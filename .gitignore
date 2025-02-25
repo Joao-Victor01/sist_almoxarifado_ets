@@ -1,0 +1,21 @@
+# .env
+.env
+
+# Alembic
+/alembic/
+
+# Outras pastas ou arquivos que você não deseja enviar para o repositório
+*.pyc
+__pycache__/
+test.py
+.env
+
+# Diretório virtual (se estiver usando venv ou outro ambiente virtual)
+venv/
+ets/
+
+# Arquivos do banco de dados SQLite (caso esteja utilizando, pode ser útil ignorar)
+*.db
+
+# Outras configurações pessoais (caso necessário)
+*.log
