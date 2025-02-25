@@ -1,3 +1,5 @@
+#core\configs.py
+
 from sqlalchemy.ext.declarative import declarative_base
 from core.config_loader import ConfigLoader
 from sqlalchemy import create_engine
@@ -8,8 +10,7 @@ class Settings:
     API_STR = "/api/almoxarifado/"
 
     # Banco de Dados
-    DATABASE_URL = 'postgresql+psycopg2://postgres:password@localhost:5432/almoxarifado_ets'
-    #ConfigLoader.get("DATABASE_URL", required=True)
+    DATABASE_URL = ConfigLoader.get("DATABASE_URL", required=True)
     engine = create_engine(DATABASE_URL) 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     DBBaseModel = declarative_base()

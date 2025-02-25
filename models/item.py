@@ -1,3 +1,5 @@
+#models\item.py
+
 from sqlalchemy import Column, Integer, String, Date, ForeignKey, TIMESTAMP
 from core.configs import settings
 

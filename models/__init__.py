@@ -1,3 +1,5 @@
+#models\__init__.py
+
 from core.configs import settings
 from models.categoria import Categoria
 from models.setor import Setor

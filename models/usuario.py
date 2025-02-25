@@ -1,3 +1,5 @@
+#models\usuario.py
+
 from sqlalchemy import Column, Integer, String, ForeignKey
 from core.configs import settings
 

@@ -1,3 +1,5 @@
+#models\setor.py
+
 from sqlalchemy import Column, Integer, String
 from core.configs import settings
 

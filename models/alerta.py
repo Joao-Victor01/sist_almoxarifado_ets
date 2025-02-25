@@ -1,3 +1,5 @@
+#models\alerta.py
+
 from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP
 from core.configs import settings
 
