@@ -1,0 +1,15 @@
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, TIMESTAMP
+from core.configs import settings
+
+class Item(settings.DBBaseModel):
+    __tablename__ = "item"
+
+    item_id = Column(Integer, primary_key=True, index=True)
+    descricao_item = Column(String(255), nullable=False)
+    unidade_medida_item = Column(String(50), nullable=False)
+    quantidade_item = Column(Integer, nullable=False)
+    data_entrada_item = Column(TIMESTAMP, nullable=False)
+    data_saida_item = Column(TIMESTAMP, nullable=True)
+    data_validade_item = Column(Date, nullable=True)
+    quantidade_minima_item = Column(Integer, nullable=True)
+    categoria_id = Column(Integer, ForeignKey("categoria.categoria_id"), nullable=False)
