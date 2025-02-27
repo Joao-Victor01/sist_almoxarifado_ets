@@ -6,7 +6,7 @@ from services.usuario_service import UsuarioService
 from core.security import get_current_user
 from typing import List
 
-router = APIRouter(prefix="/usuarios", tags=["Usuários"])
+router = APIRouter(prefix="/usuarios")
 
 @router.post("/", response_model=UsuarioOut, status_code=status.HTTP_201_CREATED)
 async def create_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_session)):

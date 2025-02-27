@@ -9,7 +9,7 @@ from models.usuario import Usuario
 from core.security import verify_password, create_access_token
 from fastapi.security import OAuth2PasswordRequestForm
 
-router = APIRouter(prefix="/auth", tags=["Autenticação"])
+router = APIRouter(prefix="/auth")
 
 @router.post('/token', response_model=TokenSchema)
 async def get_access_token(

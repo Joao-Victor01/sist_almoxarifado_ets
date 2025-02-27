@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 import pytz
 
 class Settings:
-    API_STR = "/api/almoxarifado/"
+    API_STR = "/api/almoxarifado"
 
     # Banco de Dados
     DATABASE_URL = ConfigLoader.get("DATABASE_URL", required=True)

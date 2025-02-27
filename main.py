@@ -1,6 +1,11 @@
+#main.py
 from fastapi import FastAPI
 from core.configs import settings
 from api.v1.endpoints import categoria, setor, usuario, auth
+from api.v1.endpoints.categoria import router as categoria_router
+from api.v1.endpoints.setor import router as setor_router
+from api.v1.endpoints.usuario import router as usuario_router
+from api.v1.endpoints.auth import router as auth_router
 import uvicorn
 
 app = FastAPI(
@@ -10,10 +15,11 @@ app = FastAPI(
 )
 
 # Incluindo os endpoints
-app.include_router(auth.router, prefix=f"{settings.API_STR}auth", tags=["Autenticação"])
-app.include_router(categoria.router, prefix=f"{settings.API_STR}categorias", tags=["Categorias"])
-app.include_router(setor.router, prefix=f"{settings.API_STR}setores", tags=["Setores"])
-app.include_router(usuario.router, prefix=f"{settings.API_STR}usuarios", tags=["Usuários"])
+app.include_router(setor_router, prefix=settings.API_STR, tags=['Gerenciamento de Setores'])
+app.include_router(categoria_router, prefix=settings.API_STR, tags=['Gerenciamento de Categorias'])
+app.include_router(usuario_router, prefix=settings.API_STR, tags=['Gerenciamento de Usuários'])
+app.include_router(auth_router, prefix=settings.API_STR, tags=['Autenticação de Usuários'])
+
 
 @app.get("/")
 async def root():
