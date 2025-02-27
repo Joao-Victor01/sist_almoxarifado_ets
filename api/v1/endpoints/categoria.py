@@ -1,15 +1,15 @@
 # api/v1/endpoints/categoria.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from core.database import SessionLocal
 from schemas.categoria import CategoriaCreate, CategoriaUpdate, CategoriaOut
 from services.categoria_service import CategoriaService
 from typing import List
+from core.database import get_session
 
 router = APIRouter(prefix="/categorias", tags=["Categorias"])
 
 def get_db():
-    db = SessionLocal()
+    db = get_session()
     try:
         yield db
     finally:

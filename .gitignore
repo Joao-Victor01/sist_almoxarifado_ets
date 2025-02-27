@@ -1,21 +1,36 @@
-# .env
+# Ignorar arquivos .env
 .env
 
-# Alembic
+# Ignorar diretório alembic
 /alembic/
 
-# Outras pastas ou arquivos que você não deseja enviar para o repositório
+# Ignorar arquivos .pdf
+codigos.pdf
+
+# Ignorar arquivos .ini
+alembic.ini
+
+# Ignorar arquivos .pyc e diretório __pycache__
 *.pyc
 __pycache__/
-test.py
-.env
 
-# Diretório virtual (se estiver usando venv ou outro ambiente virtual)
+# Ignorar arquivos específicos
+test.py
+gerar_pdf.py
+
+# Ignorar diretórios virtuais (venv, ets, etc.)
 venv/
 ets/
 
-# Arquivos do banco de dados SQLite (caso esteja utilizando, pode ser útil ignorar)
+# Ignorar arquivos de banco de dados SQLite
 *.db
 
-# Outras configurações pessoais (caso necessário)
+# Ignorar arquivos de log
 *.log
+
+# Ignorar diretórios específicos (adicione os diretórios que deseja ignorar)
+/diretorio_ignorado1/
+/diretorio_ignorado2/
+
+# Ignorar todos os arquivos em um diretório específico (mas manter o diretório)
+/diretorio_com_arquivos_ignorados/*

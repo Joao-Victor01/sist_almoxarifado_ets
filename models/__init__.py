@@ -9,5 +9,3 @@ from models.retirada import Retirada
 from models.retirada_item import RetiradaItem
 from models.alerta import Alerta
 
-# Criar as tabelas no banco
-settings.DBBaseModel.metadata.create_all(settings.engine)

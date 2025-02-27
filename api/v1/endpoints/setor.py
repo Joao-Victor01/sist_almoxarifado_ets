@@ -1,7 +1,7 @@
 # api/v1/endpoints/setor.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from core.database import SessionLocal
+from core.database import get_session
 from schemas.setor import SetorCreate, SetorUpdate, SetorOut
 from services.setor_service import SetorService
 from typing import List
@@ -9,7 +9,7 @@ from typing import List
 router = APIRouter(prefix="/setores", tags=["Setores"])
 
 def get_db():
-    db = SessionLocal()
+    db = get_session()
     try:
         yield db
     finally:
