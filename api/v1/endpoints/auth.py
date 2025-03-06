@@ -16,15 +16,20 @@ async def get_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_session)
 ):
-    # Buscar usuário pelo email
-    user = await db.scalar(select(Usuario).where(Usuario.email_usuario == form_data.username))
+    # Normaliza o email para lowercase
+    email = form_data.username.strip().lower()
 
-    if not user or not verify_password(form_data.password, user.password):
+    # Busca o usuário no banco de dados
+    user = await db.scalar(
+        select(Usuario).where(Usuario.email_usuario == email)
+    )
+
+    if not user or not verify_password(form_data.password, user.senha_usuario):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nome de usuário ou senha incorreta"
+            detail='Nome de usuário ou senha incorreta'
         )
 
-    access_token = create_access_token(data_payload={'sub': user.username})
+    access_token = create_access_token(data_payload={'sub': user.email_usuario})
 
     return {'access_token': access_token, 'token_type': 'Bearer'}

@@ -20,6 +20,7 @@ def get_password_hash(senha:str):
 def verify_password(senha_original: str, senha_hash:str):
     return pwd_context.verify(senha_original, senha_hash)
 
+
 def create_access_token(data_payload: dict):
     to_encode = data_payload.copy()
 

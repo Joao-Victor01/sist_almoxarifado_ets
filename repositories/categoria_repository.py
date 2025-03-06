@@ -1,15 +1,16 @@
 # repositories/categoria_repository.py
-from sqlalchemy.orm import Session
 from models.categoria import Categoria
 from schemas.categoria import CategoriaCreate, CategoriaUpdate
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 
 class CategoriaRepository:
 
     @staticmethod
     #cadastrar categoria
-    async def create_categoria(db: Session, categoria: CategoriaCreate):
+    async def create_categoria(db: AsyncSession, categoria: CategoriaCreate):
         nova_categoria = Categoria(
             nome_categoria=categoria.nome_categoria,
             descricao_categoria=categoria.descricao_categoria
@@ -21,14 +22,14 @@ class CategoriaRepository:
 
     @staticmethod
     #listar categorias
-    async def get_categorias(db: Session):
+    async def get_categorias(db: AsyncSession):
         result = await db.execute(select(Categoria))
         categorias = result.scalars().all()
         return categorias
 
     @staticmethod
     #filtar categoria por ID
-    async def get_categoria_by_id(db: Session, categoria_id: int):
+    async def get_categoria_by_id(db: AsyncSession, categoria_id: int):
         result = await db.execute(select(Categoria).filter(Categoria.categoria_id == categoria_id))
         categoria = result.scalars().first()
         
@@ -40,7 +41,7 @@ class CategoriaRepository:
     @staticmethod
 
     # Atualizar categoria
-    async def update_categoria(db: Session, categoria_id: int, categoria_data: CategoriaUpdate):
+    async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):
         result = await db.execute(select(Categoria).filter(Categoria.categoria_id == categoria_id))
         categoria = result.scalars().first()
 
@@ -56,7 +57,7 @@ class CategoriaRepository:
         return categoria
 
     @staticmethod
-    async def delete_categoria(db: Session, categoria_id: int):
+    async def delete_categoria(db: AsyncSession, categoria_id: int):
         result = await db.execute(select(Categoria).filter(Categoria.categoria_id == categoria_id))
         categoria = result.scalars().first()
         
