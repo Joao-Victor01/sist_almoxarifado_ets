@@ -5,22 +5,27 @@ from repositories.setor_repository import SetorRepository
 
 class SetorService:
     @staticmethod
-    def create_setor(db: Session, setor_data: SetorCreate):
-        return SetorRepository.create_setor(db, setor_data)
+    async def create_setor(db: Session, setor_data: SetorCreate):
+        result = await SetorRepository.create_setor(db, setor_data)
+        return result
 
     @staticmethod
-    def get_setores(db: Session):
-        return SetorRepository.get_setores(db)
+    async def get_setores(db: Session):
+        result = await SetorRepository.get_setores(db)
+        return result
 
     @staticmethod
-    def get_setor_by_id(db: Session, setor_id: int):
-        return SetorRepository.get_setor_by_id(db, setor_id)
+    async def get_setor_by_id(db: Session, setor_id: int):
+        result = await SetorRepository.get_setor_by_id(db, setor_id)
+        return result
 
     @staticmethod
-    def update_setor(db: Session, setor_id: int, setor_data: SetorUpdate):
-        return SetorRepository.update_setor(db, setor_id, setor_data)
+    async def update_setor(db: Session, setor_id: int, setor_data: SetorUpdate):
+        result = await SetorRepository.update_setor(db, setor_id, setor_data)
+        return result
 
     @staticmethod
-    def delete_setor(db: Session, setor_id: int):
-        return SetorRepository.delete_setor(db, setor_id)
+    async def delete_setor(db: Session, setor_id: int):
+        result = await SetorRepository.delete_setor(db, setor_id)
+        return result
 
