@@ -7,6 +7,7 @@ class UsuarioBase(BaseModel):
     email_usuario: EmailStr
     tipo_usuario: int
     setor_id: int
+    username: str
 
 class UsuarioCreate(UsuarioBase):
     nome_usuario: str
@@ -15,6 +16,7 @@ class UsuarioCreate(UsuarioBase):
     senha_usuario: str
     email_usuario: EmailStr
     setor_id: int
+    username: str 
 
 class UsuarioUpdate(BaseModel):
     nome_usuario: Optional[str] = None
@@ -22,6 +24,7 @@ class UsuarioUpdate(BaseModel):
     tipo_usuario: Optional[int] = None
     setor_id: Optional[int] = None
     senha_usuario: Optional[int] = None
+    username: Optional[str] = None
 
 class UsuarioOut(UsuarioBase):
     usuario_id: int

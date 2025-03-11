@@ -14,7 +14,8 @@ class UsuarioRepository:
             email_usuario=usuario_data.email_usuario.lower(),
             tipo_usuario=usuario_data.tipo_usuario,
             setor_id=usuario_data.setor_id,
-            senha_usuario=get_password_hash(usuario_data.senha_usuario) 
+            senha_usuario=get_password_hash(usuario_data.senha_usuario), 
+            username=usuario_data.username.lower()
         )
         db.add(novo_usuario)
         await db.commit()
@@ -61,7 +62,7 @@ class UsuarioRepository:
             usuario.nome_usuario = usuario_data.nome_usuario
         
         if usuario_data.email_usuario:
-            usuario.email_usuario = usuario_data.email_usuario
+            usuario.email_usuario = usuario_data.email_usuario.lower()
 
         if usuario_data.tipo_usuario is not None:
             usuario.tipo_usuario = usuario_data.tipo_usuario
@@ -71,6 +72,9 @@ class UsuarioRepository:
 
         if usuario_data.senha_usuario:
             usuario.senha_usuario = get_password_hash(usuario_data.senha_usuario)
+
+        if usuario_data.username:
+            usuario.username = usuario_data.username.lower()
 
         await db.commit()
         await db.refresh(usuario)

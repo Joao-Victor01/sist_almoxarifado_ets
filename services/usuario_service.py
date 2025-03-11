@@ -17,6 +17,13 @@ class UsuarioService:
                 detail="Email já está em uso."
             )
 
+        existing_username = await db.scalar(select(Usuario).where(Usuario.username == usuario_data.username))
+        if existing_username:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Username já está em uso."
+            )
+
         usuario_data.senha_usuario = get_password_hash(usuario_data.senha_usuario)
         return await UsuarioRepository.create_usuario(db, usuario_data)
     
@@ -88,6 +95,16 @@ class UsuarioService:
                     detail="Email já está em uso por outro usuário."
                 )
             usuario.email_usuario = usuario_data.email_usuario
+        
+        if usuario_data.username:
+            # Verifica se o username já está em uso por outro usuário
+            existing_username = await db.scalar(select(Usuario).where(Usuario.username == usuario_data.username, Usuario.id != usuario_id))
+            if existing_username:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail="Username já está em uso por outro usuário."
+                )
+            usuario.username = usuario_data.username
 
         if usuario_data.tipo_usuario is not None:
             usuario.tipo_usuario = usuario_data.tipo_usuario

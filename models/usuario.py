@@ -11,5 +11,6 @@ class Usuario(settings.DBBaseModel):
     nome_usuario = Column(String(100), nullable=False)
     tipo_usuario = Column(Integer, nullable=False)
     email_usuario = Column(String(100), unique=True, nullable=False)
-    senha_usuario = Column(String(512), nullable=False)
+    senha_usuario = Column(String(256), nullable=False)
     setor_id = Column(Integer, ForeignKey("setor.setor_id"), nullable=False)
+    username = Column(String(100), nullable=False)

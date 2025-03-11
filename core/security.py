@@ -13,17 +13,17 @@ from sqlalchemy.future import select
 
 pwd_context = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/almoxarifado/auth/token")
+def get_password_hash(password: str):
+    return pwd_context.hash(password)
 
-def get_password_hash(senha:str):
-    return pwd_context.hash(senha)
-
-def verify_password(senha_original: str, senha_hash:str):
-    return pwd_context.verify(senha_original, senha_hash)
-
+#verifica se a senha original condiz com a senha que foi gerada no hash da função get_password_hash
+def verify_password(orginal_password: str, hashed_password: str):
+    return pwd_context.verify(orginal_password, hashed_password)
 
 def create_access_token(data_payload: dict):
     to_encode = data_payload.copy()
 
+    #ver se é melhor usar ZoneInfo
     expire_date = datetime.now(tz=settings.BRASILIA_TIMEZONE) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({'exp': expire_date.timestamp()})
@@ -31,7 +31,6 @@ def create_access_token(data_payload: dict):
     encoded_jwt = encode(to_encode, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
 
     return encoded_jwt
-
 
 async def get_current_user(token: str = Depends(oauth2_scheme), 
                      db: AsyncSession = Depends(get_session)):
@@ -50,7 +49,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme),
     except PyJWTError:
         raise credentials_exception
     
-    user = await db.scalar(select(Usuario).where(Usuario.email_usuario == username))
+    user = await db.scalar(select(Usuario).where(Usuario.username == username))
 
     if not user:
         raise credentials_exception
