@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate
 from services.usuario_service import UsuarioService
-from core.security import get_current_user
+from core.security import get_current_user, verify_password, create_access_token
 from typing import List
 from sqlalchemy.future import select
 from models.usuario import Usuario
 from core.security import get_password_hash
+from schemas.auth_schemas import TokenSchema
+from fastapi.security import OAuth2PasswordRequestForm
+
 
 router = APIRouter(prefix="/usuarios")
 
@@ -46,3 +49,15 @@ async def update_usuario(
 
 
     return await UsuarioService.update_usuario(db, usuario_id, usuario, current_user)
+
+
+
+#login usuario
+@router.post('/token', response_model=TokenSchema)
+async def get_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_session)
+):
+    result = await UsuarioService.login_user(form_data, db)
+
+    return result
