@@ -13,36 +13,7 @@ router = APIRouter(prefix="/usuarios")
 
 @router.post("/", response_model=UsuarioOut, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UsuarioCreate, db: AsyncSession = Depends(get_session)):
-    # Verificar se o username já existe
-    existing_user = await db.execute(select(Usuario).filter(Usuario.username == user.username))
-    if existing_user.scalars().first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Username já está em uso."
-        )
-
-    # Verificar se o email já existe
-    existing_email = await db.execute(select(Usuario).filter(Usuario.email_usuario == user.email_usuario))
-    if existing_email.scalars().first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email já está em uso."
-        )
-
-
-    #criando o modelo de usuário 
-    new_user = Usuario(
-        username=user.username,
-        email_usuario=user.email_usuario,
-        senha_usuario=get_password_hash(user.senha_usuario),
-        siape_usuario=user.siape_usuario,
-        tipo_usuario=user.tipo_usuario,
-        nome_usuario=user.nome_usuario,
-        setor_id =user.setor_id
-    )
-
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-
+    new_user = await UsuarioService.create_usuario(db, user)
     return new_user
 
 @router.get("/", response_model=List[UsuarioOut])

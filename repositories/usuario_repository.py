@@ -7,20 +7,24 @@ from fastapi import HTTPException, status
 
 class UsuarioRepository:
     @staticmethod
-    async def create_usuario(db: AsyncSession, usuario_data: UsuarioCreate):
-        novo_usuario = Usuario(
-            siape_usuario=usuario_data.siape_usuario, 
-            nome_usuario=usuario_data.nome_usuario,
-            email_usuario=usuario_data.email_usuario.lower(),
-            tipo_usuario=usuario_data.tipo_usuario,
-            setor_id=usuario_data.setor_id,
-            senha_usuario=get_password_hash(usuario_data.senha_usuario), 
-            username=usuario_data.username.lower()
+    async def create_usuario(db: AsyncSession, user_data: UsuarioCreate):
+
+        #criando o modelo de usuário 
+        new_user = Usuario(
+            siape_usuario=user_data.siape_usuario,
+            nome_usuario=user_data.nome_usuario,
+            senha_usuario=get_password_hash(user_data.senha_usuario),
+            tipo_usuario=user_data.tipo_usuario,
+            email_usuario=user_data.email_usuario,
+            setor_id=user_data.setor_id,
+            username=user_data.username,
+
         )
-        db.add(novo_usuario)
+
+        db.add(new_user)
         await db.commit()
-        await db.refresh(novo_usuario)
-        return novo_usuario
+        await db.refresh(new_user)
+        return new_user
 
 
 

@@ -8,24 +8,23 @@ from core.security import get_password_hash
 
 class UsuarioService:
     @staticmethod
-    async def create_usuario(db: AsyncSession, usuario_data: UsuarioCreate):
-
-        existing_email = await db.scalar(select(Usuario).where(Usuario.email_usuario == usuario_data.email_usuario))
-        if existing_email:
+    async def create_usuario(db: AsyncSession, user_data: UsuarioCreate):
+        existing_user = await db.execute(select(Usuario).filter(Usuario.username == user_data.username))
+        if existing_user.scalars().first():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="Email já está em uso."
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Username já está em uso."
             )
 
-        existing_username = await db.scalar(select(Usuario).where(Usuario.username == usuario_data.username))
-        if existing_username:
+        # Verificar se o email já existe
+        existing_email = await db.execute(select(Usuario).filter(Usuario.email_usuario == user_data.email_usuario))
+        if existing_email.scalars().first():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="Username já está em uso."
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email já está em uso."
             )
+        
+        new_user = await UsuarioRepository.create_usuario(db, user_data)
+        return new_user
 
-        usuario_data.senha_usuario = get_password_hash(usuario_data.senha_usuario)
-        return await UsuarioRepository.create_usuario(db, usuario_data)
     
     @staticmethod
     async def get_usuarios(db: AsyncSession):
