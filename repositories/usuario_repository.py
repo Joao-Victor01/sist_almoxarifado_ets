@@ -41,7 +41,8 @@ class UsuarioRepository:
 
         if not usuario:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
-        return 
+        return usuario
+
 
     @staticmethod
     async def delete_usuario(db: AsyncSession, usuario_id: int):
@@ -54,6 +55,7 @@ class UsuarioRepository:
         await db.commit()
         return {"message": "Usuário deletado com sucesso"}
 
+    # atualizar dados do usuario 
     @staticmethod
     async def update_usuario(db: AsyncSession, usuario_id: int, usuario_data: UsuarioUpdate):
         result = await db.execute(select(Usuario).where(Usuario.usuario_id == usuario_id))
@@ -62,9 +64,10 @@ class UsuarioRepository:
         if not usuario:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
+        # Atualiza apenas os campos enviados na requisição
         if usuario_data.nome_usuario:
             usuario.nome_usuario = usuario_data.nome_usuario
-        
+
         if usuario_data.email_usuario:
             usuario.email_usuario = usuario_data.email_usuario.lower()
 

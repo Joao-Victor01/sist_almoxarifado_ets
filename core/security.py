@@ -12,7 +12,7 @@ from sqlalchemy.future import select
 
 
 pwd_context = PasswordHash.recommended()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/almoxarifado/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/almoxarifado/usuarios/token")
 def get_password_hash(password: str):
     return pwd_context.hash(password)
 

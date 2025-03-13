@@ -20,11 +20,12 @@ class UsuarioCreate(UsuarioBase):
 
 class UsuarioUpdate(BaseModel):
     nome_usuario: Optional[str] = None
-    email_usuario: Optional[EmailStr] = None
+    siape_usuario: Optional[int] = None
     tipo_usuario: Optional[int] = None
-    setor_id: Optional[int] = None
-    senha_usuario: Optional[int] = None
-    username: Optional[str] = None
+    senha_usuario: Optional[str] = None
+    email_usuario: Optional[EmailStr] = None
+    setor_id: Optional [int] = None
+    username: Optional [str] = None 
 
 class UsuarioOut(UsuarioBase):
     usuario_id: int
