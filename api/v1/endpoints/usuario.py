@@ -3,11 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate
 from services.usuario_service import UsuarioService
-from core.security import get_current_user, verify_password, create_access_token
+from core.security import get_current_user
 from typing import List
-from sqlalchemy.future import select
-from models.usuario import Usuario
-from core.security import get_password_hash
 from schemas.auth_schemas import TokenSchema
 from fastapi.security import OAuth2PasswordRequestForm
 
