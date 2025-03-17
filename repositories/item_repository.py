@@ -5,27 +5,31 @@ from models.item import Item
 from schemas.item import ItemCreate, ItemUpdate
 from core.security import get_password_hash
 from fastapi import HTTPException, status
+from datetime import datetime
 
 class ItemRepository:
 
     @staticmethod
     async def create_item(db: AsyncSession, item_data: ItemCreate):
 
-        #criando o modelo de usuário 
+
+        # Criando o modelo de item 
         new_item = Item(
-            descricao_item = item_data.descricao_item,
-            unidade_medida_item = item_data.unidade_medida_item,
-            quantidade_item = item_data.quantidade_item,
-            data_entrada_item = item_data.data_entrada_item,
-            data_validade_item = item_data.data_validade_item,
-            quantidade_minima_item = item_data.quantidade_minima_item,
-            categoria_id = item_data.categoria_id
+            nome_item=item_data.nome_item,  
+            descricao_item=item_data.descricao_item,
+            unidade_medida_item=item_data.unidade_medida_item,
+            quantidade_item=item_data.quantidade_item,
+            data_entrada_item=item_data.data_entrada_item,
+            data_validade_item=item_data.data_validade_item,
+            quantidade_minima_item=item_data.quantidade_minima_item,
+            categoria_id=item_data.categoria_id
         )
 
         db.add(new_item)
         await db.commit()
         await db.refresh(new_item)
         return new_item
+
 
 
     @staticmethod

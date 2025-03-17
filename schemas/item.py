@@ -1,5 +1,5 @@
 #schemas\item.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
 
@@ -9,16 +9,18 @@ class ItemBase(BaseModel):
     descricao_item: str
     quantidade_item: int
     categoria_id: int
-    data_validade_item: date
+    data_validade_item: Optional[date] = None
 
 class ItemCreate(BaseModel):
-    nome_item: str = Field(..., min_length=1, max_length=100)
-    descricao_item: str = Field(..., min_length=1, max_length=500)
-    unidade_medida_item: str = Field(..., min_length=1, max_length=50)
-    quantidade_item: int = Field(..., gt=0)  # Quantidade deve ser maior que 0
-    categoria_id: int = Field(..., gt=0)  # ID da categoria deve ser maior que 0
+    #    nome_item: str = Field(..., min_length=1, max_length=100)
+
+    nome_item: str 
+    descricao_item: str 
+    unidade_medida_item: str
+    quantidade_item: int 
+    categoria_id: int 
     data_validade_item: Optional[datetime] = None
-    quantidade_minima_item: Optional[int] = Field(None, gt=0)
+    quantidade_minima_item: Optional[int] = None
     data_entrada_item: Optional[datetime] = None  # Será preenchido automaticamente
 
 class ItemUpdate(BaseModel):
