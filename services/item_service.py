@@ -20,12 +20,12 @@ class ItemService:
     
             ItemService._validate_item_fields(item_data)
 
-            #  Verifica se o item já existe antes de criar um novo
-            item_existente = await ItemService.__find_item_by_name(db, nome_normalizado)
-            if item_existente and item_existente.categoria_id == item_data.categoria_id:
-                return await ItemService._increment_existing_item(db, item_existente, item_data.quantidade_item, item_data)
 
-            #  Criar novo item no banco
+            item_existente = await ItemService.__find_item(db, nome_normalizado, item_data.data_validade_item, item_data.categoria_id)
+            if item_existente:
+                return await ItemService._increment_existing_item(db, item_existente, item_data.quantidade_item, item_data)
+            
+
             return await ItemRepository.create_item(db, item_data, current_user.usuario_id)
 
         except IntegrityError as e:
@@ -62,13 +62,6 @@ class ItemService:
     
 #_________________________________________________________________________________________________________#
     #FUNÇÕES AUXILIARES DE VALIDAÇÕES E EXCEÇÕES   
-    
-    @staticmethod
-    async def __find_item_by_name(db: AsyncSession, item_name:str):
-        result = await db.execute(select(Item).where(Item.nome_item == item_name))
-        item = result.scalars().first()
-        
-        return item
     
     @staticmethod
     def _validate_item_fields(item_data: ItemCreate):
@@ -110,7 +103,7 @@ class ItemService:
 
     @staticmethod
     def _handle_integrity_error(e: IntegrityError):
-        """ Trata erros de integridade para mensagens mais amigáveis. """
+        """ Trata erros de integridade dos dados enviados pelo usuário """
         error_message = str(e.orig)
         if "fk_item_categoria" in error_message:
             raise HTTPException(
@@ -121,3 +114,16 @@ class ItemService:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao criar o item. Verifique os dados e tente novamente."
         )
+    
+    @staticmethod
+    async def __find_item(db: AsyncSession, 
+                                               item_name: str, 
+                                               validade: datetime, 
+                                               categoria_id:int):
+        result = await db.execute(select(Item).where(
+            Item.nome_item == item_name,
+            Item.data_validade_item == validade,
+            Item.categoria_id == categoria_id 
+        ))
+        item = result.scalars().first()
+        return item
