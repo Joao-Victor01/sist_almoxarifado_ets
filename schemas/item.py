@@ -11,6 +11,8 @@ class ItemBase(BaseModel):
     categoria_id: int
     data_validade_item: Optional[date] = None
     auditoria_usuario_id: Optional[int] = None
+    data_validade_item: Optional[datetime] = None
+    quantidade_minima_item: Optional[int] = None
 
 
 class ItemCreate(BaseModel):
@@ -35,7 +37,7 @@ class ItemUpdate(BaseModel):
     data_validade_item: Optional[date] = None
     data_entrada_item: Optional[datetime] = None
     data_saida_item: Optional[datetime] = None
-    quantidade_minima_item: Optional[datetime] = None
+    quantidade_minima_item: Optional[int] = None
 
 class ItemOut(ItemBase):
     item_id: int

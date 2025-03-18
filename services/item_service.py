@@ -23,7 +23,7 @@ class ItemService:
             #  Verifica se o item já existe antes de criar um novo
             item_existente = await ItemService.__find_item_by_name(db, nome_normalizado)
             if item_existente and item_existente.categoria_id == item_data.categoria_id:
-                return await ItemService._increment_existing_item(db, item_existente, item_data.quantidade_item)
+                return await ItemService._increment_existing_item(db, item_existente, item_data.quantidade_item, item_data)
 
             #  Criar novo item no banco
             return await ItemRepository.create_item(db, item_data, current_user.usuario_id)
@@ -50,11 +50,11 @@ class ItemService:
     @staticmethod
     async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, current_user):
         nome_normalizado = normalize_name(item_data.nome_item)
-        auditoria_usuario = current_user.usuario_id
 
-
+        auditoria_usuario_id = current_user.usuario_id
         item_data.nome_item = nome_normalizado
-        return await ItemRepository.update_item(db, item_id, item_data, auditoria_usuario)
+        
+        return await ItemRepository.update_item(db, item_id, item_data, auditoria_usuario_id)
 
     @staticmethod
     async def delete_item(db: AsyncSession, item_id: int):
@@ -93,13 +93,19 @@ class ItemService:
             )
 
     @staticmethod
-    async def _increment_existing_item(db: AsyncSession, item_existente: Item, quantidade: int):
+    async def _increment_existing_item(db: AsyncSession, item_existente: Item, quantidade: int, item_data):
         """ Se o item já existe, apenas incrementa a quantidade no banco. """
         item_existente.quantidade_item += quantidade
         item_existente.data_entrada_item = datetime.now()
+
+        if item_data.data_validade_item:
+            item_existente.data_validade_item = item_data.data_validade_item
+        if item_data.quantidade_minima_item:
+            item_existente.quantidade_minima_item = item_data.quantidade_minima_item
+
         await db.commit()
         await db.refresh(item_existente)
-        return item_existente
+        return item_existente  
 
 
     @staticmethod
