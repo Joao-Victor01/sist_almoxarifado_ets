@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.item import ItemOut, ItemCreate, ItemUpdate
@@ -12,34 +12,18 @@ router = APIRouter(prefix="/itens")
 async def create_item(
     item: ItemCreate, 
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user)  # Adicionei current_user, se necessário
+    current_user=Depends(get_current_user) 
 ):
-    try:
-        new_item = await ItemService.create_item(db, item)
-        return new_item
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao criar item: {str(e)}"
-        )
+    return await ItemService.create_item(db, item, current_user)
+
 
 @router.get("/", response_model=List[ItemOut])
 async def get_itens(
     db: AsyncSession = Depends(get_session), 
     current_user=Depends(get_current_user)
 ):
-    try:
-        response = await ItemService.get_itens(db)
-        return response
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao buscar itens: {str(e)}"
-        )
+    return await ItemService.get_itens(db)
+
 
 @router.get("/{item_id}", response_model=ItemOut)
 async def get_item(
@@ -47,16 +31,8 @@ async def get_item(
     db: AsyncSession = Depends(get_session), 
     current_user=Depends(get_current_user)
 ):
-    try:
-        response = await ItemService.get_item_by_id(db, item_id)
-        return response
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao buscar item: {str(e)}"
-        )
+    return await ItemService.get_item_by_id(db, item_id)
+
 
 @router.delete("/{item_id}")
 async def delete_item(
@@ -64,16 +40,8 @@ async def delete_item(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(get_current_user)
 ):
-    try:
-        response = await ItemService.delete_item(db, item_id)
-        return response
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao deletar item: {str(e)}"
-        )
+    return await ItemService.delete_item(db, item_id)
+
 
 @router.put("/{item_id}", response_model=ItemOut)
 async def update_item(
@@ -82,13 +50,4 @@ async def update_item(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(get_current_user)
 ):
-    try:
-        response = await ItemService.update_item(db, item_id, item)
-        return response
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao atualizar item: {str(e)}"
-        )
+    return await ItemService.update_item(db, item_id, item, current_user)

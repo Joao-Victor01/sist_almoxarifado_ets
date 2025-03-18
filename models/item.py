@@ -17,3 +17,7 @@ class Item(settings.DBBaseModel):
     data_validade_item = Column(Date, nullable=True)
     quantidade_minima_item = Column(Integer, nullable=True)
     categoria_id = Column(Integer, ForeignKey("categoria.categoria_id"), nullable=False)
+    auditoria_usuario_id = Column(Integer, ForeignKey("usuario.usuario_id"), nullable=False) 
+
+
+

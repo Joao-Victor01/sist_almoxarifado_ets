@@ -10,6 +10,8 @@ class ItemBase(BaseModel):
     quantidade_item: int
     categoria_id: int
     data_validade_item: Optional[date] = None
+    auditoria_usuario_id: Optional[int] = None
+
 
 class ItemCreate(BaseModel):
     #    nome_item: str = Field(..., min_length=1, max_length=100)
@@ -21,7 +23,8 @@ class ItemCreate(BaseModel):
     categoria_id: int 
     data_validade_item: Optional[datetime] = None
     quantidade_minima_item: Optional[int] = None
-    data_entrada_item: Optional[datetime] = None  # Será preenchido automaticamente
+    data_entrada_item: Optional[datetime] = None 
+    auditoria_usuario_id: Optional[int] = None
 
 class ItemUpdate(BaseModel):
     

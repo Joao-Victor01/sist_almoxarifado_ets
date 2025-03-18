@@ -10,7 +10,7 @@ from datetime import datetime
 class ItemRepository:
 
     @staticmethod
-    async def create_item(db: AsyncSession, item_data: ItemCreate):
+    async def create_item(db: AsyncSession, item_data: ItemCreate, usuario_id: int):
 
 
         # Criando o modelo de item 
@@ -22,7 +22,8 @@ class ItemRepository:
             data_entrada_item=item_data.data_entrada_item,
             data_validade_item=item_data.data_validade_item,
             quantidade_minima_item=item_data.quantidade_minima_item,
-            categoria_id=item_data.categoria_id
+            categoria_id=item_data.categoria_id,
+            auditoria_usuario_id=usuario_id
         )
 
         db.add(new_item)
@@ -55,12 +56,11 @@ class ItemRepository:
         return result
 
     @staticmethod
-    async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate):
+    async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, usuario_id):
 
         item = await ItemRepository.__find_item_by_id(db, item_id)
     
         if item:
-            # Atualiza apenas os campos enviados na requisição
             if item_data.nome_item:
                 item.nome_item = item_data.nome_item
 
@@ -84,6 +84,8 @@ class ItemRepository:
 
             if item_data.quantidade_minima_item:
                 item.quantidade_minima_item = item_data.quantidade_minima_item
+            
+            item.auditoria_usuario_id = usuario_id
 
         await db.commit()
         await db.refresh(item)
