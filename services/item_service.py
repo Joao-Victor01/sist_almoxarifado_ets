@@ -21,8 +21,11 @@ class ItemService:
             ItemService._validate_item_fields(item_data)
 
 
-            item_existente = await ItemService.__find_item(db, nome_normalizado, item_data.data_validade_item, item_data.categoria_id)
-            if item_existente:
+            item_existente = await ItemService.__find_item(db, nome_normalizado, 
+                                                           item_data.data_validade_item, 
+                                                           item_data.categoria_id,
+                                                           item_data.marca_item)
+            if item_existente and item_existente.marca_item == item_data.marca_item:
                 return await ItemService._increment_existing_item(db, item_existente, item_data.quantidade_item, item_data)
             
 
@@ -95,6 +98,8 @@ class ItemService:
             item_existente.data_validade_item = item_data.data_validade_item
         if item_data.quantidade_minima_item:
             item_existente.quantidade_minima_item = item_data.quantidade_minima_item
+        if item_data.marca_item:
+            item_existente.marca_item = item_data.marca_item
 
         await db.commit()
         await db.refresh(item_existente)
@@ -119,11 +124,13 @@ class ItemService:
     async def __find_item(db: AsyncSession, 
                                                item_name: str, 
                                                validade: datetime, 
-                                               categoria_id:int):
+                                               categoria_id:int,
+                                               marca_item:str):
         result = await db.execute(select(Item).where(
             Item.nome_item == item_name,
             Item.data_validade_item == validade,
-            Item.categoria_id == categoria_id 
+            Item.categoria_id == categoria_id,
+            Item.marca_item == marca_item 
         ))
         item = result.scalars().first()
         return item

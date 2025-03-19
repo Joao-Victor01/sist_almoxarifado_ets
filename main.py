@@ -6,6 +6,7 @@ from api.v1.endpoints.categoria import router as categoria_router
 from api.v1.endpoints.setor import router as setor_router
 from api.v1.endpoints.usuario import router as usuario_router
 from api.v1.endpoints.item import router as item_router
+from api.v1.endpoints.retirada import router as retidara_router
 
 app = FastAPI(
     title="Sistema de Gerenciamento de Almoxarifado",
@@ -18,6 +19,7 @@ app.include_router(setor_router, prefix=settings.API_STR, tags=['Gerenciamento d
 app.include_router(categoria_router, prefix=settings.API_STR, tags=['Gerenciamento de Categorias'])
 app.include_router(usuario_router, prefix=settings.API_STR, tags=['Gerenciamento de Usuários'])
 app.include_router(item_router, prefix=settings.API_STR, tags=['Gerenciamento de Itens'])
+app.include_router(retidara_router, prefix=settings.API_STR, tags=['Gerenciamento de Retiradas'])
 
 @app.get("/")
 async def root():

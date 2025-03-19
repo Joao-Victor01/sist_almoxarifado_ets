@@ -4,6 +4,7 @@ from schemas.setor import SetorCreate, SetorUpdate
 from repositories.setor_repository import SetorRepository
 
 class SetorService:
+    """Adicionar lógica para só permitir deletar um setor se não tiver nenhum usuário associado a ele"""
     @staticmethod
     async def create_setor(db: Session, setor_data: SetorCreate):
         result = await SetorRepository.create_setor(db, setor_data)

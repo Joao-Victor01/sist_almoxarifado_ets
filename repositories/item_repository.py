@@ -23,7 +23,8 @@ class ItemRepository:
             data_validade_item=item_data.data_validade_item,
             quantidade_minima_item=item_data.quantidade_minima_item,
             categoria_id=item_data.categoria_id,
-            auditoria_usuario_id=usuario_id
+            auditoria_usuario_id=usuario_id,
+            marca_item=item_data.marca_item
         )
 
         db.add(new_item)
@@ -84,6 +85,9 @@ class ItemRepository:
 
             if item_data.quantidade_minima_item:
                 item.quantidade_minima_item = item_data.quantidade_minima_item
+
+            if item_data.marca_item:
+                item.marca_item =item_data.marca_item
             
             item.auditoria_usuario_id = usuario_id
 
