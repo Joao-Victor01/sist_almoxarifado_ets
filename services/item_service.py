@@ -14,8 +14,10 @@ class ItemService:
     async def create_item(db: AsyncSession, item_data: ItemCreate, current_user):
         try:
             nome_normalizado = normalize_name(item_data.nome_item)
+            marca_normalizada = normalize_name(item_data.marca_item)
             item_data.data_entrada_item = datetime.now()
             item_data.nome_item = nome_normalizado
+            item_data.marca_item = marca_normalizada
 
     
             ItemService._validate_item_fields(item_data)

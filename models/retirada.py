@@ -2,12 +2,6 @@ from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Enum, Text
 from sqlalchemy.orm import relationship
 from core.configs import settings
 from datetime import datetime
-import enum
-
-# class StatusRetirada(enum.Enum):
-#     1 = "aguardando autorização"
-#     2 = "negada"
-#     3 = "concluída"
 
 class Retirada(settings.DBBaseModel):
     __tablename__ = "retirada"
