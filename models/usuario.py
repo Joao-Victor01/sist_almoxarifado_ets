@@ -2,6 +2,13 @@
 
 from sqlalchemy import Column, Integer, String, ForeignKey
 from core.configs import settings
+from enum import IntEnum
+
+class RoleEnum(IntEnum):
+    USUARIO_GERAL = 1
+    USUARIO_ALMOXARIFADO = 2
+    USUARIO_DIRECAO = 3
+
 
 class Usuario(settings.DBBaseModel):
     __tablename__ = "usuario"

@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.usuario import Usuario
+from models.setor import Setor
 from schemas.usuario import UsuarioCreate, UsuarioUpdate
 from repositories.usuario_repository import UsuarioRepository
 from fastapi import HTTPException, status, Depends
@@ -8,129 +9,231 @@ from core.security import get_password_hash, verify_password, create_access_toke
 from fastapi.security import OAuth2PasswordRequestForm
 from core.database import get_session
 
-
-
 class UsuarioService:
-
-    #create user
+    
     @staticmethod
     async def create_usuario(db: AsyncSession, user_data: UsuarioCreate):
-        existing_user = await db.execute(select(Usuario).filter(Usuario.username == user_data.username))
-        if existing_user.scalars().first():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Username já está em uso."
-            )
-
-        # Verificar se o email já existe
-        existing_email = await db.execute(select(Usuario).filter(Usuario.email_usuario == user_data.email_usuario))
-        if existing_email.scalars().first():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Email já está em uso."
-            )
+        """
+        Cria um novo usuário após validar os dados.
         
+        Args:
+            db: Sessão do banco de dados
+            user_data: Dados do usuário a ser criado
+            
+        Returns:
+            Usuario: O usuário criado
+            
+        Raises:
+            HTTPException: Se os dados forem inválidos ou o usuário já existir
+        """
+        await UsuarioService._verify_user_data(db, user_data)
         new_user = await UsuarioRepository.create_usuario(db, user_data)
         return new_user
 
-    
-    #get users
     @staticmethod
     async def get_usuarios(db: AsyncSession):
-        usuarios = await UsuarioRepository.get_usuarios(db)
-        return usuarios
+        """Retorna todos os usuários cadastrados"""
+        return await UsuarioRepository.get_usuarios(db)
 
-    #get user by id
     @staticmethod
     async def get_usuario_by_id(db: AsyncSession, usuario_id: int):
+        """Obtém um usuário pelo ID"""
         usuario = await UsuarioRepository.get_usuario_by_id(db, usuario_id)
-        if not usuario:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
-        return usuario
-
-    #delete user by id
-    @staticmethod
-    async def delete_usuario(db: AsyncSession, usuario_id: int, current_user):
-        result = await UsuarioRepository.get_usuario_by_id(db, usuario_id)
-        
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                detail="Usuário não encontrado."
-            )
-
-        if current_user.usuario_id != usuario_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='Usuário sem permissão para essa operação'
-            )
-        
-        return await UsuarioRepository.delete_usuario(db, usuario_id)
-    
-    #update user by id 
-    @staticmethod
-    async def update_usuario(db: AsyncSession, usuario_id: int, usuario_data: UsuarioUpdate, current_user):
-        usuario = await UsuarioRepository.get_usuario_by_id(db, usuario_id)
-
-        if current_user.usuario_id != usuario_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                                detail='Usuário sem permissão para essa operação')
-
         if not usuario:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuário não encontrado."
+                detail="Usuário não encontrado"
+            )
+        return usuario
+
+    @staticmethod
+    async def delete_usuario(db: AsyncSession, usuario_id: int, current_user: Usuario):
+        """
+        Remove um usuário
+        
+        Args:
+            usuario_id: ID do usuário a ser removido
+            current_user: Usuário autenticado
+            
+        Raises:
+            HTTPException: Se o usuário não existir ou não tiver permissão
+        """
+        usuario = await UsuarioRepository.get_usuario_by_id(db, usuario_id)
+        
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
             )
 
-        # Atualiza apenas os campos enviados na requisição
+        # Permite que admins ou o próprio usuário possa deletar
+        if current_user.usuario_id != usuario_id and current_user.tipo_usuario != 1:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Sem permissão para esta operação"
+            )
+            
+        await UsuarioRepository.delete_usuario(db, usuario_id)
 
+    @staticmethod
+    async def update_usuario(
+        db: AsyncSession,
+        usuario_id: int,
+        usuario_data: UsuarioUpdate,
+        current_user: Usuario
+    ):
+        """
+        Atualiza os dados de um usuário
+        
+        Args:
+            usuario_id: ID do usuário a ser atualizado
+            usuario_data: Novos dados do usuário
+            current_user: Usuário autenticado
+            
+        Returns:
+            Usuario: O usuário atualizado
+            
+        Raises:
+            HTTPException: Em caso de erros de validação ou permissão
+        """
+        usuario = await UsuarioRepository.get_usuario_by_id(db, usuario_id)
+        
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
+            )
+
+        # Verifica permissão
+        if current_user.usuario_id != usuario_id and current_user.tipo_usuario != 1:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Sem permissão para esta operação"
+            )
+
+        # Valida dados únicos (ignorando o próprio usuário)
+        await UsuarioService._verify_user_data(db, usuario_data, usuario_id)
+
+        # Atualiza campos
         if usuario_data.nome_usuario:
             usuario.nome_usuario = usuario_data.nome_usuario
-
+            
         if usuario_data.email_usuario:
-            # Verifica se o email já está em uso por outro usuário
-            existing_email = await db.scalar(select(Usuario).where(Usuario.email_usuario == usuario_data.email_usuario, Usuario.usuario_id != usuario_id))
-            if existing_email:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, 
-                    detail="Email já está em uso por outro usuário."
-                )
             usuario.email_usuario = usuario_data.email_usuario.lower()
-
+            
         if usuario_data.username:
-            # Verifica se o username já está em uso por outro usuário
-            existing_username = await db.scalar(select(Usuario).where(Usuario.username == usuario_data.username, Usuario.usuario_id != usuario_id))
-            if existing_username:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, 
-                    detail="Username já está em uso por outro usuário."
-                )
             usuario.username = usuario_data.username.lower()
-
+            
         if usuario_data.tipo_usuario is not None:
             usuario.tipo_usuario = usuario_data.tipo_usuario
-
+            
         if usuario_data.setor_id is not None:
+            setor = await db.get(Setor, usuario_data.setor_id)
+            if not setor:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Setor não encontrado"
+                )
             usuario.setor_id = usuario_data.setor_id
-
+            
         if usuario_data.senha_usuario:
             usuario.senha_usuario = get_password_hash(usuario_data.senha_usuario)
 
-        return await UsuarioRepository.update_usuario(db, usuario_id, usuario_data)
+        await db.commit()
+        await db.refresh(usuario)
+        return usuario
 
-    
     @staticmethod
-    async def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_session)):
-        #buscar o usuário
-        user = await db.scalar(select(Usuario).where(Usuario.username == form_data.username))
-
+    async def login_user(
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        db: AsyncSession = Depends(get_session)
+    ):
+        """
+        Realiza o login do usuário e retorna um token JWT
+        
+        Returns:
+            dict: {access_token, token_type}
+            
+        Raises:
+            HTTPException: Se as credenciais forem inválidas
+        """
+        user = await db.scalar(
+            select(Usuario).where(Usuario.username == form_data.username)
+        )
+        
         if not user or not verify_password(form_data.password, user.senha_usuario):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Nome de usuário ou senha incorreta"
+                detail="Credenciais inválidas"
+            )
+            
+        return {
+            "access_token": create_access_token({"sub": user.username}),
+            "token_type": "bearer"
+        }
+
+    @staticmethod
+    async def _verify_user_data(
+        db: AsyncSession,
+        user_data: UsuarioCreate | UsuarioUpdate,
+        exclude_usuario_id: int = None
+    ):
+        """
+        Valida os dados do usuário (username, email e siape)
+        
+        Args:
+            exclude_usuario_id: ID do usuário a ser ignorado (para updates)
+            
+        Raises:
+            HTTPException: Se algum dado estiver inválido
+        """
+        filters = []
+        if exclude_usuario_id is not None:
+            filters.append(Usuario.usuario_id != exclude_usuario_id)
+
+        # Verifica username
+        existing_user = await db.scalar(
+            select(Usuario)
+            .where(Usuario.username == user_data.username, *filters)
+        )
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username já está em uso"
+            )
+
+        # Verifica email
+        existing_email = await db.scalar(
+            select(Usuario)
+            .where(Usuario.email_usuario == user_data.email_usuario, *filters)
+        )
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email já está em uso"
+            )
+
+        # Verifica siape
+        existing_siape = await db.scalar(
+            select(Usuario)
+            .where(Usuario.siape_usuario == user_data.siape_usuario, *filters)
+        )
+        if existing_siape:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="SIAPE já cadastrado"
             )
         
-        access_token = create_access_token(data_payload={'sub': user.username})
+        if int(user_data.tipo_usuario) <1 or int(user_data.tipo_usuario) > 3:
+            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tipo de usuário não permitido"
+            )
 
-        return {'access_token': access_token, 'token_type': 'Bearer'}
-
-
+        # Verifica setor (apenas para criação)
+        if isinstance(user_data, UsuarioCreate):
+            if not await db.get(Setor, user_data.setor_id):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Setor não encontrado"
+                )

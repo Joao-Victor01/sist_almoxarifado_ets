@@ -1,5 +1,5 @@
 from pwdlib import PasswordHash
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Security
 from fastapi.security import OAuth2PasswordBearer
 from jwt import encode, decode
 from jwt.exceptions import PyJWTError
@@ -9,6 +9,7 @@ from core.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import Usuario
 from sqlalchemy.future import select
+from models.usuario import RoleEnum
 
 
 pwd_context = PasswordHash.recommended()
@@ -55,3 +56,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme),
         raise credentials_exception
     
     return user
+
+
+def permitido_para(*roles_permitidas: RoleEnum):
+    def verifica_permissao(usuario=Depends(get_current_user)):
+        if usuario.role not in [role.value for role in roles_permitidas]:  
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para acessar este recurso"
+            )
+        return usuario
+    return verifica_permissao
