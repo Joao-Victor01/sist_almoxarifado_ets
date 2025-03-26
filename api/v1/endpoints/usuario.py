@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate
 from services.usuario_service import UsuarioService
-from core.security import get_current_user
+from core.security import usuario_direcao
 from typing import List
 from schemas.auth_schemas import TokenSchema
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,13 +11,23 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(prefix="/usuarios")
 
+@router.post("/primeiro-usuario", status_code=201)
+async def criar_primeiro_usuario(
+    usuario_data: UsuarioCreate,
+    db: AsyncSession = Depends(get_session)
+):    
+    # Cria o primeiro usuário
+    return await UsuarioService.create_first_user(db, usuario_data)
+
+
 @router.post("/", response_model=UsuarioOut, status_code=status.HTTP_201_CREATED)
-async def create_user(user: UsuarioCreate, db: AsyncSession = Depends(get_session)):
+async def create_user(user: UsuarioCreate, db: AsyncSession = Depends(get_session),
+                      current_user = Depends(usuario_direcao)):
     new_user = await UsuarioService.create_usuario(db, user)
     return new_user
 
 @router.get("/", response_model=List[UsuarioOut])
-async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Depends(usuario_direcao)):
 
     response = await UsuarioService.get_usuarios(db)
     return response
@@ -25,7 +35,7 @@ async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Dep
 @router.get("/{usuario_id}", response_model=UsuarioOut)
 async def get_usuario(usuario_id: int, 
                        db: AsyncSession = Depends(get_session), 
-                       current_user=Depends(get_current_user)):
+                       current_user=Depends(usuario_direcao)):
 
     print(usuario_id)
     response = await UsuarioService.get_usuario_by_id(db, usuario_id)
@@ -35,7 +45,7 @@ async def get_usuario(usuario_id: int,
 @router.delete("/{usuario_id}")
 async def delete_usuario(usuario_id: int, 
                          db: AsyncSession = Depends(get_session),
-                         current_user=Depends(get_current_user)):
+                         current_user=Depends(usuario_direcao)):
 
     response = await UsuarioService.delete_usuario(db, usuario_id, current_user)
     return response
@@ -45,12 +55,11 @@ async def update_usuario(
     usuario_id: int, 
     usuario: UsuarioUpdate, 
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user)
+    current_user=Depends(usuario_direcao)
 ):
 
 
     return await UsuarioService.update_usuario(db, usuario_id, usuario, current_user)
-
 
 
 #login usuario

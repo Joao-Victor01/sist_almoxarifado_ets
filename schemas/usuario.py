@@ -18,6 +18,7 @@ class UsuarioCreate(UsuarioBase):
     setor_id: int
     username: str 
 
+
 class UsuarioUpdate(BaseModel):
     nome_usuario: Optional[str] = None
     siape_usuario: Optional[int] = None

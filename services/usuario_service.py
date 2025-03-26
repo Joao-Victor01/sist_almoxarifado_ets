@@ -8,8 +8,35 @@ from fastapi import HTTPException, status, Depends
 from core.security import get_password_hash, verify_password, create_access_token
 from fastapi.security import OAuth2PasswordRequestForm
 from core.database import get_session
+from models.usuario import RoleEnum
+from services.setor_service import SetorService
 
 class UsuarioService:
+
+    @staticmethod
+    async def create_first_user(db:AsyncSession, user_data: UsuarioCreate):
+
+            # Verifica se já existe algum usuário no sistema
+        existing_user = await db.execute(select(Usuario))         
+    
+        if existing_user.scalars().first() is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="O sistema já possui usuários cadastrados"
+            )
+        
+        setor_root = await SetorService.create_root_setor(db)
+
+        setor_root_result = await db.execute(select(Setor).where(Setor.setor_id == setor_root.setor_id))
+        setor_root_data = setor_root_result.scalars().first()
+        
+        user_data.tipo_usuario = RoleEnum.USUARIO_DIRECAO.value
+        user_data.setor_id = setor_root_data.setor_id
+
+        user_root = await UsuarioService.create_usuario(db,user_data)
+        
+        return user_root
+
     
     @staticmethod
     async def create_usuario(db: AsyncSession, user_data: UsuarioCreate):
@@ -166,10 +193,17 @@ class UsuarioService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Credenciais inválidas"
             )
-            
+        
+        # Correção: Passando o tipo_usuario para o token
+        access_token = create_access_token(
+            data_payload={"sub": user.username},
+            tipo_usuario=user.tipo_usuario  # Adicionando o tipo do usuário
+        )
+        
         return {
-            "access_token": create_access_token({"sub": user.username}),
-            "token_type": "bearer"
+            "access_token": access_token,
+            "token_type": "bearer",
+            "tipo_usuario": user.tipo_usuario  # Opcional: retornar no response
         }
 
     @staticmethod

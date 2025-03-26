@@ -6,7 +6,7 @@ from services.categoria_service import CategoriaService
 from typing import List
 from core.database import get_session
 from fastapi import status
-from core.security import get_current_user
+from core.security import usuario_almoxarifado
 
 
 router = APIRouter(prefix="/categorias")
@@ -15,14 +15,14 @@ router = APIRouter(prefix="/categorias")
 @router.post("/", response_model=CategoriaOut, status_code=status.HTTP_201_CREATED)
 async def create_categoria(categoria: CategoriaCreate, 
                            db: AsyncSession = Depends(get_session),
-                           current_user=Depends(get_current_user)):
+                           current_user=Depends(usuario_almoxarifado)):
     response = await CategoriaService.create_categoria(db, categoria)
     return response
 
 #Listar categorias
 @router.get("/", response_model=List[CategoriaOut], status_code=status.HTTP_200_OK)
 async def get_categorias(db: AsyncSession = Depends(get_session),
-                         current_user=Depends(get_current_user)):
+                         current_user=Depends(usuario_almoxarifado)):
     response = await CategoriaService.get_categorias(db)
     return response
 
@@ -30,7 +30,7 @@ async def get_categorias(db: AsyncSession = Depends(get_session),
 @router.get("/{categoria_id}", response_model=CategoriaOut, status_code=status.HTTP_200_OK)
 async def get_categoria_by_id(categoria_id: int, 
                               db: AsyncSession = Depends(get_session),
-                              current_user=Depends(get_current_user)):
+                              current_user=Depends(usuario_almoxarifado)):
     response =  await CategoriaService.get_categoria_by_id(db, categoria_id)
     return response
 
@@ -39,13 +39,13 @@ async def get_categoria_by_id(categoria_id: int,
 async def update_categoria(categoria_id: int, 
                            categoria: CategoriaUpdate, 
                            db: AsyncSession = Depends(get_session),
-                           current_user=Depends(get_current_user)):
+                           current_user=Depends(usuario_almoxarifado)):
     response  = await CategoriaService.update_categoria(db, categoria_id, categoria)
     return response
 
 @router.delete("/{categoria_id}, status_code=status.HTTP_200_OK")
 async def delete_categoria(categoria_id: int, 
                            db: AsyncSession = Depends(get_session),
-                           current_user=Depends(get_current_user)):
+                           current_user=Depends(usuario_almoxarifado)):
     response = await CategoriaService.delete_categoria(db, categoria_id)
     return response

@@ -3,7 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus, RetiradaOut
 from services.retirada_service import RetiradaService
-from core.security import get_current_user
+from core.security import ( 
+                           todos_usuarios,
+                           usuario_almoxarifado,
+                           )
 
 router = APIRouter(prefix="/retiradas")
 
@@ -11,7 +14,7 @@ router = APIRouter(prefix="/retiradas")
 async def solicitar_retirada(
     retirada: RetiradaCreate,
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user)
+    current_user=Depends(todos_usuarios)
 ):
     """
     Endpoint para solicitar uma nova retirada.
@@ -23,7 +26,7 @@ async def atualizar_status_retirada(
     retirada_id: int,
     status_data: RetiradaUpdateStatus,
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user)
+    current_user=Depends(usuario_almoxarifado)
 ):
     """
     Endpoint para atualizar o status de uma retirada.
@@ -33,7 +36,7 @@ async def atualizar_status_retirada(
 @router.get("/pendentes", response_model=list[RetiradaOut])
 async def listar_retiradas_pendentes(
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user)
+    current_user=Depends(todos_usuarios)
 ):
     """
     Endpoint para listar todas as retiradas pendentes.

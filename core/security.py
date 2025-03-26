@@ -1,5 +1,5 @@
 from pwdlib import PasswordHash
-from fastapi import Depends, HTTPException, status, Security
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import encode, decode
 from jwt.exceptions import PyJWTError
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Usuario
 from sqlalchemy.future import select
 from models.usuario import RoleEnum
+from typing import List
 
 
 pwd_context = PasswordHash.recommended()
@@ -21,9 +22,11 @@ def get_password_hash(password: str):
 def verify_password(orginal_password: str, hashed_password: str):
     return pwd_context.verify(orginal_password, hashed_password)
 
-def create_access_token(data_payload: dict):
+def create_access_token(data_payload: dict, tipo_usuario: int = None):
     to_encode = data_payload.copy()
 
+    if tipo_usuario is not None:
+        to_encode.update({'tipo_usuario': tipo_usuario})  
     #ver se é melhor usar ZoneInfo
     expire_date = datetime.now(tz=settings.BRASILIA_TIMEZONE) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
@@ -36,14 +39,17 @@ def create_access_token(data_payload: dict):
 async def get_current_user(token: str = Depends(oauth2_scheme), 
                      db: AsyncSession = Depends(get_session)):
     
-    credentials_exception = HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, 
-                                          detail='Não foi possível validar as credenciais',
-                                          headers={'WWW-Autenticate' : 'Bearer'})
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Não foi possível validar as credenciais',
+        headers={'WWW-Authenticate': 'Bearer'}
+    )
     
     try:
         payload = decode(token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM])
         username: str = payload.get('sub')
-
+        tipo_usuario = payload.get('tipo_usuario')  # Agora buscando 'tipo_usuario'
+        
         if not username:
             raise credentials_exception
 
@@ -51,19 +57,34 @@ async def get_current_user(token: str = Depends(oauth2_scheme),
         raise credentials_exception
     
     user = await db.scalar(select(Usuario).where(Usuario.username == username))
-
+    
     if not user:
         raise credentials_exception
     
+    user.tipo_usuario_from_token = tipo_usuario
+    
     return user
 
+def verify_user_type(allowed_types: List[RoleEnum]):
+    allowed_values = {t.value for t in allowed_types}
+    
+    def verifier(current_user: Usuario = Depends(get_current_user)):
+        tipo_usuario = current_user.tipo_usuario_from_token
 
-def permitido_para(*roles_permitidas: RoleEnum):
-    def verifica_permissao(usuario=Depends(get_current_user)):
-        if usuario.role not in [role.value for role in roles_permitidas]:  
+        
+        if tipo_usuario not in allowed_values:
+            allowed_names = [t.name for t in allowed_types]
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Você não tem permissão para acessar este recurso"
+                detail=f"Acesso restrito a: {', '.join(allowed_names)}"
             )
-        return usuario
-    return verifica_permissao
+        return current_user
+    
+    return verifier
+
+# Verificadores (use os mesmos nomes do RoleEnum)
+usuario_direcao = verify_user_type([RoleEnum.USUARIO_DIRECAO])
+usuario_almoxarifado = verify_user_type([RoleEnum.USUARIO_ALMOXARIFADO])
+usuario_geral = verify_user_type([RoleEnum.USUARIO_GERAL])
+direcao_ou_almoxarifado = verify_user_type([RoleEnum.USUARIO_ALMOXARIFADO, RoleEnum.USUARIO_DIRECAO])
+todos_usuarios = verify_user_type([RoleEnum.USUARIO_ALMOXARIFADO, RoleEnum.USUARIO_DIRECAO, RoleEnum.USUARIO_GERAL])
