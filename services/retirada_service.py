@@ -1,9 +1,12 @@
+#services\retirada_service.py
+
 from fastapi import HTTPException, status
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus
 from models.retirada import Retirada
 from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
 from sqlalchemy.ext.asyncio import AsyncSession
+from models.retirada import StatusEnum
 
 
 class RetiradaService:
@@ -15,7 +18,7 @@ class RetiradaService:
             nova_retirada = Retirada(
                 usuario_id=usuario_id,
                 setor_id=retirada_data.setor_id,
-                status=1,
+                status=StatusEnum.PENDENTE,
                 solicitado_localmente_por=retirada_data.solicitado_localmente_por,
                 justificativa=retirada_data.justificativa
             )
@@ -49,13 +52,19 @@ class RetiradaService:
     @staticmethod
     async def atualizar_status(db: AsyncSession, retirada_id: int, status_data: RetiradaUpdateStatus, admin_id: int):
         try:
+            if status_data.status not in {status.value for status in StatusEnum}:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Status inválido. Os valores permitidos são: 1 (PENDENTE), 2 (AUTORIZADA) ou 3 (CONCLUÍDA)."
+                )
+
             # Buscar a retirada no banco de dados
             retirada = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
             if not retirada:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Retirada não encontrada")
 
             # Verificar se o status é "Concluído" (status == 3)
-            if status_data.status == 3:
+            if status_data.status == StatusEnum.CONCLUIDA:
                 for item in retirada.itens:
                     item_existente = await RetiradaRepository.buscar_item_por_id(db, item.item_id)
                     if not item_existente or item_existente.quantidade_item < item.quantidade_retirada:

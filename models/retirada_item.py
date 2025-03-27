@@ -1,3 +1,5 @@
+#models\retirada_item.py
+
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from core.configs import settings

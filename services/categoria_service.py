@@ -3,11 +3,14 @@ from schemas.categoria import CategoriaCreate, CategoriaUpdate
 from repositories.categoria_repository import CategoriaRepository
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils.normalizar_texto import normalize_name
 
 
 class CategoriaService:
     @staticmethod
     async def create_categoria(db: AsyncSession, categoria_data: CategoriaCreate):
+        categoria_normalized = normalize_name(categoria_data.nome_categoria)
+        categoria_data.nome_categoria = categoria_normalized
         categoria = await CategoriaRepository.create_categoria(db, categoria_data)
         return categoria
 
@@ -25,6 +28,8 @@ class CategoriaService:
 
     @staticmethod
     async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):
+        categoria_normalized = normalize_name(categoria_data.nome_categoria)
+        categoria_data.nome_categoria = categoria_normalized
         updated_categoria = await CategoriaRepository.update_categoria(db, categoria_id, categoria_data)
         if not updated_categoria:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada")

@@ -1,7 +1,16 @@
+#models\retirada.py
+
 from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Text
 from sqlalchemy.orm import relationship
 from core.configs import settings
 from datetime import datetime
+from enum import IntEnum
+
+class StatusEnum(IntEnum):
+    PENDENTE = 1
+    AUTORIZADA = 2
+    CONCLUIDA = 3
+
 
 class Retirada(settings.DBBaseModel):
     __tablename__ = "retirada"
@@ -11,7 +20,7 @@ class Retirada(settings.DBBaseModel):
     autorizado_por = Column(Integer, ForeignKey("usuario.usuario_id"), nullable=True)  # Quem autorizou
     solicitado_localmente_por = Column(String(255), nullable=True)  # Nome de quem solicitou pessoalmente
     setor_id = Column(Integer, ForeignKey("setor.setor_id"), nullable=False)
-    status = Column(Integer, default=1, nullable=False)
+    status = Column(Integer, default=StatusEnum.PENDENTE, nullable=False)
     detalhe_status = Column(Text, nullable=True)  # Explicação do almoxarifado para autorização/negação
     justificativa = Column(Text, nullable=True)  # Justificativa do usuário
     data_solicitacao = Column(DateTime, default=datetime.now)

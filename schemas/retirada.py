@@ -1,6 +1,9 @@
+#schemas\retirada.py
+
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+from models.retirada import StatusEnum
 
 
 class ItemRetirada(BaseModel):
@@ -15,8 +18,9 @@ class RetiradaBase(BaseModel):
 class RetiradaCreate(RetiradaBase):
     itens: List[ItemRetirada]  # Lista de itens da retirada
 
+
 class RetiradaUpdateStatus(BaseModel):
-    status: int
+    status: StatusEnum
     detalhe_status: Optional[str] = None  # Explicação da autorização/negação
 
 class RetiradaOut(RetiradaBase):

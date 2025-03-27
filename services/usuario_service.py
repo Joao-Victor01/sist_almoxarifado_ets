@@ -42,20 +42,20 @@ class UsuarioService:
     async def create_usuario(db: AsyncSession, user_data: UsuarioCreate):
         """
         Cria um novo usuário após validar os dados.
-        
+
         Args:
             db: Sessão do banco de dados
             user_data: Dados do usuário a ser criado
-            
+
         Returns:
             Usuario: O usuário criado
-            
+
         Raises:
             HTTPException: Se os dados forem inválidos ou o usuário já existir
         """
-        await UsuarioService._verify_user_data(db, user_data)
-        new_user = await UsuarioRepository.create_usuario(db, user_data)
-        return new_user
+        await UsuarioService._validate_user_data(db, user_data)
+        return await UsuarioRepository.create_usuario(db, user_data)
+    
 
     @staticmethod
     async def get_usuarios(db: AsyncSession):
@@ -111,63 +111,36 @@ class UsuarioService:
     ):
         """
         Atualiza os dados de um usuário
-        
+
         Args:
             usuario_id: ID do usuário a ser atualizado
             usuario_data: Novos dados do usuário
             current_user: Usuário autenticado
-            
+
         Returns:
             Usuario: O usuário atualizado
-            
+
         Raises:
             HTTPException: Em caso de erros de validação ou permissão
         """
         usuario = await UsuarioRepository.get_usuario_by_id(db, usuario_id)
         
         if not usuario:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuário não encontrado"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
-        # Verifica permissão
-        if current_user.usuario_id != usuario_id and current_user.tipo_usuario != 1:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Sem permissão para esta operação"
-            )
+        # Verifica se o usuário tem permissão para atualizar
+        UsuarioService._validate_permission(usuario_id, current_user)
 
         # Valida dados únicos (ignorando o próprio usuário)
-        await UsuarioService._verify_user_data(db, usuario_data, usuario_id)
+        await UsuarioService._validate_user_data(db, usuario_data, usuario_id)
 
-        # Atualiza campos
-        if usuario_data.nome_usuario:
-            usuario.nome_usuario = usuario_data.nome_usuario
-            
-        if usuario_data.email_usuario:
-            usuario.email_usuario = usuario_data.email_usuario.lower()
-            
-        if usuario_data.username:
-            usuario.username = usuario_data.username.lower()
-            
-        if usuario_data.tipo_usuario is not None:
-            usuario.tipo_usuario = usuario_data.tipo_usuario
-            
-        if usuario_data.setor_id is not None:
-            setor = await db.get(Setor, usuario_data.setor_id)
-            if not setor:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Setor não encontrado"
-                )
-            usuario.setor_id = usuario_data.setor_id
-            
-        if usuario_data.senha_usuario:
-            usuario.senha_usuario = get_password_hash(usuario_data.senha_usuario)
+        # Aplica atualizações apenas nos campos modificados
+        campos_atualizados = UsuarioService._prepare_update_fields(db, usuario, usuario_data)
 
-        await db.commit()
-        await db.refresh(usuario)
+        if campos_atualizados:
+            await db.commit()
+            await db.refresh(usuario)
+
         return usuario
 
     @staticmethod
@@ -206,68 +179,111 @@ class UsuarioService:
             "tipo_usuario": user.tipo_usuario  # Opcional: retornar no response
         }
 
+   
+
     @staticmethod
-    async def _verify_user_data(
+    async def _validate_user_data(
         db: AsyncSession,
         user_data: UsuarioCreate | UsuarioUpdate,
         exclude_usuario_id: int = None
     ):
         """
-        Valida os dados do usuário (username, email e siape)
-        
+        Valida os dados do usuário (username, email, siape e tipo_usuario)
+
         Args:
             exclude_usuario_id: ID do usuário a ser ignorado (para updates)
-            
+
         Raises:
             HTTPException: Se algum dado estiver inválido
         """
-        filters = []
-        if exclude_usuario_id is not None:
-            filters.append(Usuario.usuario_id != exclude_usuario_id)
+        await UsuarioService._validate_unique_fields(db, user_data, exclude_usuario_id)
+        UsuarioService._validate_tipo_usuario(user_data.tipo_usuario)
 
-        # Verifica username
-        existing_user = await db.scalar(
-            select(Usuario)
-            .where(Usuario.username == user_data.username, *filters)
-        )
-        if existing_user:
+        if isinstance(user_data, UsuarioCreate):
+            await UsuarioService._validate_setor(db, user_data.setor_id)
+
+
+    @staticmethod
+    async def _validate_unique_fields(db: AsyncSession, usuario_data: UsuarioUpdate, exclude_usuario_id: int):
+        """ Valida se email, username e siape já estão em uso. """
+        campos = {
+            "username": usuario_data.username,
+            "email_usuario": usuario_data.email_usuario,
+            "siape_usuario": usuario_data.siape_usuario
+        }
+
+        for campo, valor in campos.items():
+            if valor:
+                query = await db.scalar(
+                    select(Usuario).where(getattr(Usuario, campo) == valor, Usuario.usuario_id != exclude_usuario_id)
+                )
+                if query:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{campo.title()} já cadastrado")
+                
+
+    @staticmethod
+    def _validate_tipo_usuario(tipo_usuario: int):
+        """ Valida se o tipo de usuário está dentro dos valores permitidos. """
+        if tipo_usuario not in {1, 2, 3}:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username já está em uso"
-            )
-
-        # Verifica email
-        existing_email = await db.scalar(
-            select(Usuario)
-            .where(Usuario.email_usuario == user_data.email_usuario, *filters)
-        )
-        if existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email já está em uso"
-            )
-
-        # Verifica siape
-        existing_siape = await db.scalar(
-            select(Usuario)
-            .where(Usuario.siape_usuario == user_data.siape_usuario, *filters)
-        )
-        if existing_siape:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="SIAPE já cadastrado"
-            )
-        
-        if int(user_data.tipo_usuario) <1 or int(user_data.tipo_usuario) > 3:
-            raise HTTPException(
-                                status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Tipo de usuário não permitido"
             )
 
-        # Verifica setor (apenas para criação)
-        if isinstance(user_data, UsuarioCreate):
-            if not await db.get(Setor, user_data.setor_id):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Setor não encontrado"
-                )
+    @staticmethod
+    async def _validate_setor(db: AsyncSession, setor_id: int):
+        """ Verifica se o setor informado existe no banco de dados. """
+        if not await db.get(Setor, setor_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Setor não encontrado"
+            )
+        
+    @staticmethod
+    def _validate_permission(usuario_id: int, current_user: Usuario):
+        """ Verifica se o usuário tem permissão para atualizar os dados. """
+        if current_user.usuario_id != usuario_id and current_user.tipo_usuario != 1:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Sem permissão para esta operação"
+            )
+
+    
+    @staticmethod
+    def _prepare_update_fields(db: AsyncSession, usuario: Usuario, usuario_data: UsuarioUpdate):
+        """ Atualiza apenas os campos modificados. """
+        campos_atualizados = False
+
+        if usuario_data.nome_usuario:
+            usuario.nome_usuario = usuario_data.nome_usuario
+            campos_atualizados = True
+
+        if usuario_data.email_usuario:
+            usuario.email_usuario = usuario_data.email_usuario.lower()
+            campos_atualizados = True
+
+        if usuario_data.username:
+            usuario.username = usuario_data.username.lower()
+            campos_atualizados = True
+
+        if usuario_data.tipo_usuario is not None:
+            usuario.tipo_usuario = usuario_data.tipo_usuario
+            campos_atualizados = True
+
+        if usuario_data.setor_id is not None:
+            usuario.setor_id = usuario_data.setor_id
+            campos_atualizados = True
+
+        if usuario_data.senha_usuario:
+            usuario.senha_usuario = get_password_hash(usuario_data.senha_usuario)
+            campos_atualizados = True
+
+        return campos_atualizados
+    
+
+
+
+    #____________________________________________________________________________________#
+    #COMPARAR COM AS JA EXISTENTES ACIMA::::
+   
+    

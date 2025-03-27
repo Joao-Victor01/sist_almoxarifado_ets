@@ -43,7 +43,7 @@ async def update_categoria(categoria_id: int,
     response  = await CategoriaService.update_categoria(db, categoria_id, categoria)
     return response
 
-@router.delete("/{categoria_id}, status_code=status.HTTP_200_OK")
+@router.delete("/{categoria_id}", status_code=status.HTTP_200_OK)
 async def delete_categoria(categoria_id: int, 
                            db: AsyncSession = Depends(get_session),
                            current_user=Depends(usuario_almoxarifado)):
