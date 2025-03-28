@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+#api\v1\endpoints\relatorios.py
+
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
-from utils.relatorio_itens import gerar_relatorio_quantidade_itens
+from services.relatorio_service import RelatorioService
 from fastapi.responses import FileResponse
+import os
 
 router = APIRouter()
 
@@ -10,15 +13,30 @@ router = APIRouter()
 async def gerar_relatorio(
     filtro_categoria: str = Query(None, description="Filtrar por categoria"),
     filtro_produto: str = Query(None, description="Filtrar por produto"),
-    formato: str = Query("csv", description="Formato do relatório (csv, excel, pdf)"),
+    formato: str = Query("csv", description="Formato do relatório (csv, xlsx)"),
     db: AsyncSession = Depends(get_session)
 ):
-    """
-    Gera o relatório de quantidade de itens, com opção de filtragem por categoria ou produto.
-    O relatório pode ser exportado nos formatos CSV, Excel ou PDF.
-    """
+    try:
+        caminho_arquivo = await RelatorioService.gerar_relatorio_quantidade_itens(
+            db, filtro_categoria, filtro_produto, formato
+        )
 
-    caminho_arquivo = await gerar_relatorio_quantidade_itens(db, filtro_categoria, filtro_produto, formato)
+        if not os.path.exists(caminho_arquivo):
+            raise HTTPException(
+                status_code=404,
+                detail="Arquivo de relatório não foi gerado corretamente"
+            )
 
-    # Retorna o arquivo para download
-    return FileResponse(path=caminho_arquivo, filename=caminho_arquivo.split("\\")[-1], media_type="application/octet-stream")
+        return FileResponse(
+            path=caminho_arquivo,
+            filename=os.path.basename(caminho_arquivo),
+            media_type="application/octet-stream"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar requisição: {str(e)}"
+        )

@@ -50,6 +50,15 @@ class ItemService:
     @staticmethod
     async def get_item_by_id(db: AsyncSession, item_id: int):
         return await ItemRepository.get_item_by_id(db, item_id)
+    
+    @staticmethod
+    async def get_item_by_categoria_id(db: AsyncSession, categoria_id: int):
+        return await ItemRepository.get_item_by_categoria_id(db, categoria_id)
+    
+    @staticmethod
+    async def get_item_by_name(db: AsyncSession, item_name: str):
+        normalized_name = normalize_name(item_name)
+        return await ItemRepository.get_item_by_name(db, normalized_name)
 
 
     @staticmethod

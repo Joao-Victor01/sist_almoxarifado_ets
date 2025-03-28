@@ -25,6 +25,41 @@ class CategoriaService:
         if not categoria:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada")
         return categoria
+    
+    @staticmethod
+    async def get_categoria_by_name(db: AsyncSession, categotia_name: str):
+        normalized_name = normalize_name(categotia_name)
+        categoria = await CategoriaRepository.get_categoria_by_name(db, normalized_name)
+        print(normalized_name)
+        if not categoria:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada")
+        return categoria
+    
+    @staticmethod
+    async def get_categorias_like(db: AsyncSession, termo_busca: str):
+        """
+        Busca categorias cujos nomes contenham o termo de busca (case-insensitive)
+        
+        Args:
+            session: Sessão async do SQLAlchemy
+            termo_busca: String com o termo a ser buscado (ex: "papel")
+            
+        Returns:
+            Lista de objetos Categoria que correspondem à busca
+        """
+        # Remove espaços extras e normaliza o termo de busca
+        termo_normalizado = normalize_name(termo_busca)
+        
+        # Executa a query com busca parcial case-insensitive
+        result = await CategoriaRepository.get_categoria_by_name_like(db, termo_normalizado)
+
+        if not result.scalars().all:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Categoria não encontrada"
+            )
+        
+        return result.scalars().all()
 
     @staticmethod
     async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):

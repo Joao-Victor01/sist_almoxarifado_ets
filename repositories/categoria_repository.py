@@ -1,69 +1,59 @@
-# repositories/categoria_repository.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from models.categoria import Categoria
 from schemas.categoria import CategoriaCreate, CategoriaUpdate
-from sqlalchemy.future import select
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-
 
 class CategoriaRepository:
 
     @staticmethod
-    #cadastrar categoria
-    async def create_categoria(db: AsyncSession, categoria: CategoriaCreate):
-        nova_categoria = Categoria(
-            nome_categoria=categoria.nome_categoria,
-            descricao_categoria=categoria.descricao_categoria
-        )
+    async def create_categoria(db: AsyncSession, categoria_data: CategoriaCreate):
+        nova_categoria = Categoria(**categoria_data.model_dump())
         db.add(nova_categoria)
         await db.commit()
         await db.refresh(nova_categoria)
         return nova_categoria
 
     @staticmethod
-    #listar categorias
     async def get_categorias(db: AsyncSession):
         result = await db.execute(select(Categoria))
-        categorias = result.scalars().all()
-        return categorias
+        return result.scalars().all()
 
     @staticmethod
-    #filtar categoria por ID
     async def get_categoria_by_id(db: AsyncSession, categoria_id: int):
-        result = await db.execute(select(Categoria).filter(Categoria.categoria_id == categoria_id))
-        categoria = result.scalars().first()
-        
-        if not categoria:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada")
-
-        return categoria
+        return await CategoriaRepository.__first_or_404(db, categoria_id)
 
     @staticmethod
+    async def get_categoria_by_name(db: AsyncSession, categoria_name: str):
+        return await CategoriaRepository.__first_or_404(db, Categoria.nome_categoria == categoria_name, "Categoria não encontrada")
 
-    # Atualizar categoria
+    @staticmethod
+    async def get_categoria_by_name_like(db: AsyncSession, termo_busca: str):
+        result = await db.execute(select(Categoria).where(Categoria.nome_categoria.contains(termo_busca)))
+        return result.scalars().all()
+
+    @staticmethod
     async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):
-        result = await db.execute(select(Categoria).filter(Categoria.categoria_id == categoria_id))
-        categoria = result.scalars().first()
+        categoria = await CategoriaRepository.__first_or_404(db, categoria_id)
 
-        if not categoria:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada")
-
-        categoria.nome_categoria = categoria_data.nome_categoria
-        categoria.descricao_categoria = categoria_data.descricao_categoria
+        for key, value in categoria_data.dict(exclude_unset=True).items():
+            setattr(categoria, key, value)
 
         await db.commit()
-        await db.refresh(categoria)  
-
+        await db.refresh(categoria)
         return categoria
 
     @staticmethod
     async def delete_categoria(db: AsyncSession, categoria_id: int):
-        result = await db.execute(select(Categoria).filter(Categoria.categoria_id == categoria_id))
-        categoria = result.scalars().first()
-        
-        if not categoria:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada")
-        
+        categoria = await CategoriaRepository.__first_or_404(db, categoria_id)
         await db.delete(categoria)
         await db.commit()
         return {"message": "Categoria deletada com sucesso"}
+
+    @staticmethod
+    async def __first_or_404(db: AsyncSession, *filters, message="Categoria não encontrada"):
+        result = await db.execute(select(Categoria).where(*filters))
+        categoria = result.scalars().first()
+        if not categoria:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+        return categoria
