@@ -1,3 +1,5 @@
+#api\v1\endpoints\relatorios.py
+
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session

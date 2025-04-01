@@ -1,3 +1,5 @@
+#services\relatorio_service.py
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 import pandas as pd
@@ -33,10 +35,10 @@ class RelatorioService:
             if filtro_categoria:
                 categorias = await CategoriaService.get_categorias_like(session, filtro_categoria)
                 categoria_ids = [c.categoria_id for c in categorias]
+                if not categoria_ids:
+                    # Se não houver categorias, retorna um DataFrame vazio com as colunas corretas
+                    return pd.DataFrame(columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Data_Validade"])
                 query = query.where(Item.categoria_id.in_(categoria_ids))
-
-            else:
-                return pd.DataFrame(columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Data_Validade"])
 
             if filtro_produto:
                 produto_normalizado = normalize_name(filtro_produto)
@@ -44,16 +46,25 @@ class RelatorioService:
 
             result = await session.execute(query)
             dados = result.mappings().all()
+
+            # Verificação de dados vazios antes de gerar o DataFrame
+            if not dados:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Nenhum dado encontrado para o relatório."
+                )
+
             df = pd.DataFrame(dados)
 
-            if not df.empty:
+            # Garante que o DataFrame tem as colunas corretas, mesmo se vazio
+            if df.empty:
+                df = pd.DataFrame(columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Data_Validade"])
+
+            if 'Produto' in df.columns:
                 df['Produto'] = df['Produto'].str.title().str.replace(r"([a-z])([A-Z])", r"\1 \2", regex=True)
 
-                if 'Data_Validade' in df.columns:
-                    df['Data_Validade'] = pd.to_datetime(df['Data_Validade']).dt.strftime('%d/%m/%Y')
-
-                colunas_orderadas = ["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Data_Validade"]
-                df = df[colunas_orderadas]
+            if 'Data_Validade' in df.columns:
+                df['Data_Validade'] = pd.to_datetime(df['Data_Validade']).dt.strftime('%d/%m/%Y')
 
             caminho_arquivo = os.path.join(PASTA_RELATORIOS, f"relatorio_quantidade_itens.{formato}")
 
@@ -66,6 +77,7 @@ class RelatorioService:
                     status_code=400,
                     detail="Formato inválido. Use: csv ou xlsx"
                 )
+
             export_strategy.export(df, caminho_arquivo)
 
             return caminho_arquivo
