@@ -6,11 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
 from core.configs import Settings
-from models.item import Item
-from models.categoria import Categoria
-from utils.normalizar_texto import normalize_name
 from services.categoria_service import CategoriaService
 from services.export_strategy import CSVExportStrategy, XLSXExportStrategy
+from services.item_service import ItemService
 
 
 PASTA_RELATORIOS = Settings.PASTA_RELATORIOS
@@ -70,58 +68,56 @@ async def gerar_relatorio_quantidade_itens(
     formato: str = "csv"
 ):
     try:
-        query = select(
-            Item.categoria_id.label("ID_Categoria"),
-            Categoria.nome_categoria.label("Nome_Categoria"),
-            Item.nome_item.label("Produto"),
-            Item.quantidade_item.label("Quantidade"),
-            Item.marca_item.label("Marca"),
-            Item.data_validade_item.label("Data_Validade")
-        ).join(Categoria, Item.categoria_id == Categoria.categoria_id)
-
+        # 1. Buscar categorias (se houver filtro)
+        categoria_ids = []
         if filtro_categoria:
             categorias = await CategoriaService.get_categorias_like(session, filtro_categoria)
             categoria_ids = [c.categoria_id for c in categorias]
-            if categoria_ids:
-                query = query.where(Item.categoria_id.in_(categoria_ids))
-            else:
-                # Retorna um DataFrame vazio com as colunas corretas
-                return pd.DataFrame(columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Marca", "Data_Validade"])
 
-        if filtro_produto:
-            produto_normalizado = normalize_name(filtro_produto)
-            query = query.where(Item.nome_item.ilike(f"%{produto_normalizado}%"))
+        # 2. Buscar itens com filtros usando o ItemService
+        itens = await ItemService.get_itens_filtrados(
+            session,
+            categoria_ids=categoria_ids,
+            nome_produto=filtro_produto
+        )
 
-        result = await session.execute(query)
-        dados = result.mappings().all()
+        # 3. Gerar DataFrame formatado
+        df = formatar_dataframe_relatorio(itens)
 
-        # Gera um DataFrame mesmo se os dados estiverem vazios
-        df = pd.DataFrame(dados, columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Marca", "Data_Validade"])
-
-        if not df.empty:
-            df['Produto'] = df['Produto'].str.title()
-            if 'Marca' in df.columns:
-                df['Marca'] = df['Marca'].str.title()
-            if 'Data_Validade' in df.columns:
-                df['Data_Validade'] = pd.to_datetime(df['Data_Validade']).dt.strftime('%d/%m/%Y')
-
+        # 4. Exportar relatório
         caminho_arquivo = os.path.join(PASTA_RELATORIOS, f"relatorio_quantidade_itens.{formato}")
-
-        if formato == "csv":
-            export_strategy = CSVExportStrategy()
-        elif formato == "xlsx":
-            export_strategy = XLSXExportStrategy()
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail="Formato inválido. Use: csv ou xlsx"
-            )
+        export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy()
         export_strategy.export(df, caminho_arquivo)
 
         return caminho_arquivo
 
+    except HTTPException as e:
+        raise e  # Repassa exceções HTTP específicas
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Erro ao gerar relatório: {str(e)}"
         )
+
+
+def formatar_dados_relatorio(itens: list[tuple]):
+    return [{
+        "ID_Categoria": item.categoria_id,
+        "Nome_Categoria": nome_categoria,  
+        "Produto": item.nome_item.title(),
+        "Quantidade": item.quantidade_item,
+        "Data_Validade": item.data_validade_item.strftime('%d/%m/%Y') if item.data_validade_item else None
+    } for item, nome_categoria in itens]  
+
+def formatar_dataframe_relatorio(dados: list):
+    if not dados:
+        return pd.DataFrame(columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Marca", "Data_Validade"])
+
+    df = pd.DataFrame(dados)
+    if not df.empty:
+        df['Produto'] = df['Produto'].str.title()
+        if 'Marca' in df.columns:
+            df['Marca'] = df['Marca'].str.title()
+        if 'Data_Validade' in df.columns:
+            df['Data_Validade'] = pd.to_datetime(df['Data_Validade']).dt.strftime('%d/%m/%Y')
+    return df

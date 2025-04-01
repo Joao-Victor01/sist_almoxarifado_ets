@@ -9,6 +9,7 @@ from repositories.item_repository import ItemRepository
 from fastapi import HTTPException, status
 from utils.normalizar_texto import normalize_name
 from models.item import Item
+from models.categoria import Categoria
 
 class ItemService:
     
@@ -25,7 +26,7 @@ class ItemService:
             ItemService._validate_item_fields(item_data)
 
 
-            item_existente = await ItemService.__find_item(db, nome_normalizado, 
+            item_existente = await ItemService._find_item(db, nome_normalizado, 
                                                            item_data.data_validade_item, 
                                                            item_data.categoria_id,
                                                            item_data.marca_item)
@@ -85,7 +86,24 @@ class ItemService:
                 detail="Item não encontrado"
                 )
         return result
+    
 
+    @staticmethod
+    async def get_itens_filtrados(
+        db: AsyncSession,
+        categoria_ids: list[int] = None,
+        nome_produto: str = None
+    ):
+        """
+        Encapsula a lógica de normalização e chama o repositório.
+        Retorna lista de tuplas (Item, nome_categoria).
+        """
+        nome_produto_normalizado = normalize_name(nome_produto) if nome_produto else None
+        return await ItemRepository.get_itens_filtrados(
+            db, 
+            categoria_ids=categoria_ids,
+            nome_produto_normalizado=nome_produto_normalizado
+        )
 
     @staticmethod
     async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, current_user):
@@ -161,7 +179,7 @@ class ItemService:
         )
     
     @staticmethod
-    async def __find_item(db: AsyncSession, 
+    async def _find_item(db: AsyncSession, 
                                                item_name: str, 
                                                validade: datetime, 
                                                categoria_id:int,
