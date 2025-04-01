@@ -1,3 +1,5 @@
+#services\item_service.py
+
 from datetime import datetime 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,28 +47,55 @@ class ItemService:
 
     @staticmethod
     async def get_itens(db: AsyncSession):
-        return await ItemRepository.get_itens(db)
+        result = await ItemRepository.get_itens(db)
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sem itens no banco de dados"
+            )
+        return result
 
     @staticmethod
     async def get_item_by_id(db: AsyncSession, item_id: int):
-        return await ItemRepository.get_item_by_id(db, item_id)
+        result = await ItemRepository.get_item_by_id(db, item_id)
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Item não encontrado"
+            )
+        return result
     
     @staticmethod
     async def get_item_by_categoria_id(db: AsyncSession, categoria_id: int):
-        return await ItemRepository.get_item_by_categoria_id(db, categoria_id)
+        result = await ItemRepository.get_item_by_categoria_id(db, categoria_id)
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sem itens na categoria selecionada"
+                )
+        return result
     
     @staticmethod
     async def get_item_by_name(db: AsyncSession, item_name: str):
         normalized_name = normalize_name(item_name)
-        return await ItemRepository.get_item_by_name(db, normalized_name)
+        result = await ItemRepository.get_item_by_name(db, normalized_name)
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Item não encontrado"
+                )
+        return result
 
 
     @staticmethod
     async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, current_user):
-        nome_normalizado = normalize_name(item_data.nome_item)
+
+
+        nome_normalizado = normalize_name(item_data.nome_item)   
+        item_data.nome_item = nome_normalizado
+     
 
         auditoria_usuario_id = current_user.usuario_id
-        item_data.nome_item = nome_normalizado
         
         return await ItemRepository.update_item(db, item_id, item_data, auditoria_usuario_id)
 

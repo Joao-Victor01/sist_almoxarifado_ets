@@ -61,7 +61,7 @@ class RelatorioService:
                 df = pd.DataFrame(columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Data_Validade"])
 
             if 'Produto' in df.columns:
-                df['Produto'] = df['Produto'].str.title().str.replace(r"([a-z])([A-Z])", r"\1 \2", regex=True)
+                df['Produto'] = df['Produto'].str.title()
 
             if 'Data_Validade' in df.columns:
                 df['Data_Validade'] = pd.to_datetime(df['Data_Validade']).dt.strftime('%d/%m/%Y')

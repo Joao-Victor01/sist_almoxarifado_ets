@@ -30,8 +30,7 @@ def gerar_dataframe_items(dados):
         # Formatar os nomes dos produtos e marcas  
         df['Produto'] = (  
             df['Produto']  
-            .str.title()  
-            .str.replace(r"([a-z])([A-Z])", r"\1 \2", regex=True)  
+            .str.title()   
         )  
         if 'Marca' in df.columns:
             df['Marca'] = df['Marca'].str.title()  
@@ -100,7 +99,7 @@ async def gerar_relatorio_quantidade_itens(
         df = pd.DataFrame(dados, columns=["ID_Categoria", "Nome_Categoria", "Produto", "Quantidade", "Marca", "Data_Validade"])
 
         if not df.empty:
-            df['Produto'] = df['Produto'].str.title().str.replace(r"([a-z])([A-Z])", r"\1 \2", regex=True)
+            df['Produto'] = df['Produto'].str.title()
             if 'Marca' in df.columns:
                 df['Marca'] = df['Marca'].str.title()
             if 'Data_Validade' in df.columns:

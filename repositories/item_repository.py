@@ -20,20 +20,24 @@ class ItemRepository:
 
     @staticmethod
     async def get_itens(db: AsyncSession):
-        result = await db.execute(select(Item).options(joinedload(Item.categoria)))
+        result = await db.execute(select(Item))
         return result.scalars().all()
 
     @staticmethod
     async def get_item_by_id(db: AsyncSession, item_id: int):
-        return await ItemRepository.__first_or_404(db, item_id)
+        result = await db.execute(select(Item).where(Item.item_id == item_id))
+        return result.scalars().first()
+        
 
     @staticmethod
     async def get_item_by_name(db: AsyncSession, item_name: str):
-        return await ItemRepository.__first_or_404(db, Item.nome_item == item_name, "Item não encontrado")
+        result = await db.execute(select(Item).where(Item.nome_item == item_name))
+        return result.scalars().first()
 
     @staticmethod
     async def get_item_by_categoria_id(db: AsyncSession, categoria_id: int):
-        return await ItemRepository.__first_or_404(db, Item.categoria_id == categoria_id, "Nenhum item encontrado para essa categoria")
+        result = await db.execute(select(Item).where(Item.categoria_id == categoria_id))
+        return result.scalars().all()
 
     @staticmethod
     async def delete_item(db: AsyncSession, item_id: int):
@@ -46,7 +50,7 @@ class ItemRepository:
     async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, usuario_id: int):
         item = await ItemRepository.__first_or_404(db, item_id)
 
-        for key, value in item_data.dict(exclude_unset=True).items():
+        for key, value in item_data.model_dump(exclude_unset=True).items():
             setattr(item, key, value)
 
         item.auditoria_usuario_id = usuario_id
