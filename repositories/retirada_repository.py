@@ -6,7 +6,8 @@ from sqlalchemy.orm import joinedload
 from models.retirada import Retirada
 from models.retirada_item import RetiradaItem
 from models.item import Item
-from fastapi import HTTPException
+from models.setor import Setor
+from datetime import datetime
 
 class RetiradaRepository:
 
@@ -28,7 +29,30 @@ class RetiradaRepository:
             select(Retirada).options(joinedload(Retirada.itens)).where(Retirada.retirada_id == retirada_id)
         )
         return result.scalars().first()
-
+    
+    @staticmethod
+    async def get_retiradas_por_setor_periodo(
+        db: AsyncSession,
+        setor_id: int,
+        data_inicio: datetime,
+        data_fim: datetime
+    ):
+        query = (
+            select(Retirada)
+            .options(
+                joinedload(Retirada.itens).joinedload(RetiradaItem.item),
+                joinedload(Retirada.usuario),
+                joinedload(Retirada.admin)
+            )
+            .where(
+                Retirada.setor_id == setor_id,
+                Retirada.data_solicitacao >= data_inicio,
+                Retirada.data_solicitacao <= data_fim
+            )
+        )
+        result = await db.execute(query)
+        return result.scalars().unique().all()
+    
     @staticmethod
     async def atualizar_retirada(db: AsyncSession, retirada: Retirada):
         await db.commit()

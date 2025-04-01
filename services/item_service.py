@@ -104,6 +104,16 @@ class ItemService:
             categoria_ids=categoria_ids,
             nome_produto_normalizado=nome_produto_normalizado
         )
+    
+    @staticmethod
+    async def get_itens_por_periodo(
+        db: AsyncSession,
+        data_inicio: datetime,
+        data_fim: datetime
+    ):
+
+        result = await ItemRepository.get_itens_por_periodo(db, data_inicio, data_fim)
+        return result
 
     @staticmethod
     async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, current_user):

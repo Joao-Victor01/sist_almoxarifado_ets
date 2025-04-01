@@ -4,6 +4,7 @@ from models.item import Item
 from models.categoria import Categoria
 from schemas.item import ItemCreate, ItemUpdate
 from fastapi import HTTPException, status
+from datetime import datetime
 
 class ItemRepository:
 
@@ -63,6 +64,32 @@ class ItemRepository:
 
         result = await db.execute(query)
         return result.all()
+    
+    @staticmethod
+    async def get_itens_por_periodo(
+        db: AsyncSession,
+        data_inicio: datetime,
+        data_fim: datetime
+    ):
+        # Query com JOIN e seleção explícita de campos
+        query = (
+            select(
+                Item.item_id,
+                Item.nome_item,
+                Item.quantidade_item,
+                Item.data_entrada_item,
+                Categoria.nome_categoria.label("nome_categoria")  # Alias para o nome da categoria
+            )
+            .join(Categoria, Item.categoria_id == Categoria.categoria_id)
+            .where(
+                Item.data_entrada_item >= data_inicio,
+                Item.data_entrada_item <= data_fim
+            )
+        )
+        
+        result = await db.execute(query)
+        # Retorna uma lista de dicionários com os dados
+        return result.mappings().all()
 
     @staticmethod
     async def delete_item(db: AsyncSession, item_id: int):

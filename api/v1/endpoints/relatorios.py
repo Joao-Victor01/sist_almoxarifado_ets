@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from services.relatorio_service import RelatorioService
 from fastapi.responses import FileResponse
+from datetime import datetime
 import os
 
 router = APIRouter()
@@ -41,3 +42,69 @@ async def gerar_relatorio(
             status_code=500,
             detail=f"Erro ao processar requisição: {str(e)}"
         )
+    
+@router.get("/relatorios/entrada-itens/")
+async def gerar_relatorio_entrada(
+    data_inicio: datetime = Query(..., description="Data inicial (YYYY-MM-DD)"),
+    data_fim: datetime = Query(..., description="Data final (YYYY-MM-DD)"),
+    formato: str = Query("csv", description="Formato do relatório (csv, xlsx)"),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        caminho_arquivo = await RelatorioService.gerar_relatorio_entrada_itens(
+            db, data_inicio, data_fim, formato
+        )
+        
+        # Verificar se o arquivo foi gerado
+        if not caminho_arquivo or not os.path.exists(str(caminho_arquivo)):
+            raise HTTPException(
+                status_code=404,
+                detail="Arquivo de relatório não foi gerado corretamente"
+            )
+
+        # Retornar o arquivo gerado
+        return FileResponse(
+            path=str(caminho_arquivo),
+            filename=os.path.basename(str(caminho_arquivo)),
+            media_type="application/octet-stream"
+        )
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar requisição: {str(e)}"
+        )
+    
+    
+@router.get("/relatorios/retiradas-setor/")
+async def gerar_relatorio_retiradas_setor(
+    setor_id: int = Query(..., description="ID do Setor"),
+    data_inicio: datetime = Query(..., description="Data inicial (YYYY-MM-DD)"),
+    data_fim: datetime = Query(..., description="Data final (YYYY-MM-DD)"),
+    formato: str = Query("csv", description="Formato do relatório (csv, xlsx)"),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        caminho_arquivo = await RelatorioService.gerar_relatorio_retiradas_setor(
+            db, setor_id, data_inicio, data_fim, formato
+        )
+
+        # Verifique se o caminho é válido
+        if not caminho_arquivo or not os.path.exists(str(caminho_arquivo)):
+            raise HTTPException(
+                status_code=404,
+                detail="Arquivo de relatório não foi gerado corretamente"
+            )
+
+        return FileResponse(
+            path=str(caminho_arquivo),
+            filename=os.path.basename(str(caminho_arquivo)),
+            media_type="application/octet-stream"
+        )
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

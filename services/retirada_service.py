@@ -7,6 +7,7 @@ from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.retirada import StatusEnum
+from datetime import datetime
 
 
 class RetiradaService:
@@ -106,3 +107,19 @@ class RetiradaService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Erro ao listar retiradas pendentes: {str(e)}"
             )
+        
+    @staticmethod
+    async def get_retiradas_por_setor_periodo(
+        db: AsyncSession,
+        setor_id: int,
+        data_inicio: datetime,
+        data_fim: datetime
+    ):
+
+        result = await RetiradaRepository.get_retiradas_por_setor_periodo(db, setor_id, data_inicio, data_fim) 
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Não há retiradas para esse setor ou período"
+                )
+        return result
