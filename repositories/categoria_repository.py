@@ -29,8 +29,22 @@ class CategoriaRepository:
 
     @staticmethod
     async def get_categoria_by_name_like(db: AsyncSession, termo_busca: str):
-        result = await db.execute(select(Categoria).where(Categoria.nome_categoria.contains(termo_busca)))
-        return result.scalars().all()
+        """
+        Busca categorias por similaridade no nome (case-sensitive)
+        
+        Args:
+            db: Sessão async do SQLAlchemy
+            termo_busca: Termo para busca parcial
+            
+        Returns:
+            Resultado executado (não consumido) para processamento posterior
+        """
+        result = await db.execute(
+            select(Categoria).where(
+                Categoria.nome_categoria.ilike(f"%{termo_busca}%")
+            )
+        )
+        return result  # Retorna o Result sem consumir
 
     @staticmethod
     async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):

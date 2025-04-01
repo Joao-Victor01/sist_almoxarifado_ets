@@ -41,25 +41,27 @@ class CategoriaService:
         Busca categorias cujos nomes contenham o termo de busca (case-insensitive)
         
         Args:
-            session: Sessão async do SQLAlchemy
+            db: Sessão async do SQLAlchemy
             termo_busca: String com o termo a ser buscado (ex: "papel")
             
         Returns:
             Lista de objetos Categoria que correspondem à busca
         """
-        # Remove espaços extras e normaliza o termo de busca
         termo_normalizado = normalize_name(termo_busca)
         
-        # Executa a query com busca parcial case-insensitive
+        # Obtém o resultado da query (ainda não consumido)
         result = await CategoriaRepository.get_categoria_by_name_like(db, termo_normalizado)
-
-        if not result.scalars().all:
+        
+        # Converte para lista de objetos Categoria
+        categorias = result.scalars().all()
+        
+        if not categorias:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Categoria não encontrada"
+                detail="Nenhuma categoria encontrada com o termo fornecido"
             )
         
-        return result.scalars().all()
+        return categorias
 
     @staticmethod
     async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):

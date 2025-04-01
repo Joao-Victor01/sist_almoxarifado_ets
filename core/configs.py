@@ -21,4 +21,8 @@ class Settings:
     # Timezone
     BRASILIA_TIMEZONE = pytz.timezone("America/Sao_Paulo")
 
+    # Files
+    PASTA_RELATORIOS = r"C:\Users\Victor\Desktop\projeto_almoxarifado\relatorios"
+
+
 settings = Settings()

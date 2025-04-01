@@ -1,5 +1,3 @@
-#api\v1\endpoints\relatorios.py
-
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
@@ -17,19 +15,20 @@ async def gerar_relatorio(
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        # Garanta que o RelatorioService retorna o caminho do arquivo
         caminho_arquivo = await RelatorioService.gerar_relatorio_quantidade_itens(
             db, filtro_categoria, filtro_produto, formato
         )
 
-        if not os.path.exists(caminho_arquivo):
+        if not caminho_arquivo or not os.path.exists(str(caminho_arquivo)):
             raise HTTPException(
                 status_code=404,
                 detail="Arquivo de relatório não foi gerado corretamente"
             )
 
         return FileResponse(
-            path=caminho_arquivo,
-            filename=os.path.basename(caminho_arquivo),
+            path=str(caminho_arquivo),
+            filename=os.path.basename(str(caminho_arquivo)),
             media_type="application/octet-stream"
         )
 

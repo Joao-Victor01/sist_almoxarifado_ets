@@ -1,5 +1,3 @@
-#services\export_strategy.py
-
 from abc import ABC, abstractmethod
 import pandas as pd
 
@@ -15,8 +13,8 @@ class CSVExportStrategy(ExportStrategy):
 class XLSXExportStrategy(ExportStrategy):
     def export(self, df: pd.DataFrame, file_path: str):
         with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Relatório Itens')
-            worksheet = writer.sheets['Relatório Itens']
+            df.to_excel(writer, index=False, sheet_name='Relatorio Items')
+            worksheet = writer.sheets['Relatorio Items']
             col_widths = [15, 30, 40, 15, 20]  # Ajuste para XLSX
             for i, column in enumerate(worksheet.columns):
                 max_length = max(len(str(cell.value)) for cell in column)
