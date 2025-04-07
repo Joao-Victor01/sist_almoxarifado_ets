@@ -7,6 +7,7 @@ from services.relatorio_service import RelatorioService
 from fastapi.responses import FileResponse
 from datetime import datetime
 import os
+from core.security import direcao_ou_almoxarifado
 
 router = APIRouter()
 
@@ -15,10 +16,10 @@ async def gerar_relatorio(
     filtro_categoria: str = Query(None, description="Filtrar por categoria"),
     filtro_produto: str = Query(None, description="Filtrar por produto"),
     formato: str = Query("csv", description="Formato do relatório (csv, xlsx)"),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     try:
-        # Garanta que o RelatorioService retorna o caminho do arquivo
         caminho_arquivo = await RelatorioService.gerar_relatorio_quantidade_itens(
             db, filtro_categoria, filtro_produto, formato
         )
@@ -48,7 +49,8 @@ async def gerar_relatorio_entrada(
     data_inicio: datetime = Query(..., description="Data inicial (YYYY-MM-DD)"),
     data_fim: datetime = Query(..., description="Data final (YYYY-MM-DD)"),
     formato: str = Query("csv", description="Formato do relatório (csv, xlsx)"),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     try:
         caminho_arquivo = await RelatorioService.gerar_relatorio_entrada_itens(
@@ -84,7 +86,8 @@ async def gerar_relatorio_retiradas_setor(
     data_inicio: datetime = Query(..., description="Data inicial (YYYY-MM-DD)"),
     data_fim: datetime = Query(..., description="Data final (YYYY-MM-DD)"),
     formato: str = Query("csv", description="Formato do relatório (csv, xlsx)"),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     try:
         caminho_arquivo = await RelatorioService.gerar_relatorio_retiradas_setor(
@@ -117,6 +120,7 @@ async def gerar_relatorio_retiradas_usuario(
     data_fim: datetime = Query(..., description="Data final (YYYY-MM-DD)"),
     formato: str = Query('csv', description="Formato do relatório (csv, xlsx)"),
     db: AsyncSession = Depends(get_session),
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     try:
         caminho = await RelatorioService.gerar_relatorio_retiradas_usuario(
