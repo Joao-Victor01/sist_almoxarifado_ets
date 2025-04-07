@@ -91,7 +91,7 @@ async def gerar_relatorio_retiradas_setor(
             db, setor_id, data_inicio, data_fim, formato
         )
 
-        # Verifique se o caminho é válido
+        # se o caminho é válido
         if not caminho_arquivo or not os.path.exists(str(caminho_arquivo)):
             raise HTTPException(
                 status_code=404,
@@ -108,3 +108,31 @@ async def gerar_relatorio_retiradas_setor(
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get('/relatorios/retiradas-usuario/')
+async def gerar_relatorio_retiradas_usuario(
+    usuario_id: int = Query(..., description="ID do usuário"),
+    data_inicio: datetime = Query(..., description="Data inicial (YYYY-MM-DD)"),
+    data_fim: datetime = Query(..., description="Data final (YYYY-MM-DD)"),
+    formato: str = Query('csv', description="Formato do relatório (csv, xlsx)"),
+    db: AsyncSession = Depends(get_session),
+):
+    try:
+        caminho = await RelatorioService.gerar_relatorio_retiradas_usuario(
+            db, usuario_id, data_inicio, data_fim, formato
+        )
+        
+        return FileResponse(
+            path=caminho,
+            filename=os.path.basename(caminho),
+            media_type="application/octet-stream"
+        )
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar requisição: {str(e)}"
+        )

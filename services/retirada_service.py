@@ -1,5 +1,6 @@
 #services\retirada_service.py
 
+import os
 from fastapi import HTTPException, status
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus
 from models.retirada import Retirada
@@ -8,6 +9,10 @@ from repositories.retirada_repository import RetiradaRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.retirada import StatusEnum
 from datetime import datetime
+from core.configs import Settings
+from services.export_strategy import XLSXExportStrategy, CSVExportStrategy
+from services.usuario_service import UsuarioService
+import pandas as pd
 
 
 class RetiradaService:
@@ -123,3 +128,65 @@ class RetiradaService:
                 detail="Não há retiradas para esse setor ou período"
                 )
         return result
+    
+
+    @staticmethod
+    async def gerar_relatorio_retiradas_usuario(
+        session: AsyncSession,
+        usuario_id: int,
+        data_inicio: datetime,
+        data_fim: datetime,
+        formato: str
+    ):
+        try:
+            retiradas = await RetiradaRepository.get_retiradas_por_usuario_periodo(
+                session, usuario_id, data_inicio, data_fim
+            )
+
+            dados = []
+            for retirada in retiradas:
+                for item in retirada.itens:
+                    dados.append({
+                        "ID_Retirada": retirada.retirada_id,
+                        "Data_Solicitacao": retirada.data_solicitacao.strftime('%d/%m/%Y'),
+                        "Item": item.item.nome_item,
+                        "Marca": item.item.marca_item,
+                        "Quantidade": item.quantidade_retirada,
+                        "Usuario_Retirou_ID": retirada.usuario.usuario_id,
+                        "Usuario_Retirou_Nome": retirada.usuario.nome_usuario,
+                        "Usuario_Retirou_SIAPE": retirada.usuario.siape_usuario,
+                        "Usuario_Autorizou_ID": retirada.admin.usuario_id if retirada.admin else None,
+                        "Usuario_Autorizou_Nome": retirada.admin.nome_usuario if retirada.admin else "N/A",
+                        "Usuario_Autorizou_SIAPE": retirada.admin.siape_usuario if retirada.admin else "N/A",
+                        "Status": StatusEnum(retirada.status).name
+                    })
+
+            df = pd.DataFrame(dados)
+            
+            caminho_arquivo = os.path.join(Settings.PASTA_RELATORIOS, f'relatorio_retiradas_usuario_{usuario_id}_{datetime.now().timestamp()}.{formato}')
+            
+            export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy()
+            export_strategy.export(df, caminho_arquivo)
+            
+            return caminho_arquivo
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Erro ao gerar relatório: {str(e)}"
+            )
+        
+    @staticmethod
+    async def get_retiradas_por_usuario_periodo(
+        db: AsyncSession,
+        usuario_id: int,
+        data_inicio: datetime,
+        data_fim: datetime
+    ):
+        user = await UsuarioService.get_usuario_by_id(db, usuario_id)
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                                detail="Usuário não encontrado")
+        
+        return await RetiradaRepository.get_retiradas_por_usuario_periodo(db, usuario_id, data_inicio, data_fim)

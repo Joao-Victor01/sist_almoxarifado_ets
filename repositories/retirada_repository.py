@@ -74,3 +74,27 @@ class RetiradaRepository:
     async def get_retiradas_pendentes(db: AsyncSession):
         result = await db.execute(select(Retirada).where(Retirada.status == 1))
         return result.scalars().all()
+    
+
+    @staticmethod
+    async def get_retiradas_por_usuario_periodo(
+        db: AsyncSession,
+        usuario_id: int,
+        data_inicio: datetime,
+        data_fim: datetime
+    ):
+        query = (
+            select(Retirada)
+            .options(
+                joinedload(Retirada.itens).joinedload(RetiradaItem.item),
+                joinedload(Retirada.usuario),
+                joinedload(Retirada.admin)
+            )
+            .where(
+                Retirada.usuario_id == usuario_id,
+                Retirada.data_solicitacao >= data_inicio,
+                Retirada.data_solicitacao <= data_fim
+            )
+        )
+        result = await db.execute(query)
+        return result.scalars().unique().all()

@@ -13,6 +13,8 @@ from fastapi import HTTPException
 from datetime import datetime
 import os
 
+
+
 PASTA_RELATORIOS = Settings.PASTA_RELATORIOS
 os.makedirs(PASTA_RELATORIOS, exist_ok=True)
 
@@ -116,3 +118,51 @@ class RelatorioService:
         export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy()
         export_strategy.export(df, caminho_arquivo)
         return caminho_arquivo
+    
+
+    @staticmethod
+    async def gerar_relatorio_retiradas_usuario(
+        session: AsyncSession,
+        usuario_id: int,
+        data_inicio: datetime,
+        data_fim: datetime,
+        formato: str
+    ):
+        try:
+            retiradas = await RetiradaService.get_retiradas_por_usuario_periodo(
+                session, usuario_id, data_inicio, data_fim
+            )
+
+            dados = []
+            for retirada in retiradas:
+                for item in retirada.itens:
+                    dados.append({
+                        "ID_Retirada": retirada.retirada_id,
+                        "Data_Solicitacao": retirada.data_solicitacao.strftime('%d/%m/%Y'),
+                        "Item": item.item.nome_item,
+                        "Marca": item.item.marca_item,
+                        "Quantidade_Retirada": item.quantidade_retirada,
+                        "Usuario_Retirou_ID": retirada.usuario.usuario_id,
+                        "Usuario_Retirou_Nome": retirada.usuario.nome_usuario,
+                        "Usuario_Retirou_SIAPE": retirada.usuario.siape_usuario or "N/A",
+                        "Usuario_Autorizou_ID": retirada.admin.usuario_id if retirada.admin else None,
+                        "Usuario_Autorizou_Nome": retirada.admin.nome_usuario if retirada.admin else "N/A",
+                        "Usuario_Autorizou_SIAPE": retirada.admin.siape_usuario if retirada.admin else "N/A",
+                        "Status": StatusEnum(retirada.status).name
+                    })
+
+            df = pd.DataFrame(dados)
+            
+            caminho_arquivo = os.path.join(PASTA_RELATORIOS, 
+                f'relatorio_retiradas_usuario_{usuario_id}_{datetime.now().timestamp()}.{formato}')
+            
+            export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy()
+            export_strategy.export(df, caminho_arquivo)
+            
+            return caminho_arquivo
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Erro ao gerar relatório: {str(e)}"
+            )

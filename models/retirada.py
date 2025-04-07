@@ -10,6 +10,7 @@ class StatusEnum(IntEnum):
     PENDENTE = 1
     AUTORIZADA = 2
     CONCLUIDA = 3
+    NEGADA = 4
 
 
 class Retirada(settings.DBBaseModel):
