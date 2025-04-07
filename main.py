@@ -1,6 +1,5 @@
 #main.py
 from fastapi import FastAPI
-from fastapi import Depends
 from core.configs import settings
 import uvicorn
 from api.v1.endpoints.categoria import router as categoria_router
@@ -9,17 +8,8 @@ from api.v1.endpoints.usuario import router as usuario_router
 from api.v1.endpoints.item import router as item_router
 from api.v1.endpoints.retirada import router as retirada_router
 from api.v1.endpoints.relatorios import router as relatorio_router
-
-#imports para o funcionamento do front 
-from fastapi import Request
-from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from core.database import get_session 
-from models.item import Item
-from sqlalchemy.future import select
-
+from frontend.routes.home import router as frontend_router
 
 app = FastAPI(
     title="Sistema de Gerenciamento de Almoxarifado",
@@ -27,12 +17,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Incluindo Front-End
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-
-# Incluindo os endpoints - Back-End
+# Incluindo os endpoints - Back-end
 app.include_router(setor_router, prefix=settings.API_STR, tags=['Gerenciamento de Setores'])
 app.include_router(categoria_router, prefix=settings.API_STR, tags=['Gerenciamento de Categorias'])
 app.include_router(usuario_router, prefix=settings.API_STR, tags=['Gerenciamento de Usuários'])
@@ -40,12 +25,15 @@ app.include_router(item_router, prefix=settings.API_STR, tags=['Gerenciamento de
 app.include_router(retirada_router, prefix=settings.API_STR, tags=['Gerenciamento de Retiradas'])
 app.include_router(relatorio_router, prefix=settings.API_STR, tags=['Geração de Relatórios de Itens'])
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request, db: Session = Depends(get_session)):
-    result = await db.execute(select(Item))
-    itens = result.scalars().all()
-    return templates.TemplateResponse("index.html", {"request": request, "itens": itens})
+# Montar pasta de arquivos estáticos
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
+# Incluindo os endpoints - Front-End
+app.include_router(frontend_router)
+
+@app.get("/")
+async def root():
+    return {"message": "API do Sistema de Almoxarifado rodando!"}
 
 if __name__ == "__main__":
     import uvicorn
