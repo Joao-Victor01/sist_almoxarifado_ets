@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Usuário</title>
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.5/base64.min.js"></script>
+</head>
+<body class="container mt-5">
+    <h1 class="mb-4">🎉 Bem-vindo!</h1>
+    <div class="alert alert-primary">
+        <p><strong>Usuário:</strong> <span id="usuario-nome"></span></p>
+        <p><strong>Tipo de usuário:</strong> <span id="usuario-tipo"></span></p>
+    </div>
+
+    <script>
+        function decodeJWT(token) {
+            const payload = token.split('.')[1];
+            const decoded = atob(payload); // base64 decode
+            return JSON.parse(decoded);
+        }
+
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+            alert("Token não encontrado. Faça login novamente.");
+            window.location.href = "/";
+        } else {
+            try {
+                const data = decodeJWT(token);
+                document.getElementById("usuario-nome").textContent = data.sub;
+                document.getElementById("usuario-tipo").textContent = data.tipo_usuario;
+            } catch (e) {
+                alert("Token inválido. Faça login novamente.");
+                localStorage.removeItem("access_token");
+                window.location.href = "/";
+            }
+        }
+    </script>
+</body>
+</html>
