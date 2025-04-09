@@ -1,0 +1,16 @@
+/* Cabeçalho azul customizado */
+.custom-header {
+    background-color: #1659bf;
+    color: white;
+  }
+  
+  /* Logo */
+  img {
+    max-height: 100px;
+  }
+  
+  /* Estilo do navbar */
+  .navbar .nav-link {
+    font-weight: 500;
+  }
+  

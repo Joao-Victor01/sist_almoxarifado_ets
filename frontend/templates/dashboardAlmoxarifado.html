@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SiCA - Sistema de Controle de Almoxarifado</title>
+
+  <!-- Bootstrap CSS offline -->
+  <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/static/css/custom.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <!-- Barra superior -->
+  <div class="d-flex justify-content-between align-items-center px-3 py-2 custom-header">
+    <img src="/static/img/SICA02_REDONDO.jpg" alt="Logo SiCA" style="height: 40px;">
+    <!-- <h5 class="m-0 text-white fw-bold text-center flex-grow-1">SISTEMA DE CONTROLE DE ALMOXARIFADO - CPT</h5> -->
+    <div class="custom-header text-center py-0 fw-bold">
+      SISTEMA DE CONTROLE DE ALMOXARIFADO - CPT
+    </div>
+    <img src="/static/img/cpt_logo.png" alt="Logo CPT" style="height: 40px;">
+  </div>
+
+  <!-- Barra de navegação -->
+  <nav class="navbar navbar-expand-lg" style="background-color: #00448d;">
+    <div class="container-fluid justify-content-between">
+      <div class="navbar-collapse w-100">
+        <ul class="navbar-nav d-flex justify-content-between w-100 py-0">
+
+          <!-- Itens -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-white" href="#" id="itensDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Itens
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Cadastrar item</a></li>
+              <li><a class="dropdown-item" href="#">Listar item</a></li>
+              <li><a class="dropdown-item" href="#">Editar item</a></li>
+              <li><a class="dropdown-item" href="#">Excluir item</a></li>
+            </ul>
+          </li>
+
+          <!-- Categorias -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-white" href="#" id="categoriasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Categorias
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Cadastrar categoria</a></li>
+              <li><a class="dropdown-item" href="#">Listar categorias</a></li>
+              <li><a class="dropdown-item" href="#">Editar categorias</a></li>
+              <li><a class="dropdown-item" href="#">Excluir categorias</a></li>
+            </ul>
+          </li>
+
+          <!-- Retiradas -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-white" href="#" id="retiradasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Retiradas
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Registrar retirada</a></li>
+              <li><a class="dropdown-item" href="#">Visualizar solicitações pendentes</a></li>
+              <li><a class="dropdown-item" href="#">Visualizar retiradas</a></li>
+            </ul>
+          </li>
+
+          <!-- Relatórios -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-white" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Relatórios
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Por categoria</a></li>
+              <li><a class="dropdown-item" href="#">Por produto</a></li>
+              <li><a class="dropdown-item" href="#">Por setor</a></li>
+              <li><a class="dropdown-item" href="#">Por servidor</a></li>
+              <li><a class="dropdown-item" href="#">Entradas</a></li>
+            </ul>
+          </li>
+
+          <!-- Alertas -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-white" href="#" id="alertasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Alertas
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Baixo estoque</a></li>
+              <li><a class="dropdown-item" href="#">Validade próxima</a></li>
+            </ul>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Conteúdo da página -->
+  <div class="container mt-5">
+    <h2>Bem-vindo ao SiCA</h2>
+    <p>Escolha uma opção no menu acima para começar.</p>
+  </div>
+
+  <!-- Bootstrap JS offline -->
+  <script src="/static/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

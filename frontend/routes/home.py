@@ -20,6 +20,6 @@ async def home(request: Request, db: AsyncSession = Depends(get_session)):
     itens = result.scalars().all()
     return templates.TemplateResponse("index.html", {"request": request, "itens": itens})
 
-@router.get("/dashboard", response_class=HTMLResponse)
+@router.get("/dashboardAlmoxarifado", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse("dashboardAlmoxarifado.html", {"request": request})
