@@ -23,3 +23,13 @@ async def home(request: Request, db: AsyncSession = Depends(get_session)):
 @router.get("/dashboardAlmoxarifado", response_class=HTMLResponse)
 async def dashboard(request: Request):
     return templates.TemplateResponse("dashboardAlmoxarifado.html", {"request": request})
+
+@router.get("/dashboardServidor", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    return templates.TemplateResponse("dashboardServidor.html", {"request": request})
+
+
+@router.get("/dashboardDirecao", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    return templates.TemplateResponse("dashboardDirecao.html", {"request": request})
+
