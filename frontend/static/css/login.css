@@ -1,0 +1,28 @@
+/* Cabeçalho azul customizado */
+.custom-header {
+  background-color: #1659bf;
+  color: white;
+}
+
+/* Logo */
+.logo-img {
+  max-height: 100px;
+}
+
+/* Botão de login com cor customizada */
+.custom-login-btn {
+  background-color: #1659bf;
+  border-color: #1659bf;
+}
+
+/* Botão hover */
+.custom-login-btn:hover {
+  background-color: #104ba3;
+  border-color: #104ba3;
+}
+
+/* Card opcional: padding e largura máxima */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+}

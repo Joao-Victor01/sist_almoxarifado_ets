@@ -8,6 +8,8 @@ from api.v1.endpoints.usuario import router as usuario_router
 from api.v1.endpoints.item import router as item_router
 from api.v1.endpoints.retirada import router as retirada_router
 from api.v1.endpoints.relatorios import router as relatorio_router
+from fastapi.staticfiles import StaticFiles
+from frontend.routes.home import router as frontend_router
 
 app = FastAPI(
     title="Sistema de Gerenciamento de Almoxarifado",
@@ -15,13 +17,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Incluindo os endpoints
+# Incluindo os endpoints - Back-end
 app.include_router(setor_router, prefix=settings.API_STR, tags=['Gerenciamento de Setores'])
 app.include_router(categoria_router, prefix=settings.API_STR, tags=['Gerenciamento de Categorias'])
 app.include_router(usuario_router, prefix=settings.API_STR, tags=['Gerenciamento de Usuários'])
 app.include_router(item_router, prefix=settings.API_STR, tags=['Gerenciamento de Itens'])
 app.include_router(retirada_router, prefix=settings.API_STR, tags=['Gerenciamento de Retiradas'])
 app.include_router(relatorio_router, prefix=settings.API_STR, tags=['Geração de Relatórios de Itens'])
+
+# Montar pasta de arquivos estáticos
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+
+# Incluindo os endpoints - Front-End
+app.include_router(frontend_router)
 
 @app.get("/")
 async def root():
