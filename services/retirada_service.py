@@ -1,6 +1,5 @@
 #services\retirada_service.py
 
-import os
 from fastapi import HTTPException, status
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus
 from models.retirada import Retirada
@@ -9,10 +8,10 @@ from repositories.retirada_repository import RetiradaRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.retirada import StatusEnum
 from datetime import datetime
-from core.configs import Settings
-from services.export_strategy import XLSXExportStrategy, CSVExportStrategy
 from services.usuario_service import UsuarioService
-import pandas as pd
+from services.alerta_service import AlertaService
+
+
 
 
 class RetiradaService:
@@ -81,6 +80,8 @@ class RetiradaService:
                     # Atualizar a quantidade do item no estoque
                     nova_quantidade = item_existente.quantidade_item - item.quantidade_retirada
                     await RetiradaRepository.atualizar_quantidade_item(db, item_existente, nova_quantidade)
+                    await AlertaService.verificar_estoque_baixo(db, item.item_id)
+
 
             # Atualizar o status da retirada
             retirada.status = status_data.status
@@ -113,6 +114,21 @@ class RetiradaService:
                 detail=f"Erro ao listar retiradas pendentes: {str(e)}"
             )
         
+    @staticmethod
+    async def get_all_retiradas(db: AsyncSession):
+        try:
+            retiradas = await RetiradaRepository.get_retiradas(db)
+            if not retiradas:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Não há retiradas")
+            
+            return retiradas
+        
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Erro ao listar retiradas: {str(e)}"
+            )
+
     @staticmethod
     async def get_retiradas_por_setor_periodo(
         db: AsyncSession,

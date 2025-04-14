@@ -1,6 +1,6 @@
 #models\alerta.py
 
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, String, Boolean
 from core.configs import settings
 from datetime import datetime
 from enum import Enum
@@ -16,3 +16,5 @@ class Alerta(settings.DBBaseModel):
     tipo_alerta = Column(Integer, nullable=False)
     item_id = Column(Integer, ForeignKey("item.item_id"), nullable=False)
     data_alerta = Column(TIMESTAMP, nullable=False, default=datetime.now)
+    mensagem_alerta = Column(String(255), nullable=False)
+    visualizado = Column(Boolean, default=False)

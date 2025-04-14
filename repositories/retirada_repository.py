@@ -75,6 +75,11 @@ class RetiradaRepository:
         result = await db.execute(select(Retirada).where(Retirada.status == 1))
         return result.scalars().all()
     
+    @staticmethod
+    async def get_retiradas(db:AsyncSession):
+        result = await db.execute(select(Retirada))
+        return result.scalars().all()
+    
 
     @staticmethod
     async def get_retiradas_por_usuario_periodo(

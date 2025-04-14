@@ -10,16 +10,14 @@ class AlertaRepository:
 
     @staticmethod
     async def create_alerta(db: AsyncSession, alerta_data: AlertaBase):
-        # Criando um novo alerta
         novo_alerta = Alerta(
             tipo_alerta=alerta_data.tipo_alerta,
             item_id=alerta_data.item_id,
+            mensagem_alerta=alerta_data.mensagem_alerta,  
             data_alerta=datetime.now()
         )
-
         db.add(novo_alerta)
         await db.commit()
-        await db.refresh(novo_alerta)
         return novo_alerta
 
     @staticmethod
@@ -27,7 +25,7 @@ class AlertaRepository:
         result = await db.execute(select(Alerta))
         alertas = result.scalars().all()
         return alertas
-
+    
     @staticmethod
     async def get_alerta_by_id(db: AsyncSession, alerta_id: int):
         result = await db.execute(select(Alerta).where(Alerta.alerta_id == alerta_id))
