@@ -167,10 +167,9 @@ class UsuarioService:
                 detail="Credenciais inválidas"
             )
         
-        # Correção: Passando o tipo_usuario para o token
         access_token = create_access_token(
             data_payload={"sub": user.username},
-            tipo_usuario=user.tipo_usuario  # Adicionando o tipo do usuário
+            tipo_usuario=user.tipo_usuario  # Adiciona o tipo do usuário
         )
         
         return {
