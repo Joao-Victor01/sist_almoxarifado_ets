@@ -9,4 +9,4 @@ async def tarefa_diaria():
         print("Verificando validade e estoque dos itens...")
         await AlertaService.generate_daily_alerts(db)
 
-scheduler.add_job(tarefa_diaria, "interval", seconds=10)
+scheduler.add_job(tarefa_diaria, "cron", hour=6)

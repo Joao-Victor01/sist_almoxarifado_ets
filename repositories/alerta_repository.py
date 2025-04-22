@@ -9,6 +9,17 @@ from datetime import datetime
 class AlertaRepository:
 
     @staticmethod
+    async def alerta_ja_existe(db, tipo_alerta: int, item_id: int) -> bool:
+        result = await db.execute(
+            select(Alerta).where(
+                Alerta.tipo_alerta == tipo_alerta,
+                Alerta.item_id == item_id,
+                Alerta.visualizado == False
+            )
+        )
+        return result.scalars().first() is not None
+
+    @staticmethod
     async def create_alerta(db: AsyncSession, alerta_data: AlertaBase):
         novo_alerta = Alerta(
             tipo_alerta=alerta_data.tipo_alerta,

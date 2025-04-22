@@ -20,12 +20,18 @@ class AlertaService:
         items = await db.execute(
             select(Item).where(Item.data_validade_item <= threshold_date))
         for item in items.scalars():
-            await AlertaRepository.create_alerta(db, AlertaBase(
-                tipo_alerta=2,
-                mensagem_alerta=f"Item {item.nome_item} próximo da validade",
-                item_id=item.item_id,
-                data_alerta=datetime.now()
-            ))
+            alerta_existe = await AlertaRepository.alerta_ja_existe(
+                db, TipoAlerta.VALIDADE_PROXIMA.value, item.item_id
+            )
+            if not alerta_existe:
+                await AlertaRepository.create_alerta(db, AlertaBase(
+                    tipo_alerta=2,
+                    mensagem_alerta=f"Item {item.nome_item} próximo da validade",
+                    item_id=item.item_id,
+                    data_alerta=datetime.now()
+                ))
+
+
 
     @staticmethod
     async def verificar_estoque_baixo(db: AsyncSession, item_id: int = None):
@@ -36,9 +42,13 @@ class AlertaService:
         
         items = await db.execute(query)
         for item in items.scalars():
-            await AlertaRepository.create_alerta(db, AlertaBase(
-                tipo_alerta=1,
-                mensagem_alerta=f"Estoque de {item.nome_item} abaixo do mínimo",
-                item_id=item.item_id,
-                data_alerta=datetime.now()
-            ))
+            alerta_existe = await AlertaRepository.alerta_ja_existe(
+                db, TipoAlerta.ESTOQUE_BAIXO.value, item.item_id
+            )
+            if not alerta_existe:
+                await AlertaRepository.create_alerta(db, AlertaBase(
+                    tipo_alerta=1,
+                    mensagem_alerta=f"Estoque de {item.nome_item} abaixo do mínimo",
+                    item_id=item.item_id,
+                    data_alerta=datetime.now()
+                ))
