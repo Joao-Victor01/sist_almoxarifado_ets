@@ -50,3 +50,9 @@ class AlertaRepository:
         await db.delete(alerta)
         await db.commit()
         return {"message": "Alerta deletado com sucesso"}
+    
+    async def ignorar_alerta(db:AsyncSession, alerta_id:int):
+        alerta = await AlertaRepository.get_alerta_by_id(db, alerta_id)
+        alerta.ignorar_novos = True  
+        await db.commit()
+        return alerta

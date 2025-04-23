@@ -10,6 +10,7 @@ from api.v1.endpoints.usuario import router as usuario_router
 from api.v1.endpoints.item import router as item_router
 from api.v1.endpoints.retirada import router as retirada_router
 from api.v1.endpoints.relatorios import router as relatorio_router
+from api.v1.endpoints.alerta import router as alerta_router
 from fastapi.staticfiles import StaticFiles
 from frontend.routes.home import router as frontend_router
 
@@ -45,6 +46,7 @@ app.include_router(usuario_router, prefix=settings.API_STR, tags=['Gerenciamento
 app.include_router(item_router, prefix=settings.API_STR, tags=['Gerenciamento de Itens'])
 app.include_router(retirada_router, prefix=settings.API_STR, tags=['Gerenciamento de Retiradas'])
 app.include_router(relatorio_router, prefix=settings.API_STR, tags=['Geração de Relatórios de Itens'])
+app.include_router(alerta_router, prefix=settings.API_STR, tags=['Gerenciamento de Alertas'])
 
 # Montar pasta de arquivos estáticos
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")

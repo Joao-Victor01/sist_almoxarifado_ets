@@ -5,11 +5,17 @@ from sqlalchemy import select
 from datetime import datetime, timedelta
 from models.alerta import TipoAlerta
 from models.item import Item
+from repositories.item_repository import ItemRepository
 from repositories.alerta_repository import AlertaRepository
 from schemas.alerta import AlertaBase
 from fastapi import HTTPException, status
 
 class AlertaService:
+
+    @staticmethod
+    async def ignorar_alertas(db: AsyncSession, alerta_id: int):
+        alerta = await AlertaRepository.ignorar_alerta(db, alerta_id)
+        return alerta        
     
     @staticmethod
     async def generate_daily_alerts(db: AsyncSession):
@@ -20,9 +26,8 @@ class AlertaService:
     @staticmethod
     async def verificar_validade_itens(db: AsyncSession):
         threshold_date = datetime.now() + timedelta(days=60)
-        items = await db.execute(
-            select(Item).where(Item.data_validade_item <= threshold_date))
-        for item in items.scalars():
+        items = await ItemRepository.find_items_expiring_before(db, threshold_date)
+        for item in items:
             alerta_existe = await AlertaRepository.alerta_ja_existe(
                 db, TipoAlerta.VALIDADE_PROXIMA.value, item.item_id
             )
@@ -49,6 +54,13 @@ class AlertaService:
         if item_id:
             query = query.where(Item.item_id == item_id)
         query = query.where(Item.quantidade_item <= Item.quantidade_minima_item)
+
+        # if item.quantidade_item > item.quantidade_minima_item:
+        #     await db.execute(
+        #     update(Alerta)
+        #     .where(Alerta.item_id == item.item_id)
+        #     .values(ignorar_novos=False)
+        # )
         
         items = await db.execute(query)
         for item in items.scalars():

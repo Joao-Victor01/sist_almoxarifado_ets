@@ -124,3 +124,20 @@ class ItemRepository:
         if not item:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
         return item
+    
+
+    @staticmethod
+    async def find_items_expiring_before(db: AsyncSession, date) -> list[Item]:
+        result = await db.execute(
+            select(Item).where(Item.data_validade_item <= date)
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def find_items_low_stock(db: AsyncSession) -> list[Item]:
+        result = await db.execute(
+            select(Item).where(
+                Item.quantidade_item <= Item.quantidade_minima_item
+            )
+        )
+        return result.scalars().all()
