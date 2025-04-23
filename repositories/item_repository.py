@@ -14,11 +14,18 @@ class ItemRepository:
             **item_data.model_dump(),  # Usa o dicionário diretamente
             auditoria_usuario_id=usuario_id
         )
+        # remove qualquer chave 'auditoria_usuario_id' vinda do usuario
+        data = item_data.model_dump(exclude={'auditoria_usuario_id'})
+        new_item = Item(
+            **data,
+            auditoria_usuario_id=usuario_id
+        )
+
         db.add(new_item)
         await db.commit()
         await db.refresh(new_item)
         return new_item
-
+    
     @staticmethod
     async def get_itens(db: AsyncSession):
         result = await db.execute(select(Item))

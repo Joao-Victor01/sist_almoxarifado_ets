@@ -28,7 +28,6 @@ class ItemCreate(BaseModel):
     data_validade_item: Optional[datetime] = None
     quantidade_minima_item: Optional[int] = None
     data_entrada_item: Optional[datetime] = None 
-    auditoria_usuario_id: Optional[int] = None
     marca_item: Optional[str] = None
 
 class ItemUpdate(BaseModel):

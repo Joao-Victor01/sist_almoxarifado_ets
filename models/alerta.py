@@ -18,3 +18,4 @@ class Alerta(settings.DBBaseModel):
     data_alerta = Column(TIMESTAMP, nullable=False, default=datetime.now)
     mensagem_alerta = Column(String(255), nullable=False)
     visualizado = Column(Boolean, default=False)
+    ignorar_novos = Column(Boolean, default=False) 

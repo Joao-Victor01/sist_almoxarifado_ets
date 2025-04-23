@@ -14,7 +14,8 @@ class AlertaRepository:
             select(Alerta).where(
                 Alerta.tipo_alerta == tipo_alerta,
                 Alerta.item_id == item_id,
-                Alerta.visualizado == False
+                # Alerta não visualizado OU alerta marcado para não ignorar
+                (Alerta.visualizado == False) | (Alerta.ignorar_novos == False)
             )
         )
         return result.scalars().first() is not None
@@ -41,8 +42,6 @@ class AlertaRepository:
     async def get_alerta_by_id(db: AsyncSession, alerta_id: int):
         result = await db.execute(select(Alerta).where(Alerta.alerta_id == alerta_id))
         alerta = result.scalars().first()
-        if not alerta:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta não encontrado")
         return alerta
 
     @staticmethod

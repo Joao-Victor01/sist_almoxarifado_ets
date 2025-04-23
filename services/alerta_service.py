@@ -1,3 +1,5 @@
+#services\alerta_service.py
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta
@@ -5,6 +7,7 @@ from models.alerta import TipoAlerta
 from models.item import Item
 from repositories.alerta_repository import AlertaRepository
 from schemas.alerta import AlertaBase
+from fastapi import HTTPException, status
 
 class AlertaService:
     
@@ -31,7 +34,14 @@ class AlertaService:
                     data_alerta=datetime.now()
                 ))
 
-
+    @staticmethod
+    async def get_alertas(db:AsyncSession):
+        result = await AlertaRepository.get_alertas(db)
+        if not result:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="Não foram encontrados alertas na base de dados"
+                                )
+        return result
 
     @staticmethod
     async def verificar_estoque_baixo(db: AsyncSession, item_id: int = None):
@@ -52,3 +62,11 @@ class AlertaService:
                     item_id=item.item_id,
                     data_alerta=datetime.now()
                 ))
+
+    @staticmethod
+    async def get_alerta_by_id(db: AsyncSession, alerta_id: int):
+        result = await AlertaRepository.get_alerta_by_id(db, alerta_id)
+        if not result:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta não encontrado")
+        return result
+    
