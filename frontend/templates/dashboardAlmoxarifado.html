@@ -42,7 +42,7 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="itensDropdown">
               <li><a class="dropdown-item" href="#">Cadastrar Item</a></li>
-              <li><a class="dropdown-item" href="#">Listar Item</a></li>
+              <li><a class="dropdown-item" id="listar-item-link" href="#">Listar Item</a></li>
               <li><a class="dropdown-item" href="#">Editar Item</a></li>
               <li><a class="dropdown-item" href="#">Excluir Item</a></li>
             </ul>
@@ -109,7 +109,7 @@
     </div>
   </nav>
 
-  <section class="container py-4">
+  <section class="container py-4" id="main-content">
     <h3 class="mb-3">Acesso Rápido</h3>
     <div class="row g-3">
       <div class="col-6 col-md-3">
@@ -149,5 +149,7 @@
 
   <!-- Bootstrap JS -->
   <script src="/static/js/bootstrap.bundle.min.js"></script>
+
+  <script src="/static/js/listar-itens.js"></script>  
 </body>
 </html>
