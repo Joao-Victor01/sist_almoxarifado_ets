@@ -1,43 +1,32 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login - SiCA</title>
-
-  <!-- Bootstrap CSS Local-->
-  <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-  <!--  CSS personalizado -->
-  <link rel="stylesheet" href="/static/css/login.css">
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Sistema Almoxarifado</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
 </head>
-<body class="bg-light">
+<body>
+    <header>
+        <h2>Sistema de Controle de Almoxarifado - CPT</h2>
+    </header>
+    <main>
+        <div class="login-card">
+            <div class="avatar-placeholder"></div>
+            <form id="login-form">
+                <label for="username">Usuário:</label>
+                <input type="text" id="username" name="username" required />
 
-  <!-- Barra superior -->
-  <div class="custom-header text-center py-3 fw-bold">
-    SISTEMA DE CONTROLE DE ALMOXARIFADO - CPT
-  </div>
+                <label for="password">Senha:</label>
+                <input type="password" id="password" name="password" required />
 
-  <!-- Container de login centralizado -->
-  <div class="d-flex align-items-center justify-content-center vh-100">
-    <div class="card p-4 shadow-sm login-card">
-      <div class="card-body text-center">
-        <img src="/static/img/sica_transparente.png" alt="Logo SiCA" class="img-fluid mb-4 logo-img">
-        <form id="login-form">
-          <div class="mb-3">
-            <input type="text" name="username" class="form-control" placeholder="Nome de Usuário" required>
-          </div>
-          <div class="mb-3">
-            <input type="password" name="password" class="form-control" placeholder="Senha" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100 custom-login-btn">Login</button>
-          <p class="text-danger mt-3" id="login-error" style="display: none;">Usuário ou senha inválidos.</p>
-        </form>
-      </div>
-    </div>
-  </div>
+                <a href="#" id="recover-link">Cadastrar/Recuperação de conta</a>
 
-  <!-- Bootstrap JS + JS para login-->
-  <script src="/static/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/js/login.js"></script>
+                <button type="submit" id="login-btn">Entrar</button>
+            </form>
+        </div>
+    </main>
+    <script src="/static/js/login.js"></script>
 </body>
 </html>

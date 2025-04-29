@@ -21,15 +21,15 @@ async def home(request: Request, db: AsyncSession = Depends(get_session)):
     return templates.TemplateResponse("index.html", {"request": request, "itens": itens})
 
 @router.get("/dashboardAlmoxarifado", response_class=HTMLResponse)
-async def dashboard(request: Request):
+async def dashboard_almoxarifado(request: Request):
     return templates.TemplateResponse("dashboardAlmoxarifado.html", {"request": request})
 
 @router.get("/dashboardServidor", response_class=HTMLResponse)
-async def dashboard(request: Request):
+async def dashboard_servidor(request: Request):
     return templates.TemplateResponse("dashboardServidor.html", {"request": request})
 
 
 @router.get("/dashboardDirecao", response_class=HTMLResponse)
-async def dashboard(request: Request):
+async def dashboard_direcao(request: Request):
     return templates.TemplateResponse("dashboardDirecao.html", {"request": request})
 

@@ -1,64 +1,41 @@
+// frontend/static/js/validar-acesso.js
+;(function () {
+  // 1) lê token
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    window.location.replace('/')
+    return
+  }
 
-(function () {
-    // Decodifica o token JWT
-    function decodeJWT(token) {
-      try {
-        const payloadBase64 = token.split('.')[1];
-        const decodedPayload = atob(payloadBase64);
-        return JSON.parse(decodedPayload);
-      } catch (e) {
-        return null;
-      }
-    }
-  
-    // Mapeamento de páginas para tipos de usuário permitidos
-    const pageRoles = {
-      'dashboardServidor': 1,
-      'dashboardAlmoxarifado': 2,
-      'dashboardDirecao': 3
-    };
-  
-    // Função principal de verificação
-    function checkAuthAndRedirect() {
-      const token = localStorage.getItem("access_token");
-      
-      // Redireciona se não tiver token
-      if (!token) {
-        alert("Você precisa estar logado.");
-        window.location.href = "/";
-        return;
-      }
-  
-      // Verifica token válido
-      const data = decodeJWT(token);
-      if (!data || !data.tipo_usuario) {
-        alert("Token inválido.");
-        localStorage.removeItem("access_token");
-        window.location.href = "/";
-        return;
-      }
-  
-      // Obtém a página atual
-      const currentPage = window.location.pathname.split('/').pop();
-      const requiredRole = Object.keys(pageRoles).find(page => currentPage.includes(page));
-  
-      // Verifica se a página requer autorização específica
-      if (requiredRole && data.tipo_usuario !== pageRoles[requiredRole]) {
-        const roleNames = {
-          1: 'servidor',
-          2: 'almoxarifado',
-          3: 'direção'
-        };
-        
-        alert(`Acesso negado. Apenas ${roleNames[pageRoles[requiredRole]]} pode acessar esta área.`);
-        window.location.href = "/";
-        return;
-      }
-  
-      // Log opcional do usuário autenticado
-      console.log("Usuário autenticado:", data.sub);
-    }
-  
-    // Executa a verificação quando o script é carregado
-    checkAuthAndRedirect();
-  })();
+  // 2) decodifica payload e checa expiração
+  let payload
+  try {
+    payload = JSON.parse(atob(token.split('.')[1]))
+  } catch {
+    localStorage.removeItem('access_token')
+    window.location.replace('/')
+    return
+  }
+  const now = Date.now() / 1000
+  if (!payload.exp || payload.exp < now) {
+    localStorage.removeItem('access_token')
+    window.location.replace('/')
+    return
+  }
+
+  // 3) checa role x rota
+  const pageRole = {
+    dashboardServidor:    1,
+    dashboardAlmoxarifado: 2,
+    dashboardDirecao:      3
+  }
+  const path = window.location.pathname.split('/').pop()
+  const required = pageRole[path]
+  if (required && payload.tipo_usuario !== required) {
+    localStorage.removeItem('access_token')
+    window.location.replace('/')
+    return
+  }
+
+  // se tudo ok, segue em frente
+})()

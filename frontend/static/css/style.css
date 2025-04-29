@@ -1,0 +1,85 @@
+/* Reset simples */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f9fc;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  header {
+    background-color: #0b3d91;
+    padding: 1rem;
+    text-align: center;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .login-card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 2rem;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    width: 320px;
+    text-align: center;
+    position: relative;
+  }
+  
+  .avatar-placeholder {
+    width: 100px;
+    height: 100px;
+    background-color: #e0e0e0;
+    border-radius: 1rem;
+    margin: 0 auto 1.5rem;
+  }
+  
+  .login-card label {
+    display: block;
+    text-align: left;
+    margin-top: 0.5rem;
+    font-weight: bold;
+  }
+  
+  .login-card input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+    border: 1px solid #ccc;
+    border-radius: 1rem;
+  }
+  
+  #recover-link {
+    display: inline-block;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    color: #0b3d91;
+    text-decoration: none;
+  }
+  
+  #login-btn {
+    background-color: #0b3d91;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  
+  #login-btn:hover {
+    opacity: 0.9;
+  }

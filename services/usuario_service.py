@@ -279,10 +279,4 @@ class UsuarioService:
 
         return campos_atualizados
     
-
-
-
-    #____________________________________________________________________________________#
-    #COMPARAR COM AS JA EXISTENTES ACIMA::::
-   
     
