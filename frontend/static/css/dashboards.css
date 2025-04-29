@@ -1,0 +1,91 @@
+/* static/css/dashboards.css */
+
+/* Cores principais */
+:root {
+    --blue-top:    #0052cc;
+    --blue-nav:    #003166;
+  }
+  
+  /* Barra superior */
+  .top-bar {
+    background-color: var(--blue-top);
+    color: #fff;
+    padding: 0.5rem 1rem;
+  }
+  
+  .top-bar .logo {
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    color: white;
+  }
+  
+  /* Navbar secundária */
+  .navbar-custom {
+    background-color: var(--blue-nav);
+  }
+  
+  .navbar-custom .nav-link,
+  .navbar-custom .navbar-brand,
+  .navbar-custom .btn-link {
+    color: #fff;
+  }
+  
+  .navbar-custom .nav-link:hover,
+  .navbar-custom .btn-link:hover {
+    color: #ddd;
+  }
+  
+  /* Ajuste para centralizar os menus dropdown */
+  .navbar-nav {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .nav-item.dropdown {
+    flex: 0 1 auto; /* Não cresce, pode encolher, largura automática */
+    white-space: nowrap; /* Impede que o texto quebre em várias linhas */
+    padding: 0 10px; /* Espaçamento entre os itens */
+  }
+  
+  .dropdown-menu {
+    min-width: 12rem;
+  }
+  
+  /* Estilos para os cards de acesso rápido */
+  .quick-access-card {
+    padding: 1.5rem;
+    background-color: white;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    text-align: center;
+    transition: transform 0.2s;
+    height: 100%;
+  }
+  
+  .quick-access-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .quick-access-card i {
+    font-size: 2rem;
+    color: #0d6efd;
+  }
+  
+  .quick-access-card p {
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+  }
+  
+  /* Ajuste para mobile */
+  @media (max-width: 992px) {
+    .navbar-nav {
+      flex-direction: column;
+    }
+    
+    .nav-item.dropdown {
+      padding: 0;
+      text-align: left;
+    }
+  }
