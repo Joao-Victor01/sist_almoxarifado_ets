@@ -1,7 +1,7 @@
 #schemas\item.py
 from pydantic import BaseModel
-from typing import Optional
 from datetime import date, datetime
+from typing import List, Optional
 
 
 class ItemBase(BaseModel):
@@ -48,3 +48,14 @@ class ItemOut(ItemBase):
 
     class Config:
         from_attributes = True
+
+class PaginatedItems(BaseModel):
+    page: int
+    size: int
+    total: int
+    items: List[ItemOut]
+
+    model_config = {
+        'from_attributes': True
+    }
+

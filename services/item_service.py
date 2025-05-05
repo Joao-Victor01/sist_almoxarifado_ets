@@ -9,7 +9,7 @@ from repositories.item_repository import ItemRepository
 from fastapi import HTTPException, status
 from utils.normalizar_texto import normalize_name
 from models.item import Item
-from models.categoria import Categoria
+from schemas.item import PaginatedItems, ItemOut
 
 class ItemService:
     
@@ -130,6 +130,40 @@ class ItemService:
     @staticmethod
     async def delete_item(db: AsyncSession, item_id: int):
         return await ItemRepository.delete_item(db, item_id)
+    
+    #retorna itens paginados
+    @staticmethod
+    async def get_items_paginated(
+        db,
+        page: int,
+        size: int
+    ) -> PaginatedItems:
+        # validação de tamanho
+        allowed = [5, 10, 25, 50, 100]
+        if size not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"size deve ser um de {allowed}"
+            )
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="page deve ser >= 1"
+            )
+
+        total = await ItemRepository.count_items(db)
+        offset = (page - 1) * size
+        itens = await ItemRepository.get_items_paginated(db, offset, size)
+
+        # converte para DTO
+        items_out = [ItemOut.model_validate(i) for i in itens]
+
+        return PaginatedItems(
+            page=page,
+            size=size,
+            total=total,
+            items=items_out
+        )
     
 #_________________________________________________________________________________________________________#
     #FUNÇÕES AUXILIARES DE VALIDAÇÕES E EXCEÇÕES   

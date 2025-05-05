@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
-from schemas.item import ItemOut, ItemCreate, ItemUpdate
+from schemas.item import ItemOut, ItemCreate, ItemUpdate, PaginatedItems
 from services.item_service import ItemService
 from core.security import usuario_almoxarifado, direcao_ou_almoxarifado
 from typing import List
@@ -16,6 +16,22 @@ async def create_item(
     current_user=Depends(usuario_almoxarifado) 
 ):
     return await ItemService.create_item(db, item, current_user)
+
+
+@router.get(
+    "/paginated",
+    response_model=PaginatedItems,
+    dependencies=[Depends(direcao_ou_almoxarifado)]
+)
+async def get_items_paginated(
+    page: int = Query(1, ge=1, description="Número da página"),
+    size: int = Query(10, description="Itens por página: 5,10,25,50 ou 100"),
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Lista itens com paginação.
+    """
+    return await ItemService.get_items_paginated(db, page, size)
 
 
 @router.get("/", response_model=List[ItemOut])

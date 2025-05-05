@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.item import Item
@@ -116,6 +117,26 @@ class ItemRepository:
         await db.commit()
         await db.refresh(item)
         return item
+    
+    @staticmethod
+    async def count_items(db: AsyncSession) -> int:
+        result = await db.execute(select(func.count()).select_from(Item))
+        return result.scalar_one()
+
+    @staticmethod
+    async def get_items_paginated(
+        db: AsyncSession,
+        offset: int,
+        limit: int
+    ) -> list[Item]:
+        result = await db.execute(
+            select(Item)
+            .offset(offset)
+            .limit(limit)
+        )
+        return result.scalars().all()
+    
+    #__________________________FUNÇÕES AUXILIARES ABAIXO_______________________________________
 
     @staticmethod
     async def __first_or_404(db: AsyncSession, *filters, message="Item não encontrado"):
