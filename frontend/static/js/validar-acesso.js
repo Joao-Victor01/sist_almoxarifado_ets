@@ -1,41 +1,31 @@
-// frontend/static/js/validar-acesso.js
-;(function () {
-  // 1) lê token
-  const token = localStorage.getItem('access_token')
-  if (!token) {
-    window.location.replace('/')
-    return
-  }
 
-  // 2) decodifica payload e checa expiração
-  let payload
+
+document.getElementById('form-login').addEventListener('submit', async function (event) {
+  event.preventDefault();
+
+  const form = event.target;
+  const formData = new FormData(form);
+  const data = new URLSearchParams(formData);
+
   try {
-    payload = JSON.parse(atob(token.split('.')[1]))
-  } catch {
-    localStorage.removeItem('access_token')
-    window.location.replace('/')
-    return
-  }
-  const now = Date.now() / 1000
-  if (!payload.exp || payload.exp < now) {
-    localStorage.removeItem('access_token')
-    window.location.replace('/')
-    return
-  }
+    const response = await fetch('/api/almoxarifado/usuarios/token', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json'
+      },
+      body: data,
+      credentials: 'include' // IMPORTANTE: isso permite que o cookie seja salvo
+    });
 
-  // 3) checa role x rota
-  const pageRole = {
-    dashboardServidor:    1,
-    dashboardAlmoxarifado: 2,
-    dashboardDirecao:      3
+    if (response.ok) {
+      // Depois de salvar o cookie com sucesso, redireciona manualmente
+      window.location.href = "/";
+    } else {
+      const result = await response.json();
+      alert(result.detail || "Erro ao fazer login");
+    }
+  } catch (err) {
+    console.error("Erro no login:", err);
+    alert("Erro de rede ao tentar fazer login.");
   }
-  const path = window.location.pathname.split('/').pop()
-  const required = pageRole[path]
-  if (required && payload.tipo_usuario !== required) {
-    localStorage.removeItem('access_token')
-    window.location.replace('/')
-    return
-  }
-
-  // se tudo ok, segue em frente
-})()
+});

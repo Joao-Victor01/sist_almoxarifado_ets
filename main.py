@@ -1,5 +1,6 @@
 #main.py
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from core.configs import settings
 from utils.scheduler import tarefa_diaria, scheduler
 import uvicorn
@@ -36,6 +37,14 @@ app = FastAPI(
     description="API para gerenciar o estoque e retirada de materiais",
     version="1.0.0",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8082"],  # mudar para domínio que será usado quando fizer o deploy, deve ser a URL do front
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

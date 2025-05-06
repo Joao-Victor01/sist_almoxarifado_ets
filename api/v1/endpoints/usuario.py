@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+#api\v1\endpoints\usuario.py
+
+from fastapi import APIRouter, Depends, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate
@@ -7,6 +9,8 @@ from core.security import usuario_direcao
 from typing import List
 from schemas.auth_schemas import TokenSchema
 from fastapi.security import OAuth2PasswordRequestForm
+from datetime import datetime, timedelta
+
 
 
 router = APIRouter(prefix="/usuarios")
@@ -65,9 +69,24 @@ async def update_usuario(
 #login usuario
 @router.post('/token', response_model=TokenSchema)
 async def get_access_token(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
-    result = await UsuarioService.login_user(form_data, db)
+    token_dict = await UsuarioService.login_user(form_data, db)
+    token = TokenSchema(**token_dict)
+    expires = datetime.utcnow() + timedelta(days=1)
 
-    return result
+
+    response.set_cookie(
+        key="access_token",
+        value=token.access_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=86400,  # 60 segundos * 60 minutos * 24 horas
+        expires=expires.strftime("%a, %d-%b-%Y %H:%M:%S GMT"),
+        path="/"
+    )
+
+    return token
