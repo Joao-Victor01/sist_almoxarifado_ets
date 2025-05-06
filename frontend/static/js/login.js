@@ -1,13 +1,11 @@
 window.addEventListener('DOMContentLoaded', () => {
-  console.log('📢 DOM pronto, anexando handler…');
+  console.log('DOM pronto, anexando handler…');
   const form = document.getElementById('login-form');
   if (!form) {
-    console.error('❌ Form não encontrado!');
     return;
   }
 
   form.addEventListener('submit', async (e) => {
-    console.log('🖱️  submit disparado');
     e.preventDefault();
 
     const username = document.getElementById('username').value;
@@ -23,7 +21,6 @@ window.addEventListener('DOMContentLoaded', () => {
         body: body.toString()
       });
 
-      console.log('📶 fetch retornou status', resp.status);
 
       if (!resp.ok) {
         const err = await resp.json();
@@ -32,7 +29,6 @@ window.addEventListener('DOMContentLoaded', () => {
       }
 
       const { access_token } = await resp.json();
-      console.log('🔑 token recebido', access_token);
 
       const payload = JSON.parse(atob(access_token.split('.')[1]));
       const tipo = payload.tipo_usuario;
@@ -42,7 +38,6 @@ window.addEventListener('DOMContentLoaded', () => {
       else                  alert('Tipo de usuário desconhecido.');
 
     } catch (error) {
-      console.error('❌ Erro no fetch:', error);
       alert('Erro de conexão com o servidor.');
     }
   });

@@ -1,6 +1,8 @@
 #api\v1\endpoints\usuario.py
 
 from fastapi import APIRouter, Depends, status, Response
+from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate
@@ -8,9 +10,7 @@ from services.usuario_service import UsuarioService
 from core.security import usuario_direcao
 from typing import List
 from schemas.auth_schemas import TokenSchema
-from fastapi.security import OAuth2PasswordRequestForm
 from datetime import datetime, timedelta
-
 
 
 router = APIRouter(prefix="/usuarios")
@@ -75,7 +75,7 @@ async def get_access_token(
 ):
     token_dict = await UsuarioService.login_user(form_data, db)
     token = TokenSchema(**token_dict)
-    expires = datetime.utcnow() + timedelta(days=1)
+    expires = datetime.now() + timedelta(days=1)
 
 
     response.set_cookie(
@@ -90,3 +90,16 @@ async def get_access_token(
     )
 
     return token
+
+from fastapi.responses import JSONResponse
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout():
+    # Cria a resposta manualmente
+    resp = JSONResponse({"message": "Logout realizado com sucesso"})
+    # Deleta o cookie nessa resposta
+    resp.delete_cookie(
+        key="access_token",
+        path="/"
+    )
+    return resp

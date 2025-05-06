@@ -63,9 +63,9 @@ app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 # Incluindo os endpoints - Front-End
 app.include_router(frontend_router)
 
-@app.get("/")
-async def root():
-    return {"message": "API do Sistema de Almoxarifado rodando!"}
+# @app.get("/")
+# async def root():
+#     return {"message": "API do Sistema de Almoxarifado rodando!"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8082, reload=True)

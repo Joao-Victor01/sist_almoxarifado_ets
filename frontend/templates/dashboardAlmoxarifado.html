@@ -100,12 +100,13 @@
           </li>
         </ul>
 
-        <div class="d-flex align-items-center">
-          <button class="btn btn-link nav-link me-2" id="themeToggle">
-            <i class="bi bi-moon"></i>
-          </button>
-          <a class="nav-link me-2" href="#"><i class="bi bi-search"></i></a>
-          <a class="nav-link" href="#"><i class="bi bi-person-circle"></i></a>
+        <div class="dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle"></i>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+            <li><a class="dropdown-item" href="#" id="logoutButton">Logout</a></li>
+          </ul>
         </div>
       </div>
     </div>
@@ -153,5 +154,22 @@
   <script src="/static/js/bootstrap.bundle.min.js"></script>
 
   <script src="/static/js/listar-itens.js"></script>  
+  <script>
+    document.getElementById("logoutButton").addEventListener("click", async function (e) {
+      e.preventDefault();
+  
+      const response = await fetch("/api/almoxarifado/usuarios/logout", {
+        method: "POST",
+        credentials: "include" // necessário para enviar o cookie
+      });
+  
+      if (response.ok) {
+        // Redireciona para a tela de login
+        window.location.href = "/";
+      } else {
+        alert("Erro ao fazer logout.");
+      }
+    });
+  </script>
 </body>
 </html>
