@@ -45,7 +45,7 @@ function criarTabelaItens(itens) {
           <tr>
             <th>Nome</th>
             <th>Descrição</th>
-            <th>Unidade</th>
+            <th>Unidade de Medida</th>
             <th>Quantidade</th>
             <th>Validade</th>
             <th>Entrada</th>

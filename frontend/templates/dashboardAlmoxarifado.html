@@ -48,8 +48,8 @@
               ITENS
             </a>
             <ul class="dropdown-menu" aria-labelledby="itensDropdown">
-              <li><a class="dropdown-item" href="#">Cadastrar Item</a></li>
-              <li><a class="dropdown-item" id="listar-item-link" href="#">Listar Item</a></li>
+              <li><a class="dropdown-item" id="btn-open-cadastrar-item" href="#">Cadastrar Item</a></li>
+              <li><a class="dropdown-item" id="listar-item-link" href="#">Listar Itens</a></li>
               <li><a class="dropdown-item" href="#">Editar Item</a></li>
               <li><a class="dropdown-item" href="#">Excluir Item</a></li>
             </ul>
@@ -123,7 +123,7 @@
       <div class="row g-3">
         <!-- cards de acesso rápido... -->
         <div class="col-6 col-md-3">
-          <a href="/itens/cadastrar" class="text-decoration-none">
+          <a href="#" id="btn-open-cadastrar-item" class="text-decoration-none">
             <div class="quick-access-card">
               <i class="bi bi-plus-square"></i>
               <p>Cadastrar Item</p>
@@ -157,28 +157,111 @@
       </div>
     </section>
 
+
+
+    <!-- MODAL DE CADASTRAR ITEM -->
+    <div class="modal fade" id="modalCadastrarItem" tabindex="-1" aria-labelledby="modalCadastrarItemLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+          <div class="modal-header border-0">
+            <h5 class="modal-title" id="modalCadastrarItemLabel">Cadastrar Novo Item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <form id="form-cadastrar-item">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="nome_item" class="form-label">Nome do Item*</label>
+                  <input type="text" class="form-control" id="nome_item" name="nome_item" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="unidade_medida_item" class="form-label">Unidade de Medida*</label>
+                  <input type="text" class="form-control" id="unidade_medida_item" name="unidade_medida_item" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="descricao_item" class="form-label">Descrição*</label>
+                  <textarea class="form-control" id="descricao_item" name="descricao_item" rows="2" required></textarea>
+                </div>
+                <div class="col-md-3">
+                  <label for="quantidade_item" class="form-label">Quantidade*</label>
+                  <input type="number" class="form-control" id="quantidade_item" name="quantidade_item" min="0" required>
+                </div>
+                <div class="col-md-3">
+                  <label for="quantidade_minima_item" class="form-label">Quantidade Mínima</label>
+                  <input type="number" class="form-control" id="quantidade_minima_item" name="quantidade_minima_item" min="0">
+                </div>
+                <div class="col-md-4">
+                  <label for="data_validade_item" class="form-label">Data de Validade</label>
+                  <input type="date" class="form-control" id="data_validade_item" name="data_validade_item">
+                </div>
+                <div class="col-md-4">
+                  <label for="data_entrada_item" class="form-label">Data de Entrada</label>
+                  <input type="datetime-local" class="form-control" id="data_entrada_item" name="data_entrada_item">
+                </div>
+                <div class="col-md-4">
+                  <label for="marca_item" class="form-label">Marca</label>
+                  <input type="text" class="form-control" id="marca_item" name="marca_item">
+                </div>
+                <div class="col-md-6">
+                  <label for="categoria_id" class="form-label">Categoria (ID)*</label>
+                  <input type="number" class="form-control" id="categoria_id" name="categoria_id" required>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer border-0 justify-content-center">
+            <button type="button" class="btn btn-secondary me-2" id="btn-cancelar-item">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btn-salvar-item">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   <!-- Scripts JS -->
   <script src="/static/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/listar-itens.js"></script>  
   <script src="/static/js/logout.js"></script>
+  <script src="/static/js/cadastrar-item.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Conteúdo inicial
-      const defaultContent = document.getElementById('main-content').innerHTML;
-
-      // Home
+    document.addEventListener('DOMContentLoaded', initPage);
+  
+    function initPage() {
+      // Guarda o conteúdo “home” original
+      const main      = document.getElementById('main-content');
+      const defaultHTML = main.innerHTML;
+  
+      // Botão Home — restaura conteúdo e re-binda quick-access
       document.getElementById('home-button').addEventListener('click', e => {
         e.preventDefault();
-        document.getElementById('main-content').innerHTML = defaultContent;
+        main.innerHTML = defaultHTML;
+        bindQuickAccess();
       });
-
-      // Quick Access
+  
+      // Binda na primeira vez
+      bindQuickAccess();
+    }
+  
+    function bindQuickAccess() {
+      const modalEl = document.getElementById('modalCadastrarItem');
+      const modal   = new bootstrap.Modal(modalEl);
+  
+      // Listar Itens (quick access)
       document.getElementById('listar-item-link-quick')?.addEventListener('click', e => {
         e.preventDefault();
-        currentPage = 1; pageSize = 10;
+        currentPage = 1;
+        pageSize   = 10;
         renderizarListaItens();
       });
-    });
+  
+      // Abrir modal de Cadastrar Item (quick access e dropdown)
+      document.querySelectorAll('#btn-open-cadastrar-item').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          modal.show();
+        });
+      });
+    }
   </script>
+  
 </body>
 </html>
