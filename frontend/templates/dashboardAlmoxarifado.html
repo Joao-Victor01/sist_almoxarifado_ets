@@ -29,6 +29,11 @@
   <!-- Navbar principal -->
   <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
     <div class="container-fluid">
+      <!-- Botão Home -->
+      <button class="btn btn-outline-light me-3" id="home-button">
+        <i class="bi bi-house-fill"></i>
+      </button>
+
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
               data-bs-target="#navbarMenu" aria-controls="navbarMenu"
               aria-expanded="false" aria-label="Alternar navegação">
@@ -112,10 +117,11 @@
     </div>
   </nav>
 
-    <!-- Conteúdo dinâmico aqui -->
+    <!-- Conteúdo dinâmico para exibir a tabela de itens paginada -->
     <section class="container py-4" id="main-content">
       <h3 class="mb-3">Acesso Rápido</h3>
       <div class="row g-3">
+        <!-- cards de acesso rápido... -->
         <div class="col-6 col-md-3">
           <a href="/itens/cadastrar" class="text-decoration-none">
             <div class="quick-access-card">
@@ -125,7 +131,7 @@
           </a>
         </div>
         <div class="col-6 col-md-3">
-          <a href="/itens" class="text-decoration-none">
+          <a href="#" id="listar-item-link-quick" class="text-decoration-none">
             <div class="quick-access-card">
               <i class="bi bi-card-list"></i>
               <p>Listar Itens</p>
@@ -151,10 +157,28 @@
       </div>
     </section>
 
-  <!-- Bootstrap JS -->
+  <!-- Scripts JS -->
   <script src="/static/js/bootstrap.bundle.min.js"></script>
-
   <script src="/static/js/listar-itens.js"></script>  
   <script src="/static/js/logout.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Conteúdo inicial
+      const defaultContent = document.getElementById('main-content').innerHTML;
+
+      // Home
+      document.getElementById('home-button').addEventListener('click', e => {
+        e.preventDefault();
+        document.getElementById('main-content').innerHTML = defaultContent;
+      });
+
+      // Quick Access
+      document.getElementById('listar-item-link-quick')?.addEventListener('click', e => {
+        e.preventDefault();
+        currentPage = 1; pageSize = 10;
+        renderizarListaItens();
+      });
+    });
+  </script>
 </body>
 </html>

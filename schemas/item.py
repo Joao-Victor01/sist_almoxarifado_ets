@@ -52,10 +52,10 @@ class ItemOut(ItemBase):
 class PaginatedItems(BaseModel):
     page: int
     size: int
-    total: int
+    total: int           # total de itens no banco
+    total_pages: int     # total de páginas (ceil(total/size))
     items: List[ItemOut]
 
     model_config = {
         'from_attributes': True
     }
-

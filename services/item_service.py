@@ -10,6 +10,8 @@ from fastapi import HTTPException, status
 from utils.normalizar_texto import normalize_name
 from models.item import Item
 from schemas.item import PaginatedItems, ItemOut
+import math
+
 
 class ItemService:
     
@@ -131,10 +133,10 @@ class ItemService:
     async def delete_item(db: AsyncSession, item_id: int):
         return await ItemRepository.delete_item(db, item_id)
     
-    #retorna itens paginados
+    #função para retorno de itens paginados
     @staticmethod
     async def get_items_paginated(
-        db,
+        db: AsyncSession,
         page: int,
         size: int
     ) -> PaginatedItems:
@@ -151,6 +153,7 @@ class ItemService:
                 detail="page deve ser >= 1"
             )
 
+        # conta total de itens
         total = await ItemRepository.count_items(db)
         offset = (page - 1) * size
         itens = await ItemRepository.get_items_paginated(db, offset, size)
@@ -158,13 +161,16 @@ class ItemService:
         # converte para DTO
         items_out = [ItemOut.model_validate(i) for i in itens]
 
+        # calcula total de páginas
+        total_pages = math.ceil(total / size) if total > 0 else 1
+
         return PaginatedItems(
             page=page,
             size=size,
             total=total,
+            total_pages=total_pages,
             items=items_out
         )
-    
 #_________________________________________________________________________________________________________#
     #FUNÇÕES AUXILIARES DE VALIDAÇÕES E EXCEÇÕES   
     
