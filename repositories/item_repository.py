@@ -101,15 +101,15 @@ class ItemRepository:
 
     @staticmethod
     async def delete_item(db: AsyncSession, item_id: int):
-        item = await ItemRepository.__first_or_404(db, item_id)
-        await db.delete(item)
-        await db.commit()
-        return {"message": "Item deletado com sucesso"}
-
+       item = await ItemRepository.__first_or_404(db, Item.item_id == item_id)
+       await db.delete(item)
+       await db.commit()
+       return {"message": "Item deletado com sucesso"}
+    
+    
     @staticmethod
     async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, usuario_id: int):
-        item = await ItemRepository.__first_or_404(db, item_id)
-
+        item = await ItemRepository.__first_or_404(db, Item.item_id == item_id)
         for key, value in item_data.model_dump(exclude_unset=True).items():
             setattr(item, key, value)
 
