@@ -304,7 +304,7 @@ function bindRowActions(categorias) {
     if (form.data_validade_item.value)
       data.data_validade_item = form.data_validade_item.value;
     if (form.data_entrada_item.value)
-      data.data_entrada_item = new Date(form.data_entrada_item.value).toISOString();
+      data.data_entrada_item = form.data_entrada_item.value;
     if (form.marca_item.value)
       data.marca_item = form.marca_item.value;
 
