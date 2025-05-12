@@ -1,3 +1,5 @@
+//frontend\static\js\cadastrar-item.js
+
 document.addEventListener('DOMContentLoaded', () => {
     const modalEl = document.getElementById('modalCadastrarItem');
     const modal = new bootstrap.Modal(modalEl);

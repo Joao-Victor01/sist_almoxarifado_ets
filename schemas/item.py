@@ -55,6 +55,8 @@ class ItemOut(ItemBase):
     quantidade_minima_item: Optional[int] = None
     marca_item: Optional[str] = None
     unidade_medida_item: str
+    data_entrada_item: Optional[datetime] = None
+
 
 
     class Config:
