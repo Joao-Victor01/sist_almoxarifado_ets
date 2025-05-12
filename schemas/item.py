@@ -45,6 +45,17 @@ class ItemUpdate(BaseModel):
 
 class ItemOut(ItemBase):
     item_id: int
+    nome_item: str
+    descricao_item: str
+    quantidade_item: int
+    categoria_id: int
+    data_validade_item: Optional[date] = None
+    auditoria_usuario_id: Optional[int] = None
+    data_validade_item: Optional[datetime] = None
+    quantidade_minima_item: Optional[int] = None
+    marca_item: Optional[str] = None
+    unidade_medida_item: str
+
 
     class Config:
         from_attributes = True

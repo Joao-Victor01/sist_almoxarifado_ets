@@ -139,7 +139,59 @@ class ItemService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Nenhum item encontrado para os critérios de busca"
             )
+        
         return itens
+    
+    
+    @staticmethod
+    async def search_items_paginated(
+        db: AsyncSession,
+        nome_produto: str | None,
+        nome_categoria: str | None,
+        page: int,
+        size: int
+    ) -> PaginatedItems:
+        # validações idênticas a get_items_paginated
+        allowed = [5, 10, 25, 50, 100]
+        if size not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"size deve ser um de {allowed}"
+            )
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="page deve ser >= 1"
+            )
+
+        # normaliza e traduz nome_categoria em IDs
+        nome_norm = normalize_name(nome_produto) if nome_produto else None
+        categoria_ids = None
+        if nome_categoria:
+            nome_cat_norm = normalize_name(nome_categoria)
+            categoria_ids = await CategoriaRepository.find_categoria_ids_by_name(db, nome_cat_norm)
+
+        # conta total de itens filtrados
+        total = await ItemRepository.count_filtered_items(
+            db, categoria_ids=categoria_ids, nome_produto_normalizado=nome_norm
+        )
+
+        # calcula offset e traz só a página
+        offset = (page - 1) * size
+        itens = await ItemRepository.get_filtered_items_paginated(
+            db, categoria_ids=categoria_ids,
+            nome_produto_normalizado=nome_norm,
+            offset=offset, limit=size
+        )
+
+        items_out = [ItemOut.model_validate(i) for i in itens]
+        total_pages = math.ceil(total / size) if total > 0 else 1
+
+        return PaginatedItems(
+            page=page, size=size,
+            total=total, total_pages=total_pages,
+            items=items_out
+        )
     
     @staticmethod
     async def get_itens_por_periodo(

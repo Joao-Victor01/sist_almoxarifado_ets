@@ -135,6 +135,37 @@ class ItemRepository:
             .limit(limit)
         )
         return result.scalars().all()
+            
+    @staticmethod
+    async def count_filtered_items(
+        db: AsyncSession,
+        categoria_ids: list[int] | None,
+        nome_produto_normalizado: str | None
+    ) -> int:
+        query = select(func.count()).select_from(Item)
+        if categoria_ids:
+            query = query.where(Item.categoria_id.in_(categoria_ids))
+        if nome_produto_normalizado:
+            query = query.where(Item.nome_item.ilike(f"%{nome_produto_normalizado}%"))
+        result = await db.execute(query)
+        return result.scalar_one()
+
+    @staticmethod
+    async def get_filtered_items_paginated(
+        db: AsyncSession,
+        categoria_ids: list[int] | None,
+        nome_produto_normalizado: str | None,
+        offset: int, limit: int
+    ) -> list[Item]:
+        query = select(Item)
+        if categoria_ids:
+            query = query.where(Item.categoria_id.in_(categoria_ids))
+        if nome_produto_normalizado:
+            query = query.where(Item.nome_item.ilike(f"%{nome_produto_normalizado}%"))
+        query = query.offset(offset).limit(limit)
+        result = await db.execute(query)
+        return result.scalars().all()
+
     
     #__________________________FUNÇÕES AUXILIARES ABAIXO_______________________________________
 
