@@ -19,6 +19,23 @@ async def create_item(
 ):
     return await ItemService.create_item(db, item, current_user)
 
+@router.get(
+    "/buscar",
+    response_model=List[ItemOut],
+    dependencies=[Depends(direcao_ou_almoxarifado)]
+)
+async def search_items(
+    nome: str | None = Query(None, description="Nome total ou parcial do item"),
+    categoria: str | None = Query(None, description="Categoria total ou parcial"),
+    db: AsyncSession = Depends(get_session),
+    current_user=Depends(direcao_ou_almoxarifado)
+):
+    """
+    Busca itens filtrando por nome e/ou por categoria.
+    Tanto nome quanto categoria podem ser totais ou parciais.
+    """
+    return await ItemService.get_itens_name_or_categoria_ilike(db, nome_produto=nome, nome_categoria=categoria)
+
 
 @router.get(
     "/paginated",
@@ -69,3 +86,4 @@ async def update_item(
     current_user=Depends(usuario_almoxarifado)
 ):
     return await ItemService.update_item(db, item_id, item, current_user)
+

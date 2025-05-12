@@ -14,7 +14,7 @@ document.getElementById('form-login').addEventListener('submit', async function 
         'Accept': 'application/json'
       },
       body: data,
-      credentials: 'include' // IMPORTANTE: isso permite que o cookie seja salvo
+      credentials: 'include' // permite que o cookie seja salvo
     });
 
     if (response.ok) {

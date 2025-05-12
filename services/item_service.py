@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from schemas.item import ItemCreate, ItemUpdate
 from repositories.item_repository import ItemRepository
+from repositories.categoria_repository import CategoriaRepository
 from fastapi import HTTPException, status
 from utils.normalizar_texto import normalize_name
 from models.item import Item
@@ -106,6 +107,39 @@ class ItemService:
             categoria_ids=categoria_ids,
             nome_produto_normalizado=nome_produto_normalizado
         )
+    
+    @staticmethod
+    async def get_itens_name_or_categoria_ilike(db: AsyncSession,
+        nome_produto: str = None,
+        nome_categoria: str = None
+        )-> list[Item]:
+        """
+        Encapsula a lógica de normalização e chama o repositório.
+        Retorna lista de Item (fazendo filtro por nome do produto e/ou por categoria).
+        """
+        # normaliza termo de busca de produto, se informado
+        nome_produto_normalizado = normalize_name(nome_produto) if nome_produto else None
+
+        # obtém lista de categoria_ids via nome de categoria parcial, se informado
+        categoria_ids = None
+        if nome_categoria:
+            nome_cat_norm = normalize_name(nome_categoria)
+            categoria_ids = await CategoriaRepository.find_categoria_ids_by_name(db, nome_cat_norm)
+
+        # busca no repositório (retorna tuplas (Item, nome_categoria))
+        resultados = await ItemRepository.get_itens_filtrados(
+            db,
+            categoria_ids=categoria_ids,
+            nome_produto_normalizado=nome_produto_normalizado
+        )
+
+        itens = [item for item, _nome_cat in resultados]
+        if not itens:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nenhum item encontrado para os critérios de busca"
+            )
+        return itens
     
     @staticmethod
     async def get_itens_por_periodo(

@@ -13,7 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const body = new URLSearchParams({ username, password });
 
     try {
-      console.log('🔄 enviando fetch…');
+      console.log(' enviando fetch…');
       const resp = await fetch('api/almoxarifado/usuarios/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

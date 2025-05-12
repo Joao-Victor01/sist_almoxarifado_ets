@@ -71,3 +71,15 @@ class CategoriaRepository:
         if not categoria:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
         return categoria
+    
+    @staticmethod
+    async def find_categoria_ids_by_name(db: AsyncSession, nome_normalizado: str) -> list[int]:
+        """
+        Retorna lista de categoria_id cujos nomes contêm nome_normalizado.
+        Usa ILIKE para busca parcial.
+        """
+        result = await db.execute(
+            select(Categoria.categoria_id)
+            .where(Categoria.nome_categoria.ilike(f"%{nome_normalizado}%"))
+        )
+        return [r[0] for r in result.all()]
