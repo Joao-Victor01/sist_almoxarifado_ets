@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.categoria import Categoria
@@ -64,13 +65,6 @@ class CategoriaRepository:
         await db.commit()
         return {"message": "Categoria deletada com sucesso"}
 
-    @staticmethod
-    async def __first_or_404(db: AsyncSession, *filters, message="Categoria não encontrada"):
-        result = await db.execute(select(Categoria).where(*filters))
-        categoria = result.scalars().first()
-        if not categoria:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-        return categoria
     
     @staticmethod
     async def find_categoria_ids_by_name(db: AsyncSession, nome_normalizado: str) -> list[int]:
@@ -83,3 +77,61 @@ class CategoriaRepository:
             .where(Categoria.nome_categoria.ilike(f"%{nome_normalizado}%"))
         )
         return [r[0] for r in result.all()]
+    
+    @staticmethod
+    async def count_categorias(db: AsyncSession) -> int:
+        result = await db.execute(select(func.count()).select_from(Categoria))
+        return result.scalar_one()
+
+    @staticmethod
+    async def get_categorias_paginated(
+        db: AsyncSession,
+        offset: int,
+        limit: int
+    ) -> list[Categoria]:
+        result = await db.execute(
+            select(Categoria)
+            .offset(offset)
+            .limit(limit)
+        )
+        return result.scalars().all()
+    
+
+    @staticmethod
+    async def count_filtered_categorias(
+        db: AsyncSession,
+        categoria_ids: list[int] | None,
+        nome_categoria_normalizado: str | None
+    ) -> int:
+        query = select(func.count()).select_from(Categoria)
+        if categoria_ids:
+            query = query.where(Categoria.categoria_id.in_(categoria_ids))
+        if nome_categoria_normalizado:
+            query = query.where(Categoria.nome_categoria.ilike(f"%{nome_categoria_normalizado}%"))
+        result = await db.execute(query)
+        return result.scalar_one()
+
+    @staticmethod
+    async def get_filtered_categorias_paginated(
+        db: AsyncSession,
+        categoria_ids: list[int] | None,
+        nome_categorias_normalizado: str | None,
+        offset: int, limit: int
+    ) -> list[Categoria]:
+        query = select(Categoria)
+        if categoria_ids:
+            query = query.where(Categoria.categoria_id.in_(categoria_ids))
+        if nome_categorias_normalizado:
+            query = query.where(Categoria.nome_categoria.ilike(f"%{nome_categorias_normalizado}%"))
+        query = query.offset(offset).limit(limit)
+        result = await db.execute(query)
+        return result.scalars().all()
+
+
+    @staticmethod
+    async def __first_or_404(db: AsyncSession, *filters, message="Categoria não encontrada"):
+        result = await db.execute(select(Categoria).where(*filters))
+        categoria = result.scalars().first()
+        if not categoria:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+        return categoria

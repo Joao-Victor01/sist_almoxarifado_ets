@@ -1,6 +1,6 @@
 # schemas/categoria.py
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 
 class CategoriaBase(BaseModel):
     nome_categoria: str
@@ -17,3 +17,14 @@ class CategoriaOut(CategoriaBase):
 
     class Config:
         from_attributes = True
+
+class PaginatedCategorias(BaseModel):
+    page: int
+    size: int
+    total: int           # total de categorias no banco
+    total_pages: int     # total de páginas (ceil(total/size))
+    items: List[CategoriaOut]
+
+    model_config = {
+        'from_attributes': True
+    }

@@ -1,9 +1,10 @@
 # services/categoria_service.py
-from schemas.categoria import CategoriaCreate, CategoriaUpdate
+from schemas.categoria import CategoriaCreate, CategoriaUpdate, PaginatedCategorias, CategoriaOut
 from repositories.categoria_repository import CategoriaRepository
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.normalizar_texto import normalize_name
+import math
 
 
 class CategoriaService:
@@ -78,3 +79,91 @@ class CategoriaService:
         if not result:
             raise HTTPException(status_code=404, detail="Categoria não encontrada")
         return result
+    
+    #função para retorno de categorias paginadas
+    @staticmethod
+    async def get_categorias_paginated(
+        db: AsyncSession,
+        page: int,
+        size: int
+    ) -> PaginatedCategorias:
+        # validação de tamanho
+        allowed = [5, 10, 25, 50, 100]
+        if size not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"size deve ser um de {allowed}"
+            )
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="page deve ser >= 1"
+            )
+
+        # conta total de categorias
+        total = await CategoriaRepository.count_categorias(db)
+        offset = (page - 1) * size
+        itens = await CategoriaRepository.get_categorias_paginated(db, offset, size)
+
+        # converte para DTO
+        items_out = [CategoriaOut.model_validate(i) for i in itens]
+
+        # calcula total de páginas
+        total_pages = math.ceil(total / size) if total > 0 else 1
+
+        return PaginatedCategorias(
+            page=page,
+            size=size,
+            total=total,
+            total_pages=total_pages,
+            items=items_out
+        )
+    
+    @staticmethod
+    async def search_categorias_paginated(
+        db: AsyncSession,
+        nome_categoria: str | None,
+        page: int,
+        size: int
+    ) -> PaginatedCategorias:
+        # validações (idênticas a get_categorias_paginated)
+        allowed = [5, 10, 25, 50, 100]
+        if size not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"size deve ser um de {allowed}"
+            )
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="page deve ser >= 1"
+            )
+
+        # normaliza e traduz nome_categoria em IDs
+        nome_norm = normalize_name(nome_categoria) if nome_categoria else None
+        categoria_ids = None
+        if nome_categoria:
+            nome_cat_norm = normalize_name(nome_categoria)
+            categoria_ids = await CategoriaRepository.find_categoria_ids_by_name(db, nome_cat_norm)
+
+        # conta total de itens filtrados
+        total = await CategoriaRepository.count_filtered_categorias(
+            db, categoria_ids=categoria_ids, nome_categoria_normalizado=nome_norm
+        )
+
+        # calcula offset e traz só a página
+        offset = (page - 1) * size
+        categorias = await CategoriaRepository.get_filtered_categorias_paginated(
+            db, categoria_ids=categoria_ids,
+            nome_categorias_normalizado=nome_norm,
+            offset=offset, limit=size
+        )
+
+        categorias_out = [CategoriaOut.model_validate(i) for i in categorias]
+        total_pages = math.ceil(total / size) if total > 0 else 1
+
+        return PaginatedCategorias(
+            page=page, size=size,
+            total=total, total_pages=total_pages,
+            items=categorias_out
+        )
