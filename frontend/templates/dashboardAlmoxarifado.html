@@ -199,8 +199,10 @@
                   <input type="text" class="form-control" id="marca_item" name="marca_item">
                 </div>
                 <div class="col-md-6">
-                  <label for="categoria_id" class="form-label">Categoria (ID)*</label>
-                  <input type="number" class="form-control" id="categoria_id" name="categoria_id" required>
+                  <label for="categoria_id" class="form-label">Categoria*</label>
+                  <select class="form-select" id="categoria_id" name="categoria_id" required>
+                    <option value="" disabled selected></option>
+                  </select>
                 </div>
               </div>
             </form>
@@ -259,8 +261,10 @@
                 <input type="text" class="form-control" id="edit-marca_item" name="marca_item">
               </div>
               <div class="col-md-6">
-                <label for="edit-categoria_id" class="form-label">Categoria (ID)*</label>
-                <input type="number" class="form-control" id="edit-categoria_id" name="categoria_id" required>
+                <label for="categoria_id" class="form-label">Categoria*</label>
+                <select class="form-select" id="edit-categoria_id" name="categoria_id" required>
+                  <option value="" disabled selected></option>
+                </select>
               </div>
             </div>
           </form>

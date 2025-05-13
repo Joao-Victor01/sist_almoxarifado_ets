@@ -4,6 +4,9 @@
 let currentPage = 1;
 let pageSize    = 10;
 const pageSizeOptions = [5, 10, 25, 50, 100];
+// guarda estado da última busca
+let searchNome = '';
+let searchCategoria = '';
 
 // 1) API de categorias
 async function carregarCategorias() {
@@ -145,27 +148,31 @@ function criarControlesPaginacao(totalPages) {
 
 // 4) Carrega e renderiza tudo
 async function renderizarListaItens() {
-  try {
-    const data       = await carregarListaItens();
-    const categorias = await carregarCategorias();
-    const categoryMap= {};
-    categorias.forEach(c => categoryMap[c.categoria_id] = c);
+   try {
+    // se tiver filtro, chama buscarItens, senão lista geral
+    const data = (searchNome || searchCategoria)
+      ? await buscarItens(searchNome, searchCategoria, currentPage, pageSize)
+      : await carregarListaItens(currentPage, pageSize);
 
-    const main = document.getElementById('main-content');
-    main.innerHTML = 
-      criarSearchBar() +
-      criarTabelaItens(data.items, categoryMap) +
-      criarControlesPaginacao(data.total_pages);
+     const categorias = await carregarCategorias();
+     const categoryMap= {};
+     categorias.forEach(c => categoryMap[c.categoria_id] = c);
 
-    bindSearch();
-    bindPagination(data.total_pages);
-    bindRowActions(categorias);
-  } catch (err) {
-    console.error(err);
-    document.getElementById('main-content').innerHTML =
-      `<div class="alert alert-warning">Erro: ${err.message}</div>`;
-  }
-}
+     const main = document.getElementById('main-content');
+     main.innerHTML = 
+       criarSearchBar() +
+       criarTabelaItens(data.items, categoryMap) +
+       criarControlesPaginacao(data.total_pages);
+
+     bindSearch();
+     bindPagination(data.total_pages);
+     bindRowActions(categorias);
+   } catch (err) {
+     console.error(err);
+     document.getElementById('main-content').innerHTML =
+       `<div class="alert alert-warning">Erro: ${err.message}</div>`;
+   }
+ }
 
 // 5) Bindings de busca
 function bindSearch() {
@@ -173,21 +180,20 @@ function bindSearch() {
     e.preventDefault();
     const nome = document.getElementById('search-nome').value.trim();
     const cat  = document.getElementById('search-categoria').value.trim();
+    // atualiza estado de busca
+    searchNome = nome;
+    searchCategoria = cat;
     currentPage = 1;
-    const data = await buscarItens(nome, cat);
-    const categorias = await carregarCategorias();
-    const map = {};
-    categorias.forEach(c => map[c.categoria_id] = c);
-    document.getElementById('main-content').innerHTML =
-      criarSearchBar() +
-      criarTabelaItens(data.items, map) +
-      criarControlesPaginacao(data.total_pages);
-    bindSearch();
-    bindPagination(data.total_pages);
-    bindRowActions(categorias);
+
+    // re-renderiza via mesma função
+    renderizarListaItens();
   };
   document.getElementById('btn-clear-search').onclick = e => {
-    e.preventDefault();
+     e.preventDefault();
+
+    // limpa filtros
+    searchNome = '';
+    searchCategoria = '';
     currentPage = 1;
     pageSize = 10;
     renderizarListaItens();
@@ -216,8 +222,8 @@ function bindPagination(totalPages) {
       currentPage = +el.dataset.page;
       renderizarListaItens();
     };
-  });
-  document.getElementById('page-size-select').onchange = e => {
+   });
+   document.getElementById('page-size-select').onchange = e => {
     pageSize = +e.target.value;
     currentPage = 1;
     renderizarListaItens();
@@ -257,12 +263,14 @@ function bindRowActions(categorias) {
       // 2) popula categorias no select de edição
       const sel = document.getElementById('edit-categoria_id');
       sel.innerHTML = '<option value="" disabled>Carregando...</option>';
+
       categorias.forEach(c => {
         const o = document.createElement('option');
-        o.value = c.categoria_id;
-        o.textContent = c.nome_categoria;
+        o.value       = c.categoria_id;
+        o.textContent = `${c.categoria_id} – ${c.nome_categoria.toUpperCase()}`;
         sel.append(o);
       });
+
       sel.value = item.categoria_id;
 
       // 3) preenche demais campos
@@ -335,13 +343,12 @@ function bindRowActions(categorias) {
 }
 
 // 9) inicialização
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('listar-item-link').onclick = e => {
+const linkListar = document.getElementById('listar-item-link');
+if (linkListar) {
+  linkListar.addEventListener('click', e => {
     e.preventDefault();
     currentPage = 1;
     pageSize = 10;
     renderizarListaItens();
-  };
-  // opcional: já carregar lista de início
-  renderizarListaItens();
-});
+  });
+}

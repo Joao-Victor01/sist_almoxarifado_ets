@@ -1,16 +1,65 @@
 //frontend\static\js\cadastrar-item.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    const modalEl = document.getElementById('modalCadastrarItem');
-    const modal = new bootstrap.Modal(modalEl);
-  
-    // botões que abrem o modal
-    document.querySelectorAll('#btn-open-cadastrar-item').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.preventDefault();
-        modal.show();
-      });
+  const modalEl = document.getElementById('modalCadastrarItem');
+  const modal   = new bootstrap.Modal(modalEl);
+
+  async function preencherCategoriasNoCadastro() {
+    console.log('[Cadastro] Buscando categorias…');
+    const token = localStorage.getItem('token');
+    const resp  = await fetch('/api/almoxarifado/categorias', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
     });
+    if (!resp.ok) {
+      console.error('[Cadastro] Erro ao carregar categorias:', resp.status);
+      return;
+    }
+    const cats = await resp.json();
+    console.log('[Cadastro] Categorias recebidas:', cats);
+
+    // Busca o <select> dentro do próprio modal
+    const sel = modalEl.querySelector('select[name="categoria_id"]');
+    console.log('[Cadastro] Select escopado:', sel);
+    if (!sel) return console.error('[Cadastro] select[name="categoria_id"] não encontrado!');
+
+    sel.innerHTML = '<option value="" disabled selected>Selecione...</option>';
+    cats.forEach(c => {
+      const o = document.createElement('option');
+      o.value       = c.categoria_id;
+      o.textContent = `${c.categoria_id} – ${c.nome_categoria.toUpperCase()}`;
+      sel.append(o);
+    });
+  }
+
+  // Use shown.bs.modal para garantir que o modal já está completamente aberto
+  modalEl.addEventListener('shown.bs.modal', preencherCategoriasNoCadastro);
+
+  // resto do código continua igual...
+  document.querySelectorAll('#btn-open-cadastrar-item').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      modal.show();
+    });
+  });
+
+
+  async function preencherCategoriasNoCadastro() {
+    const token = localStorage.getItem('token');
+    const resp  = await fetch('/api/almoxarifado/categorias', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+    });
+    if (!resp.ok) return console.error('Falha ao carregar categorias');
+    const cats = await resp.json();
+    const sel = document.getElementById('categoria_id');
+    sel.innerHTML = '<option value="" disabled selected>Selecione...</option>';
+    cats.forEach(c => {
+      const o = document.createElement('option');
+      o.value       = c.categoria_id;
+      o.textContent = `${c.categoria_id} – ${c.nome_categoria.toUpperCase()}`;
+      sel.append(o);
+    });
+  }
+    modalEl.addEventListener('show.bs.modal', preencherCategoriasNoCadastro);
   
     const form = document.getElementById('form-cadastrar-item');
     const btnSalvar = document.getElementById('btn-salvar-item');
