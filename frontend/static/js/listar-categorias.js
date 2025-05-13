@@ -36,50 +36,60 @@ async function renderizarCategorias() {
     : await carregarCategoriasPag(currentPageCat, pageSizeCat);
 
   main.innerHTML = `
-    <div class="row mb-3">
+    <div class="row mb-3" id="search-bar">
       <div class="col-md-4">
-        <input type="text" id="search-categoria-nome" class="form-control" placeholder="Buscar categoria">
+        <input type="text" id="search-categoria-nome" class="form-control" placeholder="Buscar por nome">
       </div>
-      <div class="col-md-2">
-        <button id="btn-search-cat" class="btn btn-primary">Buscar</button>
-      </div>
-      <div class="col-md-2">
+
+      <div class="col-md-4 d-flex">
+        <button id="btn-search-cat" class="btn btn-primary me-2">Buscar</button>
         <button id="btn-clear-search-cat" class="btn btn-secondary">Limpar</button>
       </div>
     </div>
     <h3 class="mb-3">Lista de Categorias</h3>
-    <table class="table table-bordered">
-      <thead><tr>
-        <th>ID</th><th>Nome</th><th>Descrição</th><th>Ações</th>
-      </tr></thead><tbody>
-      ${data.items.map(c => `
-        <tr>
-          <td>${c.categoria_id}</td>
-          <td>${c.nome_categoria}</td>
-          <td>${c.descricao_categoria || '-'}</td>
-          <td class="text-center">
-            <button class="btn btn-sm btn-primary btn-editar-cat" data-id="${c.categoria_id}">Editar</button>
-            <button class="btn btn-sm btn-danger btn-deletar-cat" data-id="${c.categoria_id}">Deletar</button>
-          </td>
-        </tr>`).join('')}
-    </tbody></table>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead class="table-secondary text-center">
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items.map((c,i) => `
+            <tr>
+              <td class="text-center">${c.categoria_id}</td>
+              <td>${c.nome_categoria}</td>
+              <td>${c.descricao_categoria || '-'}</td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-primary btn-editar-cat me-1" data-id="${c.categoria_id}">Editar</button>
+                <button class="btn btn-sm btn-danger btn-deletar-cat" data-id="${c.categoria_id}">Deletar</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
     <nav>
       <ul class="pagination justify-content-center">
-        <li class="page-item ${currentPageCat===1?'disabled':''}"><a class="page-link" href="#" data-action="prev-cat">Anterior</a></li>
+        <li class="page-item ${currentPageCat === 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-action="prev-cat">Anterior</a></li>
         ${(() => {
           const pages = [];
-          const start = Math.max(1, currentPageCat-2);
-          const end   = Math.min(data.total_pages, currentPageCat+2);
-          for(let p=start;p<=end;p++) pages.push(`<li class="page-item ${p===currentPageCat?'active':''}"><a class="page-link" href="#" data-page-cat="${p}">${p}</a></li>`);
+          const start = Math.max(1, currentPageCat - 2);
+          const end = Math.min(data.total_pages, currentPageCat + 2);
+          for (let p = start; p <= end; p++) {
+            pages.push(`<li class="page-item ${p === currentPageCat ? 'active' : ''}"><a class="page-link" href="#" data-page-cat="${p}">${p}</a></li>`);
+          }
           return pages.join('');
         })()}
-        <li class="page-item ${currentPageCat===data.total_pages?'disabled':''}"><a class="page-link" href="#" data-action="next-cat">Próximo</a></li>
+        <li class="page-item ${currentPageCat === data.total_pages ? 'disabled' : ''}"><a class="page-link" href="#" data-action="next-cat">Próximo</a></li>
       </ul>
     </nav>
     <div class="d-flex justify-content-center my-2">
-      <label class="me-2">Por página:</label>
+      <label class="me-2">Categorias por página:</label>
       <select id="page-size-cat" class="form-select w-auto">
-        ${[5,10,25,50,100].map(opt => `<option value="${opt}" ${opt===pageSizeCat?'selected':''}>${opt}</option>`).join('')}
+        ${[5,10,25,50,100].map(opt => `<option value="${opt}" ${opt === pageSizeCat ? 'selected' : ''}>${opt}</option>`).join('')}
       </select>
     </div>
   `;
@@ -146,7 +156,7 @@ function bindCategoriaActions() {
         return alert(`Erro ao excluir categoria:\n${err}`);
         }
 
-        // só re-renderiza se deu sucesso (2xx)
+        // só re-renderiza se deu sucesso
         renderizarCategorias();
     };
 });
