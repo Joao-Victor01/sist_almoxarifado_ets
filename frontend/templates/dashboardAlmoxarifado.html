@@ -59,8 +59,8 @@
               CATEGORIAS
             </a>
             <ul class="dropdown-menu" aria-labelledby="categoriasDropdown">
-              <li><a class="dropdown-item" href="#">Cadastrar Categoria</a></li>
-              <li><a class="dropdown-item" href="#">Listar Categoria</a></li>
+              <li><a class="dropdown-item" id="btn-open-cadastrar-categoria" href="#">Cadastrar Categoria</a></li>
+              <li><a class="dropdown-item" id ="listar-categoria-link-quick" href="#">Listar Categoria</a></li>
             </ul>
           </li>
 
@@ -275,12 +275,70 @@
     </div>
   </div>
 
+  <!-- MODAL DE CADASTRAR CATEGORIA -->
+  <div class="modal fade" id="modalCadastrarCategoria" tabindex="-1" aria-labelledby="modalCadastrarCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalCadastrarCategoriaLabel">Cadastrar Categoria</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-cadastrar-categoria">
+            <div class="mb-3">
+              <label for="nome_categoria" class="form-label">Nome*</label>
+              <input type="text" class="form-control" id="nome_categoria" name="nome_categoria" required>
+            </div>
+            <div class="mb-3">
+              <label for="descricao_categoria" class="form-label">Descrição</label>
+              <textarea class="form-control" id="descricao_categoria" name="descricao_categoria" rows="2"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer border-0 justify-content-center">
+          <button class="btn btn-secondary me-2" id="btn-cancelar-categoria">Cancelar</button>
+          <button class="btn btn-primary" id="btn-salvar-categoria">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE EDITAR CATEGORIA -->
+  <div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-labelledby="modalEditarCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalEditarCategoriaLabel">Editar Categoria</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-editar-categoria">
+            <div class="mb-3">
+              <label for="edit-nome_categoria" class="form-label">Nome*</label>
+              <input type="text" class="form-control" id="edit-nome_categoria" name="nome_categoria" required>
+            </div>
+            <div class="mb-3">
+              <label for="edit-descricao_categoria" class="form-label">Descrição</label>
+              <textarea class="form-control" id="edit-descricao_categoria" name="descricao_categoria" rows="2"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer border-0 justify-content-center">
+          <button class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" id="btn-salvar-editar-categoria">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Scripts JS -->
   <script src="/static/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/listar-itens.js"></script>  
   <script src="/static/js/logout.js"></script>
   <script src="/static/js/cadastrar-item.js"></script>
+  <script src="/static/js/listar-categorias.js"></script>
+  <script src="/static/js/cadastrar-categorias.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', initPage);
   
@@ -319,6 +377,29 @@
           modal.show();
         });
       });
+
+      // Quick access: Cadastrar Categoria
+      document.getElementById('btn-open-cadastrar-categoria')?.addEventListener('click', e => {
+        e.preventDefault();
+        new bootstrap.Modal(document.getElementById('modalCadastrarCategoria')).show();
+      });
+
+      // Quick access: Listar Categorias
+      document.getElementById('listar-categoria-link-quick')?.addEventListener('click', e => {
+        e.preventDefault();
+        renderizarCategorias();
+      });
+
+      // Dropdown menu categorias
+      document.getElementById('categoriasDropdown')?.querySelector('[href="#"]').addEventListener('click', e => {
+        e.preventDefault();
+        new bootstrap.Modal(document.getElementById('modalCadastrarCategoria')).show();
+      });
+      document.querySelector('#categoriasDropdown .dropdown-menu a[href="#Listar Categoria"]')?.addEventListener('click', e => {
+        e.preventDefault();
+        renderizarCategorias();
+      });
+
     }
   </script>
   

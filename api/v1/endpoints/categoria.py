@@ -6,9 +6,7 @@ from services.categoria_service import CategoriaService
 from typing import List
 from core.database import get_session
 from fastapi import status
-from core.security import usuario_almoxarifado, direcao_ou_almoxarifado
-
-
+from core.security import usuario_almoxarifado
 
 router = APIRouter(prefix="/categorias")
 

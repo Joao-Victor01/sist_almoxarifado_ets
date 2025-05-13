@@ -1,9 +1,11 @@
 from sqlalchemy import func
+from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.categoria import Categoria
 from schemas.categoria import CategoriaCreate, CategoriaUpdate
 from fastapi import HTTPException, status
+
 
 class CategoriaRepository:
 
@@ -22,34 +24,36 @@ class CategoriaRepository:
 
     @staticmethod
     async def get_categoria_by_id(db: AsyncSession, categoria_id: int):
-        return await CategoriaRepository.__first_or_404(db, categoria_id)
+        # Usa expressão SQLAlchemy para filtrar por ID
+        return await CategoriaRepository.__first_or_404(
+            db,
+            Categoria.categoria_id == categoria_id
+        )
 
     @staticmethod
     async def get_categoria_by_name(db: AsyncSession, categoria_name: str):
-        return await CategoriaRepository.__first_or_404(db, Categoria.nome_categoria == categoria_name, "Categoria não encontrada")
+        # Filtra pelo nome exato
+        return await CategoriaRepository.__first_or_404(
+            db,
+            Categoria.nome_categoria == categoria_name
+        )
 
     @staticmethod
     async def get_categoria_by_name_like(db: AsyncSession, termo_busca: str):
-        """
-        Busca categorias por similaridade no nome (case-sensitive)
-        
-        Args:
-            db: Sessão async do SQLAlchemy
-            termo_busca: Termo para busca parcial
-            
-        Returns:
-            Resultado executado (não consumido) para processamento posterior
-        """
         result = await db.execute(
             select(Categoria).where(
                 Categoria.nome_categoria.ilike(f"%{termo_busca}%")
             )
         )
-        return result  # Retorna o Result sem consumir
+        return result
 
     @staticmethod
     async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):
-        categoria = await CategoriaRepository.__first_or_404(db, categoria_id)
+        # Primeiro recupera a categoria existente usando expressão
+        categoria = await CategoriaRepository.__first_or_404(
+            db,
+            Categoria.categoria_id == categoria_id
+        )
 
         for key, value in categoria_data.dict(exclude_unset=True).items():
             setattr(categoria, key, value)
@@ -58,20 +62,24 @@ class CategoriaRepository:
         await db.refresh(categoria)
         return categoria
 
-    @staticmethod
-    async def delete_categoria(db: AsyncSession, categoria_id: int):
-        categoria = await CategoriaRepository.__first_or_404(db, categoria_id)
-        await db.delete(categoria)
-        await db.commit()
-        return {"message": "Categoria deletada com sucesso"}
-
+    @classmethod
+    async def delete_categoria(cls, db: AsyncSession, categoria_id: int):
+        expr = Categoria.categoria_id == categoria_id
+        categoria = await cls.__first_or_404(db, expr)
+        try:
+            await db.delete(categoria)
+            await db.commit()
+            return {"message": "Categoria excluída com sucesso"}
+        except IntegrityError as e:
+            # se violação de FK em item → retorna 409 Conflict
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Não é possível excluir: existem itens vinculados a esta categoria."
+            )
     
     @staticmethod
     async def find_categoria_ids_by_name(db: AsyncSession, nome_normalizado: str) -> list[int]:
-        """
-        Retorna lista de categoria_id cujos nomes contêm nome_normalizado.
-        Usa ILIKE para busca parcial.
-        """
         result = await db.execute(
             select(Categoria.categoria_id)
             .where(Categoria.nome_categoria.ilike(f"%{nome_normalizado}%"))
@@ -96,7 +104,6 @@ class CategoriaRepository:
         )
         return result.scalars().all()
     
-
     @staticmethod
     async def count_filtered_categorias(
         db: AsyncSession,
@@ -127,11 +134,19 @@ class CategoriaRepository:
         result = await db.execute(query)
         return result.scalars().all()
 
-
     @staticmethod
-    async def __first_or_404(db: AsyncSession, *filters, message="Categoria não encontrada"):
-        result = await db.execute(select(Categoria).where(*filters))
-        categoria = result.scalars().first()
-        if not categoria:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-        return categoria
+    async def __first_or_404(db: AsyncSession, where_expr):
+        """
+        Retorna o primeiro resultado para a expressão SQL where_expr,
+        ou levanta HTTPException(404) se nenhum for encontrado.
+        """
+        try:
+            result = await db.execute(
+                select(Categoria).where(where_expr)
+            )
+            return result.scalars().one()
+        except NoResultFound:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Categoria não encontrada"
+            )
