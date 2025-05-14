@@ -11,7 +11,26 @@ const statusMap = {
   4: 'NEGADA'
 };
 
+const statusMapUpdate = {
+  AUTORIZADA: 2,
+  NEGADA: 4
+};
+function showAlert(message, type = 'success') {
+  // type pode ser 'success' ou 'danger'
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  // insere no topo do main-content
+  const main = document.getElementById('main-content');
+  main.prepend(wrapper);
+}
+
 // --- Helpers de API ---
+
 async function getUsuarioById(id) {
   const token = localStorage.getItem('token');
   try {
@@ -156,7 +175,7 @@ async function renderPendentesRetiradas() {
               <td>
                 <button class="btn btn-sm btn-success btn-autorizar-retirada"
                         data-id="${r.retirada_id}">
-                  Autorizar
+                  Autorizar/Negar
                 </button>
                 <button class="btn btn-sm btn-info btn-detalhes-retirada"
                         data-id="${r.retirada_id}">
@@ -215,7 +234,6 @@ function fillModalDetalhes(r) {
 }
 
 // 5) Popula modal de autorizar
-
 function fillModalAutorizar(r) {
   document.getElementById('aut-id').value               = r.retirada_id;
   document.getElementById('aut-setor').value            = r.setor_nome;
@@ -224,42 +242,78 @@ function fillModalAutorizar(r) {
   document.getElementById('aut-data').value             = new Date(r.data_solicitacao).toLocaleString();
   // limpa o campo para nova justificativa
   document.getElementById('aut-detalhe-status').value   = '';
+
+  document.getElementById('btn-autorizar-retirada').dataset.id = r.retirada_id;
+  document.getElementById('btn-negar-retirada').dataset.id     = r.retirada_id;
 }
 
 
 // 6) Handler dos botões Autorizar / Negar
+
 document.getElementById('btn-autorizar-retirada').onclick = async e => {
-  const id = +e.currentTarget.dataset.id;
-  const detalhe = document.getElementById('aut-detalhe-status').value.trim();
-  await fetch(`/api/almoxarifado/retiradas/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type':'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
-    body: JSON.stringify({ status: 'AUTORIZADA', justificativa: r.justificativa, detalhe_status: detalhe })
-  });
-  bootstrap.Modal.getInstance(document.getElementById('modalAutorizarRetirada')).hide();
-  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-  renderPendentesRetiradas();
+  const id     = +e.currentTarget.dataset.id;
+  const detalhe= document.getElementById('aut-detalhe-status').value.trim();
+  const token  = localStorage.getItem('token');
+
+  try {
+    const resp = await fetch(`/api/almoxarifado/retiradas/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status: statusMapUpdate.AUTORIZADA,
+        detalhe_status: detalhe
+      })
+    });
+
+    if (resp.ok) {
+      showAlert('Retirada autorizada com sucesso!', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('modalAutorizarRetirada')).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove());
+      renderPendentesRetiradas();
+    } else {
+      const err = await resp.json().catch(() => null);
+      showAlert(err?.detail || 'Erro ao autorizar retirada.', 'danger');
+    }
+  } catch {
+    showAlert('Erro de conexão ao autorizar.', 'danger');
+  }
 };
 
+// Negar
 document.getElementById('btn-negar-retirada').onclick = async e => {
-  const id = +e.currentTarget.dataset.id;
-  const detalhe = document.getElementById('aut-detalhe-status').value.trim();
-  await fetch(`/api/almoxarifado/retiradas/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type':'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
-    body: JSON.stringify({ status: 'NEGADA', justificativa: r.justificativa, detalhe_status: detalhe })
-  });
-  bootstrap.Modal.getInstance(document.getElementById('modalAutorizarRetirada')).hide();
-  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-  renderPendentesRetiradas();
-};
+  const id     = +e.currentTarget.dataset.id;
+  const detalhe= document.getElementById('aut-detalhe-status').value.trim();
+  const token  = localStorage.getItem('token');
 
+  try {
+    const resp = await fetch(`/api/almoxarifado/retiradas/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status: statusMapUpdate.NEGADA,
+        detalhe_status: detalhe
+      })
+    });
+
+    if (resp.ok) {
+      showAlert('Retirada negada com sucesso.', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('modalAutorizarRetirada')).hide();
+      document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove());
+      renderPendentesRetiradas();
+    } else {
+      const err = await resp.json().catch(() => null);
+      showAlert(err?.detail || 'Erro ao negar retirada.', 'danger');
+    }
+  } catch {
+    showAlert('Erro de conexão ao negar.', 'danger');
+  }
+};
 
 // 7) Hooks para chamar as views
 document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
