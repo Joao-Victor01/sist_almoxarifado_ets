@@ -332,19 +332,54 @@
   </div>
 
   <!-- MODAL VER DETALHES RETIRADA -->
-  <div class="modal fade" id="modalVerDetalhesRetirada" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="modalVerDetalhesRetirada" tabindex="-1" aria-labelledby="modalVerDetalhesRetiradaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content rounded-4 shadow">
-        <div class="modal-header">
-          <h5 class="modal-title">Detalhes da Retirada</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalVerDetalhesRetiradaLabel">Detalhes da Retirada</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
-          <dl class="row" id="detalhes-retirada-body">
-            <!-- será preenchido por JS -->
-          </dl>
+          <form class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">ID</label>
+              <input type="text" class="form-control" id="det-id" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Status</label>
+              <input type="text" class="form-control" id="det-status" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Setor</label>
+              <input type="text" class="form-control" id="det-setor" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Usuário</label>
+              <input type="text" class="form-control" id="det-usuario" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Solicitado Localmente Por</label>
+              <input type="text" class="form-control" id="det-solicitado-local" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Autorizado Por</label>
+              <input type="text" class="form-control" id="det-autorizado-por" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Data da Solicitação</label>
+              <input type="text" class="form-control" id="det-data" readonly>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Justificativa do Usuário</label>
+              <textarea class="form-control" id="det-justificativa" rows="2" readonly></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Justificativa de Status (Almoxarifado)</label>
+              <textarea class="form-control" id="det-detalhe-status" rows="2" readonly></textarea>
+            </div>
+          </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer border-0 justify-content-center">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
         </div>
       </div>
@@ -352,30 +387,50 @@
   </div>
 
   <!-- MODAL AUTORIZAR / NEGAR RETIRADA -->
-  <div class="modal fade" id="modalAutorizarRetirada" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="modalAutorizarRetirada" tabindex="-1" aria-labelledby="modalAutorizarRetiradaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content rounded-4 shadow">
-        <div class="modal-header">
-          <h5 class="modal-title">Autorizar Retirada</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalAutorizarRetiradaLabel">Autorizar Retirada</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
-          <dl class="row" id="autorizar-retirada-body">
-            <!-- dados fixos da retirada -->
-          </dl>
-          <div class="mb-3">
-            <label for="justificativa" class="form-label">Justificativa</label>
-            <textarea id="justificativa" class="form-control" rows="3"></textarea>
-          </div>
+          <form class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">ID</label>
+              <input type="text" class="form-control" id="aut-id" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Setor</label>
+              <input type="text" class="form-control" id="aut-setor" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Usuário</label>
+              <input type="text" class="form-control" id="aut-usuario" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Solicitado Localmente Por</label>
+              <input type="text" class="form-control" id="aut-solicitado-local" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Data da Solicitação</label>
+              <input type="text" class="form-control" id="aut-data" readonly>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Justificativa para Autorizar/Negar</label>
+              <textarea class="form-control" id="aut-detalhe-status" rows="3" placeholder="Digite a justificativa do almoxarifado"></textarea>
+            </div>
+          </form>
         </div>
-        <div class="modal-footer">
-          <button id="btn-negar-retirada" class="btn btn-danger">Negar</button>
-          <button id="btn-autorizar-retirada" class="btn btn-success">Autorizar</button>
+        <div class="modal-footer border-0 justify-content-center">
+          <button id="btn-negar-retirada" class="btn btn-danger me-2">Negar</button>
+          <button id="btn-autorizar-retirada" class="btn btn-success me-2">Autorizar</button>
           <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         </div>
       </div>
     </div>
   </div>
+
 
 
 

@@ -83,6 +83,12 @@ async function renderHistoricoRetiradas() {
   allRetiradas = await fetchAllRetiradas();
   const { usuarioMap } = await buildLookupMaps(allRetiradas);
 
+  // injeta usuario_nome em cada objeto
+  allRetiradas.forEach(r => {
+    r.usuario_nome = r.solicitado_localmente_por 
+        ? r.solicitado_localmente_por 
+        : usuarioMap[r.usuario_id];});
+
   const main = document.getElementById('main-content');
   main.innerHTML = `
     <h3 class="mb-3">Histórico de Retiradas</h3>
@@ -121,6 +127,12 @@ async function renderHistoricoRetiradas() {
 async function renderPendentesRetiradas() {
   pendentesRetiradas = await fetchRetiradasPendentes();
   const { usuarioMap, setorMap } = await buildLookupMaps(pendentesRetiradas);
+
+  pendentesRetiradas.forEach(r => {
+  r.usuario_nome = r.solicitado_localmente_por 
+    ? r.solicitado_localmente_por 
+    : usuarioMap[r.usuario_id];
+  r.setor_nome   = setorMap[r.setor_id];});
 
   const main = document.getElementById('main-content');
   main.innerHTML = `
@@ -191,73 +203,63 @@ function bindRetiradaActions() {
 
 // 4) Popula modal de detalhes
 function fillModalDetalhes(r) {
-  const dl = document.getElementById('detalhes-retirada-body');
-  dl.innerHTML = `
-    <dt class="col-sm-4">ID</dt><dd class="col-sm-8">${r.retirada_id}</dd>
-    <dt class="col-sm-4">Usuário</dt><dd class="col-sm-8">${r.usuario_nome}</dd>
-    <dt class="col-sm-4">Data</dt><dd class="col-sm-8">${new Date(r.data_solicitacao).toLocaleString()}</dd>
-    <dt class="col-sm-4">Status</dt><dd class="col-sm-8">${r.status}</dd>
-    <dt class="col-sm-4">Itens</dt>
-    <dd class="col-sm-8">
-      <ul>
-        ${r.itens.map(i=>`<li>${i.nome_item} x${i.quantidade}</li>`).join('')}
-      </ul>
-    </dd>
-    ${r.justificativa ? `<dt class="col-sm-4">Justificativa</dt><dd class="col-sm-8">${r.justificativa}</dd>` : ''}
-  `;
+  document.getElementById('det-id').value               = r.retirada_id;
+  document.getElementById('det-status').value           = statusMap[r.status];
+  document.getElementById('det-setor').value            = r.setor_nome;
+  document.getElementById('det-usuario').value          = r.usuario_nome;
+  document.getElementById('det-solicitado-local').value = r.solicitado_localmente_por || '';
+  document.getElementById('det-autorizado-por').value   = r.autorizado_por_nome || '';
+  document.getElementById('det-data').value             = new Date(r.data_solicitacao).toLocaleString();
+  document.getElementById('det-justificativa').value    = r.justificativa || '';
+  document.getElementById('det-detalhe-status').value   = r.detalhe_status || '';
 }
 
 // 5) Popula modal de autorizar
+
 function fillModalAutorizar(r) {
-  const dl = document.getElementById('autorizar-retirada-body');
-  dl.innerHTML = `
-    <dt class="col-sm-4">ID</dt><dd class="col-sm-8">${r.retirada_id}</dd>
-    <dt class="col-sm-4">Usuário</dt><dd class="col-sm-8">${r.usuario_nome}</dd>
-    <dt class="col-sm-4">Data</dt><dd class="col-sm-8">${new Date(r.data_solicitacao).toLocaleString()}</dd>
-    <dt class="col-sm-4">Itens</dt>
-    <dd class="col-sm-8">
-      <ul>${r.itens.map(i=>`<li>${i.nome_item} x${i.quantidade}</li>`).join('')}</ul>
-    </dd>
-  `;
-  // guarda id nos botões
-  document.getElementById('btn-autorizar-retirada').dataset.id = r.retirada_id;
-  document.getElementById('btn-negar-retirada').dataset.id     = r.retirada_id;
+  document.getElementById('aut-id').value               = r.retirada_id;
+  document.getElementById('aut-setor').value            = r.setor_nome;
+  document.getElementById('aut-usuario').value          = r.usuario_nome;
+  document.getElementById('aut-solicitado-local').value = r.solicitado_localmente_por || '';
+  document.getElementById('aut-data').value             = new Date(r.data_solicitacao).toLocaleString();
+  // limpa o campo para nova justificativa
+  document.getElementById('aut-detalhe-status').value   = '';
 }
+
 
 // 6) Handler dos botões Autorizar / Negar
 document.getElementById('btn-autorizar-retirada').onclick = async e => {
   const id = +e.currentTarget.dataset.id;
-  const justificativa = document.getElementById('justificativa').value.trim();
-  const token = localStorage.getItem('token');
+  const detalhe = document.getElementById('aut-detalhe-status').value.trim();
   await fetch(`/api/almoxarifado/retiradas/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type':'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
     },
-    body: JSON.stringify({ status: 'AUTORIZADO', justificativa })
+    body: JSON.stringify({ status: 'AUTORIZADA', justificativa: r.justificativa, detalhe_status: detalhe })
   });
   bootstrap.Modal.getInstance(document.getElementById('modalAutorizarRetirada')).hide();
-  document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove());
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
   renderPendentesRetiradas();
 };
 
 document.getElementById('btn-negar-retirada').onclick = async e => {
   const id = +e.currentTarget.dataset.id;
-  const justificativa = document.getElementById('justificativa').value.trim();
-  const token = localStorage.getItem('token');
+  const detalhe = document.getElementById('aut-detalhe-status').value.trim();
   await fetch(`/api/almoxarifado/retiradas/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type':'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
     },
-    body: JSON.stringify({ status: 'NEGADO', justificativa })
+    body: JSON.stringify({ status: 'NEGADA', justificativa: r.justificativa, detalhe_status: detalhe })
   });
   bootstrap.Modal.getInstance(document.getElementById('modalAutorizarRetirada')).hide();
-  document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove());
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
   renderPendentesRetiradas();
 };
+
 
 // 7) Hooks para chamar as views
 document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
