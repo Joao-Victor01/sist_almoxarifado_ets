@@ -1,3 +1,4 @@
+#api\v1\endpoints\setor.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session

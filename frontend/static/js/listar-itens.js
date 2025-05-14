@@ -82,7 +82,7 @@ function criarTabelaItens(itens, categoryMap) {
       <table class="table table-bordered table-striped">
         <thead class="table-secondary text-center">
           <tr>
-            <th>Nome</th><th>Descrição</th><th>Unidade de Medida</th><th>Quantidade</th>
+            <th>ID</th><th>Nome</th><th>Descrição</th><th>Unidade de Medida</th><th>Quantidade</th>
             <th>Validade</th><th>Entrada</th><th>Marca</th><th>Categoria</th><th>Ações</th>
           </tr>
         </thead>
@@ -94,6 +94,7 @@ function criarTabelaItens(itens, categoryMap) {
       : item.categoria_id;
     html += `
       <tr>
+        <td>${item.item_id}</td>
         <td>${item.nome_item_original}</td>
         <td>${item.descricao_item}</td>
         <td>${item.unidade_medida_item}</td>

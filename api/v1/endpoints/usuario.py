@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate
 from services.usuario_service import UsuarioService
-from core.security import usuario_direcao
+from core.security import usuario_direcao, direcao_ou_almoxarifado
 from typing import List
 from schemas.auth_schemas import TokenSchema
 from fastapi.security import OAuth2PasswordRequestForm
@@ -29,7 +29,7 @@ async def create_user(user: UsuarioCreate, db: AsyncSession = Depends(get_sessio
     return new_user
 
 @router.get("/", response_model=List[UsuarioOut])
-async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Depends(usuario_direcao)):
+async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Depends(direcao_ou_almoxarifado)):
 
     response = await UsuarioService.get_usuarios(db)
     return response
@@ -37,7 +37,7 @@ async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Dep
 @router.get("/{usuario_id}", response_model=UsuarioOut)
 async def get_usuario(usuario_id: int, 
                        db: AsyncSession = Depends(get_session), 
-                       current_user=Depends(usuario_direcao)):
+                       current_user=Depends(direcao_ou_almoxarifado)):
 
     print(usuario_id)
     response = await UsuarioService.get_usuario_by_id(db, usuario_id)

@@ -70,8 +70,8 @@
               RETIRADAS
             </a>
             <ul class="dropdown-menu" aria-labelledby="retiradasDropdown">
-              <li><a class="dropdown-item" href="#">Histórico de Retiradas</a></li>
-              <li><a class="dropdown-item" href="#">Visualizar solicitações pendentes</a></li>
+              <li><a class="dropdown-item" id="listar-retiradas-link" href="#">Histórico de Retiradas</a></li>
+              <li><a class="dropdown-item" id="listar-retiradas-pendentes-link" href="#">Visualizar solicitações pendentes</a></li>
             </ul>
           </li>
 
@@ -135,9 +135,9 @@
           </a>
         </div>
         <div class="col-6 col-md-3">
-          <a href="/retiradas/novo" class="text-decoration-none">
+          <a href="#" id="listar-retiradas-pendentes-quick" class="text-decoration-none">
             <div class="quick-access-card">
-              <i class="bi bi-box-arrow-in-up"></i>
+              <i class="bi bi-card-checklist"></i>
               <p>Retiradas Pendentes</p>
             </div>
           </a>
@@ -331,6 +331,53 @@
     </div>
   </div>
 
+  <!-- MODAL VER DETALHES RETIRADA -->
+  <div class="modal fade" id="modalVerDetalhesRetirada" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalhes da Retirada</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <dl class="row" id="detalhes-retirada-body">
+            <!-- será preenchido por JS -->
+          </dl>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AUTORIZAR / NEGAR RETIRADA -->
+  <div class="modal fade" id="modalAutorizarRetirada" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header">
+          <h5 class="modal-title">Autorizar Retirada</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <dl class="row" id="autorizar-retirada-body">
+            <!-- dados fixos da retirada -->
+          </dl>
+          <div class="mb-3">
+            <label for="justificativa" class="form-label">Justificativa</label>
+            <textarea id="justificativa" class="form-control" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-negar-retirada" class="btn btn-danger">Negar</button>
+          <button id="btn-autorizar-retirada" class="btn btn-success">Autorizar</button>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 
   <!-- Scripts JS -->
   <script src="/static/js/bootstrap.bundle.min.js"></script>
@@ -339,6 +386,8 @@
   <script src="/static/js/cadastrar-item.js"></script>
   <script src="/static/js/listar-categorias.js"></script>
   <script src="/static/js/cadastrar-categorias.js"></script>
+  <script src="/static/js/listar-retiradas.js"></script>
+
   <script>
     document.addEventListener('DOMContentLoaded', initPage);
   
@@ -399,6 +448,23 @@
         e.preventDefault();
         renderizarCategorias();
       });
+
+      // dropdown Retiradas
+      document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
+        e.preventDefault();
+        renderHistoricoRetiradas();
+      });
+      document.getElementById('listar-retiradas-pendentes-link')?.addEventListener('click', e => {
+        e.preventDefault();
+        renderPendentesRetiradas();
+      });
+
+      // quick access Retiradas Pendentes
+      document.getElementById('listar-retiradas-pendentes-quick')?.addEventListener('click', e => {
+        e.preventDefault();
+        renderPendentesRetiradas();
+      });
+  
 
     }
   </script>
