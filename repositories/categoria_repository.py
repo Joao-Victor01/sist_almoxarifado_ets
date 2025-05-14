@@ -30,6 +30,14 @@ class CategoriaRepository:
             db,
             Categoria.categoria_id == categoria_id
         )
+    
+    @staticmethod
+    async def aux_get_categoria_by_name(db: AsyncSession, categoria_name: str):
+        result = await db.execute(
+            select(Categoria)
+            .where(Categoria.nome_categoria == categoria_name)
+        )
+        return result.scalars().first()  # Retorna None se não encontrar
 
     @staticmethod
     async def get_categoria_by_name(db: AsyncSession, categoria_name: str):

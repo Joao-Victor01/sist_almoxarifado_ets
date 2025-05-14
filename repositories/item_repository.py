@@ -10,22 +10,14 @@ from datetime import datetime
 class ItemRepository:
 
     @staticmethod
-    async def create_item(db: AsyncSession, item_data: ItemCreate, usuario_id: int):
-        new_item = Item(
-            **item_data.model_dump(),  # Usa o dicionário diretamente
-            auditoria_usuario_id=usuario_id
-        )
-        # remove qualquer chave 'auditoria_usuario_id' vinda do usuario
-        data = item_data.model_dump(exclude={'auditoria_usuario_id'})
-        new_item = Item(
-            **data,
-            auditoria_usuario_id=usuario_id
-        )
-
-        db.add(new_item)
+    async def create_item(db: AsyncSession, item_data: dict):
+        novo_item = Item(**item_data)  # recebe um dicionário
+        db.add(novo_item)
         await db.commit()
-        await db.refresh(new_item)
-        return new_item
+        await db.refresh(novo_item)
+
+        return novo_item
+    
     
     @staticmethod
     async def get_itens(db: AsyncSession):
@@ -108,9 +100,10 @@ class ItemRepository:
     
     
     @staticmethod
-    async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, usuario_id: int):
+    async def update_item(db: AsyncSession, item_id: int, item_data: dict, usuario_id: int):
         item = await ItemRepository.__first_or_404(db, Item.item_id == item_id)
-        for key, value in item_data.model_dump(exclude_unset=True).items():
+        
+        for key, value in item_data.items():  
             setattr(item, key, value)
 
         item.auditoria_usuario_id = usuario_id

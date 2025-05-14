@@ -37,7 +37,7 @@ async function carregarListaItens(page=currentPage, size=pageSize) {
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const data = await resp.json();
   // Ordena itens alfabeticamente por nome
-  data.items.sort((a, b) => a.nome_item.localeCompare(b.nome_item));
+  data.items.sort((a, b) => a.nome_item_original.localeCompare(b.nome_item_original));
   return data;
 }
 
@@ -52,7 +52,7 @@ async function buscarItens(nome, categoria, page=currentPage, size=pageSize) {
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const data = await resp.json();
   // Ordena itens da busca
-  data.items.sort((a, b) => a.nome_item.localeCompare(b.nome_item));
+  data.items.sort((a, b) => a.nome_item_original.localeCompare(b.nome_item_original));
   return data;
 }
 
@@ -90,11 +90,11 @@ function criarTabelaItens(itens, categoryMap) {
   itens.forEach(item => {
     const cat = categoryMap[item.categoria_id];
     const label = cat 
-      ? `${item.categoria_id} – ${cat.nome_categoria}` 
+      ? `${item.categoria_id} – ${cat.nome_original.toUpperCase()}` 
       : item.categoria_id;
     html += `
       <tr>
-        <td>${item.nome_item}</td>
+        <td>${item.nome_item_original}</td>
         <td>${item.descricao_item}</td>
         <td>${item.unidade_medida_item}</td>
         <td class="text-center">${item.quantidade_item}</td>
@@ -275,7 +275,7 @@ function bindRowActions(categorias) {
 
       // 3) preenche demais campos
       const form = document.getElementById('form-editar-item');
-      form.nome_item.value = item.nome_item;
+      form.nome_item.value = item.nome_item_original;
       form.unidade_medida_item.value = item.unidade_medida_item;
       form.descricao_item.value = item.descricao_item;
       form.quantidade_item.value = item.quantidade_item;

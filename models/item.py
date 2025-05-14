@@ -19,6 +19,7 @@ class Item(settings.DBBaseModel):
     categoria_id = Column(Integer, ForeignKey("categoria.categoria_id"), nullable=False)
     auditoria_usuario_id = Column(Integer, ForeignKey("usuario.usuario_id"), nullable=False) 
     marca_item = Column(String(200), nullable=True)
+    nome_item_original = Column(String(256), nullable=False)
 
 
 

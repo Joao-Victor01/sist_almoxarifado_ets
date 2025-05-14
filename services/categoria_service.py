@@ -2,30 +2,47 @@
 from schemas.categoria import CategoriaCreate, CategoriaUpdate, PaginatedCategorias, CategoriaOut
 from repositories.categoria_repository import CategoriaRepository
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.normalizar_texto import normalize_name
 import math
 
 
 class CategoriaService:
+
     @staticmethod
     async def create_categoria(db: AsyncSession, categoria_data: CategoriaCreate):
-        # Extrai o nome original do que o usuário enviou em nome_categoria
-        nome_original = categoria_data.nome_categoria.strip()
-        
-        # Normaliza para o nome_categoria
-        nome_normalizado = normalize_name(nome_original)
-        
-        # Prepara os dados para o modelo
-        dados_categoria = categoria_data.model_dump()
-        dados_categoria.update({
-            "nome_original": nome_original,
-            "nome_categoria": nome_normalizado
-        })
-        
-        # Cria a categoria no banco
-        categoria = await CategoriaRepository.create_categoria(db, dados_categoria)
-        return categoria
+        try:
+            # Normaliza o nome
+            nome_original = categoria_data.nome_categoria.strip()
+            nome_normalizado = normalize_name(nome_original)
+
+            # Verifica se já existe categoria com o nome normalizado
+            categoria_existente = await CategoriaRepository.aux_get_categoria_by_name(
+                db, nome_normalizado
+            )
+            
+            if categoria_existente:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Já existe uma categoria com este nome"
+                )
+
+            # Prepara os dados para criação
+            dados_categoria = categoria_data.model_dump()
+            dados_categoria.update({
+                "nome_original": nome_original,
+                "nome_categoria": nome_normalizado
+            })
+            
+            return await CategoriaRepository.create_categoria(db, dados_categoria)
+
+        except IntegrityError as e:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Erro de integridade ao criar categoria"
+            )
     
 
     @staticmethod

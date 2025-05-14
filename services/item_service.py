@@ -19,25 +19,41 @@ class ItemService:
     @staticmethod
     async def create_item(db: AsyncSession, item_data: ItemCreate, current_user):
         try:
-            nome_normalizado = normalize_name(item_data.nome_item)
-            marca_normalizada = normalize_name(item_data.marca_item)
-            item_data.data_entrada_item = datetime.now()
-            item_data.nome_item = nome_normalizado
-            item_data.marca_item = marca_normalizada
-
-    
             ItemService._validate_item_fields(item_data)
-
-
-            item_existente = await ItemService._find_item(db, nome_normalizado, 
-                                                           item_data.data_validade_item, 
-                                                           item_data.categoria_id,
-                                                           item_data.marca_item)
-            if item_existente and item_existente.marca_item == item_data.marca_item:
-                return await ItemService._increment_existing_item(db, item_existente, item_data.quantidade_item, item_data)
             
+            nome_original = item_data.nome_item.strip()
+            nome_normalizado = normalize_name(nome_original)
 
-            return await ItemRepository.create_item(db, item_data, current_user.usuario_id)
+            # Prepara os dados do item
+            dados_item = item_data.model_dump()
+            dados_item.update({
+                "nome_item_original": nome_original,
+                "nome_item": nome_normalizado,
+                "auditoria_usuario_id": current_user.usuario_id,
+                "data_entrada_item": dados_item.get('data_entrada_item') or datetime.now()
+            })
+
+            # Verifica se já existe um item idêntico
+            existing_item = await ItemService._find_item(
+                db=db,
+                item_name=nome_normalizado,
+                validade=dados_item.get('data_validade_item'),
+                categoria_id=dados_item['categoria_id'],
+                marca_item=dados_item.get('marca_item')
+            )
+
+            if existing_item:
+                # Incrementa a quantidade no item existente
+                return await ItemService._increment_existing_item(
+                    db=db,
+                    item_existente=existing_item,
+                    quantidade=dados_item['quantidade_item'],
+                    item_data=item_data  # Passa os dados para atualizar outros campos
+                )
+            else:
+                # Cria novo item
+                item = await ItemRepository.create_item(db, dados_item)
+                return item
 
         except IntegrityError as e:
             await db.rollback()
@@ -205,15 +221,54 @@ class ItemService:
 
     @staticmethod
     async def update_item(db: AsyncSession, item_id: int, item_data: ItemUpdate, current_user):
+        item = await ItemRepository.get_item_by_id(db, item_id)
+        valores_atualizados = item_data.model_dump(exclude_unset=True)
 
+        # Normaliza o nome se fornecido
+        if 'nome_item' in valores_atualizados:
+            novo_nome_original = valores_atualizados['nome_item'].strip()
+            nome_normalizado = normalize_name(novo_nome_original)
+            valores_atualizados['nome_item_original'] = novo_nome_original
+            valores_atualizados['nome_item'] = nome_normalizado
 
-        nome_normalizado = normalize_name(item_data.nome_item)   
-        item_data.nome_item = nome_normalizado
-     
+        # Prepara os novos valores para verificação
+        novo_nome = valores_atualizados.get('nome_item', item.nome_item)
+        nova_marca = valores_atualizados.get('marca_item', item.marca_item)
+        nova_validade = valores_atualizados.get('data_validade_item', item.data_validade_item)
+        nova_categoria = valores_atualizados.get('categoria_id', item.categoria_id)
 
-        auditoria_usuario_id = current_user.usuario_id
-        
-        return await ItemRepository.update_item(db, item_id, item_data, auditoria_usuario_id)
+        # Busca por itens idênticos com os novos valores
+        existing_item = await ItemService._find_item(
+            db=db,
+            item_name=novo_nome,
+            validade=nova_validade,
+            categoria_id=nova_categoria,
+            marca_item=nova_marca
+        )
+
+        # Se encontrar um item diferente, mescla
+        if existing_item and existing_item.item_id != item.item_id:
+            # Transfere a quantidade
+            existing_item.quantidade_item += item.quantidade_item
+            
+            # Atualiza campos adicionais se necessário
+            for field in ['quantidade_minima_item', 'data_validade_item', 'marca_item']:
+                if field in valores_atualizados:
+                    setattr(existing_item, field, valores_atualizados[field])
+            
+            # Deleta o item original
+            await db.delete(item)
+            await db.commit()
+            await db.refresh(existing_item)
+            return existing_item
+        else:
+            # Atualiza normalmente se não houver duplicata
+            for key, value in valores_atualizados.items():
+                setattr(item, key, value)
+            item.auditoria_usuario_id = current_user.usuario_id
+            await db.commit()
+            await db.refresh(item)
+            return item
 
     @staticmethod
     async def delete_item(db: AsyncSession, item_id: int):

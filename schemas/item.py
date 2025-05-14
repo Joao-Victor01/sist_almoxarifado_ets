@@ -10,7 +10,6 @@ class ItemBase(BaseModel):
     quantidade_item: int
     categoria_id: int
     data_validade_item: Optional[date] = None
-    auditoria_usuario_id: Optional[int] = None
     data_validade_item: Optional[datetime] = None
     quantidade_minima_item: Optional[int] = None
     marca_item: Optional[str] = None
@@ -41,6 +40,9 @@ class ItemUpdate(BaseModel):
     data_saida_item: Optional[datetime] = None
     quantidade_minima_item: Optional[int] = None
     marca_item: Optional[str] = None
+    unidade_medida_item: Optional [str] = None
+
+
 
 
 class ItemOut(ItemBase):
@@ -50,12 +52,13 @@ class ItemOut(ItemBase):
     quantidade_item: int
     categoria_id: int
     data_validade_item: Optional[date] = None
-    auditoria_usuario_id: Optional[int] = None
+    auditoria_usuario_id: int
     data_validade_item: Optional[datetime] = None
     quantidade_minima_item: Optional[int] = None
     marca_item: Optional[str] = None
     unidade_medida_item: str
     data_entrada_item: Optional[datetime] = None
+    nome_item_original: str
 
 
 
