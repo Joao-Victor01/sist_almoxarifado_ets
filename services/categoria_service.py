@@ -10,10 +10,23 @@ import math
 class CategoriaService:
     @staticmethod
     async def create_categoria(db: AsyncSession, categoria_data: CategoriaCreate):
-        categoria_normalized = normalize_name(categoria_data.nome_categoria)
-        categoria_data.nome_categoria = categoria_normalized
-        categoria = await CategoriaRepository.create_categoria(db, categoria_data)
+        # Extrai o nome original do que o usuário enviou em nome_categoria
+        nome_original = categoria_data.nome_categoria.strip()
+        
+        # Normaliza para o nome_categoria
+        nome_normalizado = normalize_name(nome_original)
+        
+        # Prepara os dados para o modelo
+        dados_categoria = categoria_data.model_dump()
+        dados_categoria.update({
+            "nome_original": nome_original,
+            "nome_categoria": nome_normalizado
+        })
+        
+        # Cria a categoria no banco
+        categoria = await CategoriaRepository.create_categoria(db, dados_categoria)
         return categoria
+    
 
     @staticmethod
     async def get_categorias(db: AsyncSession):
@@ -65,13 +78,26 @@ class CategoriaService:
         return categorias
 
     @staticmethod
-    async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):
-        categoria_normalized = normalize_name(categoria_data.nome_categoria)
-        categoria_data.nome_categoria = categoria_normalized
-        updated_categoria = await CategoriaRepository.update_categoria(db, categoria_id, categoria_data)
-        if not updated_categoria:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada")
-        return updated_categoria
+    async def update_categoria(db: AsyncSession, categoria_id: int, update_data: CategoriaUpdate):
+        # Busca a categoria existente
+        categoria = await CategoriaRepository.get_categoria_by_id(db, categoria_id)
+        
+        # Converte para dicionário e remove campos não setados
+        update_values = update_data.model_dump(exclude_unset=True)
+        
+        if 'nome_categoria' in update_values:
+            # Processa novo nome
+            novo_original = update_values['nome_categoria'].strip()
+            novo_normalizado = normalize_name(novo_original)
+            
+            update_values['nome_original'] = novo_original
+            update_values['nome_categoria'] = novo_normalizado
+            
+            # Remove o campo temporário
+            del update_values['nome_categoria']
+        
+        # Atualiza apenas os campos permitidos
+        return await CategoriaRepository.update_categoria(db, categoria_id, update_values)
 
     @staticmethod
     async def delete_categoria(db: AsyncSession, categoria_id: int):

@@ -61,7 +61,7 @@ async function renderizarCategorias() {
           ${data.items.map((c,i) => `
             <tr>
               <td class="text-center">${c.categoria_id}</td>
-              <td>${c.nome_categoria}</td>
+              <td>${c.nome_original}</td>
               <td>${c.descricao_categoria || '-'}</td>
               <td class="text-center">
                 <button class="btn btn-sm btn-primary btn-editar-cat me-1" data-id="${c.categoria_id}">Editar</button>
@@ -123,7 +123,7 @@ function bindCategoriaActions() {
       const cat = await res.json();
 
       // popula modal de edição
-      document.getElementById('edit-nome_categoria').value = cat.nome_categoria;
+      document.getElementById('edit-nome_categoria').value = cat.nome_original;
       document.getElementById('edit-descricao_categoria').value = cat.descricao_categoria || '';
       const saveBtn = document.getElementById('btn-salvar-editar-categoria');
       saveBtn.dataset.id = id;

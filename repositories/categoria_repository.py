@@ -1,3 +1,4 @@
+#repositories\categoria_repository.py
 from sqlalchemy import func
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,13 +11,13 @@ from fastapi import HTTPException, status
 class CategoriaRepository:
 
     @staticmethod
-    async def create_categoria(db: AsyncSession, categoria_data: CategoriaCreate):
-        nova_categoria = Categoria(**categoria_data.model_dump())
+    async def create_categoria(db: AsyncSession, categoria_data: dict): 
+        nova_categoria = Categoria(**categoria_data)  # recebe um dicionário
         db.add(nova_categoria)
         await db.commit()
         await db.refresh(nova_categoria)
         return nova_categoria
-
+    
     @staticmethod
     async def get_categorias(db: AsyncSession):
         result = await db.execute(select(Categoria))
@@ -48,16 +49,15 @@ class CategoriaRepository:
         return result
 
     @staticmethod
-    async def update_categoria(db: AsyncSession, categoria_id: int, categoria_data: CategoriaUpdate):
-        # Primeiro recupera a categoria existente usando expressão
+    async def update_categoria(db: AsyncSession, categoria_id: int, update_values: dict):
         categoria = await CategoriaRepository.__first_or_404(
             db,
             Categoria.categoria_id == categoria_id
         )
-
-        for key, value in categoria_data.dict(exclude_unset=True).items():
+        
+        for key, value in update_values.items():
             setattr(categoria, key, value)
-
+        
         await db.commit()
         await db.refresh(categoria)
         return categoria
