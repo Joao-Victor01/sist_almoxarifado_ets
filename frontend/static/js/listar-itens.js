@@ -234,18 +234,46 @@ function bindPagination(totalPages) {
 // 7) Bindings de ações nas linhas
 function bindRowActions(categorias) {
   // deletar
-  document.querySelectorAll('.btn-deletar').forEach(btn => {
-    btn.onclick = async () => {
-      if (!confirm('Excluir este item?')) return;
-      const id = btn.dataset.id;
-      const token = localStorage.getItem('token');
-      await fetch(`/api/almoxarifado/itens/${id}`, {
+// Deletar
+  // listar-itens.js - função bindRowActions (parte de deletar)
+
+document.querySelectorAll('.btn-deletar').forEach(btn => {
+  btn.onclick = async () => {
+    if (!confirm('Excluir este item?')) return;
+    const id = btn.dataset.id;
+    const token = localStorage.getItem('token');
+    
+    try {
+      const resp = await fetch(`/api/almoxarifado/itens/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (!resp.ok) {
+        const error = await resp.json();
+        // Extrai IDs de retiradas da mensagem de erro (se existirem)
+        const matches = error.detail?.match(/retirada_item\.DETAIL:  Chave \(item_id\)=\(\d+\) ainda é referenciada pela tabela "retirada_item" \(id_retirada=(\d+)\)/);
+        
+        if (matches && matches[1]) {
+          throw new Error(`Item vinculado à retirada ID: ${matches[1]}. Não pode ser excluído!`);
+        }
+        throw new Error(error.detail || 'Erro ao excluir item');
+      }
+      
       renderizarListaItens();
-    };
-  });
+    } catch (err) {
+      console.error(err);
+      // Mensagem personalizada para erros de chave estrangeira
+      // Adicione no bloco catch
+      if (err.message.includes('retirada_item')) {
+        alert('❗ Item vinculado a uma ou mais retiradas.\n\n' +
+              'Primeiro exclua as retiradas relacionadas no sistema antes de remover este item.');
+      } else {
+        alert(err.message);
+      }
+    }
+  };
+}); 
 
   // editar
   document.querySelectorAll('.btn-editar').forEach(btn => {
@@ -297,48 +325,55 @@ function bindRowActions(categorias) {
   });
 
   // 8) salvar edição
-  document.getElementById('btn-salvar-editar-item').onclick = async e => {
+    document.getElementById('btn-salvar-editar-item').onclick = async e => {
     const id = e.currentTarget.dataset.id;
     if (!id) return alert('ID de edição não definido');
     const form = document.getElementById('form-editar-item');
+
+    // Validação dos campos obrigatórios
+    const requiredFields = ['nome_item', 'unidade_medida_item', 'descricao_item', 'quantidade_item', 'categoria_id'];
+    const missingFields = requiredFields.filter(field => !form[field].value.trim());
+    if (missingFields.length) {
+      return alert('Preencha todos os campos obrigatórios: ' + missingFields.join(', '));
+    }
+
     const data = {
-      nome_item:           form.nome_item.value,
-      unidade_medida_item: form.unidade_medida_item.value,
-      descricao_item:      form.descricao_item.value,
-      quantidade_item:     Number(form.quantidade_item.value),
-      categoria_id:        Number(form.categoria_id.value),
+      nome_item_original: form.nome_item.value.trim(), // Ajuste para o campo correto
+      unidade_medida_item: form.unidade_medida_item.value.trim(),
+      descricao_item: form.descricao_item.value.trim(),
+      quantidade_item: Number(form.quantidade_item.value),
+      categoria_id: Number(form.categoria_id.value),
     };
-    if (form.quantidade_minima_item.value)
+
+    // Campos opcionais
+    if (form.quantidade_minima_item.value.trim())
       data.quantidade_minima_item = Number(form.quantidade_minima_item.value);
-    if (form.data_validade_item.value)
+    if (form.data_validade_item.value.trim())
       data.data_validade_item = form.data_validade_item.value;
-    if (form.data_entrada_item.value)
+    if (form.data_entrada_item.value.trim())
       data.data_entrada_item = form.data_entrada_item.value;
-    if (form.marca_item.value)
-      data.marca_item = form.marca_item.value;
+    if (form.marca_item.value.trim())
+      data.marca_item = form.marca_item.value.trim();
 
     try {
       const token = localStorage.getItem('token');
       const resp = await fetch(`/api/almoxarifado/itens/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type':  'application/json',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(data)
       });
       if (!resp.ok) {
         const err = await resp.json();
-        return alert('Erro ao salvar: ' + (err.detail||resp.status));
+        throw new Error(err.detail || `Erro HTTP ${resp.status}`);
       }
-      // fecha e atualiza
-      bootstrap.Modal
-        .getInstance(document.getElementById('modalEditarItem'))
-        .hide();
+      bootstrap.Modal.getInstance(document.getElementById('modalEditarItem')).hide();
       renderizarListaItens();
     } catch (err) {
       console.error(err);
-      alert('Erro de conexão ao salvar alterações.');
+      alert('Erro ao salvar: ' + err.message);
     }
   };
 }
