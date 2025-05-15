@@ -238,23 +238,22 @@ function fillModalAutorizar(r) {
   document.getElementById('autorizarRetiradaId').value     = r.retirada_id;
   document.getElementById('autorizarSetor').value         = r.setor_nome;
   document.getElementById('autorizarUsuario').value       = r.usuario_nome;
-  // aqui preenche a justificativa original:
   document.getElementById('autorizarJustificativa').value = r.justificativa || '';
   document.getElementById('autorizarData').value          = new Date(r.data_solicitacao).toLocaleString('pt-BR');
-  // se quiser um campo extra para o responsável escrever um "detalhe" (motivo de negar/aut.)
-  // você precisa adicioná-lo ao HTML do modal, por exemplo:
-  // <textarea id="autorizarDetalheStatus"></textarea>
-  // e então aqui mantê-lo:
+
+  // limpa o campo de comentário
   document.getElementById('autorizarDetalheStatus').value = '';
+
+  // garante que os botões dentro do modal “saibam” o ID da retirada
+  document.getElementById('btn-autorizar-retirada').dataset.id = r.retirada_id;
+  document.getElementById('btn-negar-retirada').dataset.id     = r.retirada_id;
 }
 
 
-
 // 6) Handler dos botões Autorizar / Negar
-
 document.getElementById('btn-autorizar-retirada').onclick = async e => {
   const id     = +e.currentTarget.dataset.id;
-  const detalhe= document.getElementById('aut-detalhe-status').value.trim();
+  const detalhe = document.getElementById('autorizarDetalheStatus').value.trim();
   const token  = localStorage.getItem('token');
 
   try {
@@ -287,7 +286,7 @@ document.getElementById('btn-autorizar-retirada').onclick = async e => {
 // Negar
 document.getElementById('btn-negar-retirada').onclick = async e => {
   const id     = +e.currentTarget.dataset.id;
-  const detalhe= document.getElementById('aut-detalhe-status').value.trim();
+  const detalhe= document.getElementById('autorizarDetalheStatus').value.trim();
   const token  = localStorage.getItem('token');
 
   try {
