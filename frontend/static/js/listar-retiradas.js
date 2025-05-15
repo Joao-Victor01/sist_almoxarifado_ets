@@ -222,30 +222,32 @@ function bindRetiradaActions() {
 
 // 4) Popula modal de detalhes
 function fillModalDetalhes(r) {
-  document.getElementById('det-id').value               = r.retirada_id;
-  document.getElementById('det-status').value           = statusMap[r.status];
-  document.getElementById('det-setor').value            = r.setor_nome;
-  document.getElementById('det-usuario').value          = r.usuario_nome;
-  document.getElementById('det-solicitado-local').value = r.solicitado_localmente_por || '';
-  document.getElementById('det-autorizado-por').value   = r.autorizado_por_nome || '';
-  document.getElementById('det-data').value             = new Date(r.data_solicitacao).toLocaleString();
-  document.getElementById('det-justificativa').value    = r.justificativa || '';
-  document.getElementById('det-detalhe-status').value   = r.detalhe_status || '';
+  document.getElementById('detalheRetiradaId').value     = r.retirada_id;
+  document.getElementById('detalheStatus').value        = statusMap[r.status];
+  document.getElementById('detalheSetor').value         = r.setor_nome;
+  document.getElementById('detalheUsuario').value       = r.usuario_nome;
+  document.getElementById('detalheSolicitadoPor').value = r.solicitado_localmente_por || '—';
+  document.getElementById('detalheAutorizadoPor').value = r.autorizado_por_nome || '—';
+  document.getElementById('detalheData').value          = new Date(r.data_solicitacao).toLocaleString('pt-BR');
+  document.getElementById('detalheJustificativa').value = r.justificativa || '';
+  document.getElementById('detalheStatusDesc').value    = r.detalhe_status || '—';
 }
 
 // 5) Popula modal de autorizar
 function fillModalAutorizar(r) {
-  document.getElementById('aut-id').value               = r.retirada_id;
-  document.getElementById('aut-setor').value            = r.setor_nome;
-  document.getElementById('aut-usuario').value          = r.usuario_nome;
-  document.getElementById('aut-solicitado-local').value = r.solicitado_localmente_por || '';
-  document.getElementById('aut-data').value             = new Date(r.data_solicitacao).toLocaleString();
-  // limpa o campo para nova justificativa
-  document.getElementById('aut-detalhe-status').value   = '';
-
-  document.getElementById('btn-autorizar-retirada').dataset.id = r.retirada_id;
-  document.getElementById('btn-negar-retirada').dataset.id     = r.retirada_id;
+  document.getElementById('autorizarRetiradaId').value     = r.retirada_id;
+  document.getElementById('autorizarSetor').value         = r.setor_nome;
+  document.getElementById('autorizarUsuario').value       = r.usuario_nome;
+  // aqui preenche a justificativa original:
+  document.getElementById('autorizarJustificativa').value = r.justificativa || '';
+  document.getElementById('autorizarData').value          = new Date(r.data_solicitacao).toLocaleString('pt-BR');
+  // se quiser um campo extra para o responsável escrever um "detalhe" (motivo de negar/aut.)
+  // você precisa adicioná-lo ao HTML do modal, por exemplo:
+  // <textarea id="autorizarDetalheStatus"></textarea>
+  // e então aqui mantê-lo:
+  document.getElementById('autorizarDetalheStatus').value = '';
 }
+
 
 
 // 6) Handler dos botões Autorizar / Negar

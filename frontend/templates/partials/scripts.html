@@ -48,24 +48,6 @@
     document.getElementById('listar-categoria-link-quick')?.addEventListener('click', e => { e.preventDefault(); renderizarCategorias(); });
   }
 
-  function bindRetiradaButtons() {
-    // Ver detalhes de retirada
-    document.querySelectorAll('.btn-view-detalhes').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.preventDefault();
-        const id = btn.getAttribute('data-id');
-        abrirModalDetalhesRetirada(id);
-      });
-    });
-    // Autorizar ou negar
-    document.getElementById('btn-autorizar-retirada')?.addEventListener('click', e => {
-      e.preventDefault(); processarAutorizarRetirada();
-    });
-    document.getElementById('btn-negar-retirada')?.addEventListener('click', e => {
-      e.preventDefault(); processarNegarRetirada();
-    });
-  }
-
   function bindLogout() {
     document.getElementById('logout-link')?.addEventListener('click', e => {
       e.preventDefault(); logout();
