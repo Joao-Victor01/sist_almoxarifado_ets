@@ -128,6 +128,16 @@ class RetiradaService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Erro ao listar retiradas: {str(e)}"
             )
+        
+    @staticmethod
+    async def get_retirada_by_id(db: AsyncSession, retirada_id: int):
+        result = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Retirada não encontrada"
+            )
+        return result
 
     @staticmethod
     async def get_retiradas_por_setor_periodo(

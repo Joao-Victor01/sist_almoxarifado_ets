@@ -54,3 +54,11 @@ async def listar_retiradas(
     Endpoint para listar todas as retiradas.
     """
     return await RetiradaService.get_all_retiradas(db)
+
+@router.get("/{retirada_id}", response_model=RetiradaOut)
+async def get_retirada(
+    retirada_id: int, 
+    db: AsyncSession = Depends(get_session), 
+    current_user=Depends(usuario_almoxarifado)
+):
+    return await RetiradaService.get_retirada_by_id(db, retirada_id)
