@@ -1,0 +1,68 @@
+<!-- frontend/templates/partials/modals/modal_editar_item.html -->
+
+<div class="modal fade" id="modalEditarItem" tabindex="-1" aria-labelledby="modalEditarItemLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow">
+      
+      <!-- Modal Header -->
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="modalEditarItemLabel">Editar Item</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <form id="form-editar-item">
+          <div class="row g-3">
+            <!-- Campos de edição -->
+            <div class="col-md-6">
+              <label for="nome_item" class="form-label">Nome do Item*</label>
+              <input type="text" class="form-control" id="nome_item" name="nome_item" required>
+            </div>
+            <div class="col-md-6">
+              <label for="unidade_medida_item" class="form-label">Unidade de Medida*</label>
+              <input type="text" class="form-control" id="unidade_medida_item" name="unidade_medida_item" required>
+            </div>
+            <div class="col-md-6">
+              <label for="descricao_item" class="form-label">Descrição*</label>
+              <textarea class="form-control" id="descricao_item" name="descricao_item" rows="2" required></textarea>
+            </div>
+            <div class="col-md-3">
+              <label for="quantidade_item" class="form-label">Quantidade*</label>
+              <input type="number" class="form-control" id="quantidade_item" name="quantidade_item" min="0" required>
+            </div>
+            <div class="col-md-3">
+              <label for="quantidade_minima_item" class="form-label">Quantidade Mínima</label>
+              <input type="number" class="form-control" id="quantidade_minima_item" name="quantidade_minima_item" min="0">
+            </div>
+            <div class="col-md-4">
+              <label for="data_validade_item" class="form-label">Data de Validade</label>
+              <input type="date" class="form-control" id="data_validade_item" name="data_validade_item">
+            </div>
+            <div class="col-md-4">
+              <label for="data_entrada_item" class="form-label">Data de Entrada</label>
+              <input type="datetime-local" class="form-control" id="data_entrada_item" name="data_entrada_item">
+            </div>
+            <div class="col-md-4">
+              <label for="marca_item" class="form-label">Marca</label>
+              <input type="text" class="form-control" id="marca_item" name="marca_item">
+            </div>
+            <div class="col-md-6">
+              <label for="edit-categoria_id" class="form-label">Categoria*</label>
+              <select class="form-select" id="edit-categoria_id" name="categoria_id" required>
+                <option value="" disabled selected></option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-editar-item">Salvar</button>
+      </div>
+      
+    </div>
+  </div>
+</div>

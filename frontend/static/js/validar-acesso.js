@@ -1,4 +1,4 @@
-
+//frontend\static\js\validar-acesso.js
 
 document.getElementById('form-login').addEventListener('submit', async function (event) {
   event.preventDefault();
