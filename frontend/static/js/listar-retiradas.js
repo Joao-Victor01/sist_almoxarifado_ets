@@ -95,12 +95,24 @@ async function buildLookupMaps(retiradas) {
 
 // Abre modal de detalhe de item
 function openItemDetail(item, qtdRetirada) {
+  // popula os campos...
   document.getElementById('itemNome').textContent        = item.nome_item_original;
   document.getElementById('itemEstoque').textContent     = item.quantidade_item;
   document.getElementById('itemQtdRetirada').textContent = qtdRetirada;
   document.getElementById('itemEstoqueMin').textContent  = item.quantidade_minima_item;
-  document.getElementById('itemValidade').textContent    = new Date(item.data_validade_item).toLocaleDateString('pt-BR');
-  new bootstrap.Modal(document.getElementById('modalDetalheItem')).show();
+  
+  const validadeEl = document.getElementById('itemValidade');
+  if (item.data_validade_item) {
+    validadeEl.textContent = new Date(item.data_validade_item)
+      .toLocaleDateString('pt-BR');
+  } else {
+    validadeEl.textContent = '—';
+  }
+
+  // instância sem backdrop extra
+  const modalEl = document.getElementById('modalDetalheItem');
+  const modalItem = new bootstrap.Modal(modalEl, { backdrop: false });
+  modalItem.show();
 }
 
 // Monta a lista de itens dentro de um container
@@ -210,38 +222,49 @@ function bindRetiradaActions() {
   document.querySelectorAll('.btn-detalhes-retirada').forEach(btn => {
     btn.onclick = () => {
       const id = +btn.dataset.id;
-      const r = allRetiradas.find(x => x.retirada_id === id)
-             || pendentesRetiradas.find(x => x.retirada_id === id);
-      fillModalDetalhes(r);
-      new bootstrap.Modal(document.getElementById('modalVerDetalhesRetirada')).show();
-    };
-  });
-
-  document.querySelectorAll('.btn-autorizar-retirada').forEach(btn => {
-    btn.onclick = () => {
-      const id = +btn.dataset.id;
-      const r = pendentesRetiradas.find(x => x.retirada_id === id);
-      fillModalAutorizar(r);
-      new bootstrap.Modal(document.getElementById('modalAutorizarRetirada')).show();
+      const r  = allRetiradas.find(x => x.retirada_id === id)
+               || pendentesRetiradas.find(x => x.retirada_id === id);
+     fillModalDetalhes(r)
+       .then(() => {
+         new bootstrap.Modal(document.getElementById('modalVerDetalhesRetirada')).show();
+       });
     };
   });
 }
+
 
 // Popula modal de detalhes
-function fillModalDetalhes(r) {
-  document.getElementById('detalheRetiradaId').value     = r.retirada_id;
-  document.getElementById('detalheStatus').value        = statusMap[r.status];
-  document.getElementById('detalheSetor').value         = r.setor_id || '';
-  document.getElementById('detalheUsuario').value       = r.usuario_id;
-  document.getElementById('detalheSolicitadoPor').value = r.solicitado_localmente_por || '—';
-  document.getElementById('detalheAutorizadoPor').value = r.autorizado_por || '—';
-  document.getElementById('detalheData').value          = new Date(r.data_solicitacao).toLocaleString('pt-BR');
-  document.getElementById('detalheJustificativa').value = r.justificativa || '';
-  document.getElementById('detalheStatusDesc').value    = r.detalhe_status || '—';
+async function fillModalDetalhes(r) {
+  // Busca nome do setor
+   const setorNome = r.setor_id
+     ? await getSetorById(r.setor_id)
+     : '—';
+   document.getElementById('detalheSetor').value = setorNome;
 
-  // novos itens
-  renderItemList('detalheItens', r.itens);
-}
+    // Busca nome do usuário solicitante (ou usa override local)
+   const usuarioNome = r.solicitado_localmente_por
+     ? r.solicitado_localmente_por
+     : await getUsuarioById(r.usuario_id);
+   document.getElementById('detalheUsuario').value = usuarioNome;
+
+    // Justificativa, status, etc.
+    document.getElementById('detalheJustificativa').value = r.justificativa || '';
+    document.getElementById('detalheStatusDesc').value    = r.detalhe_status   || '—';
+    document.getElementById('detalheRetiradaId').value    = r.retirada_id;
+    document.getElementById('detalheStatus').value        = statusMap[r.status];
+    document.getElementById('detalheData').value          = new Date(r.data_solicitacao).toLocaleString('pt-BR');
+
+    // Busca nome de quem autorizou/negou (se houver)
+   let autorizadoPorNome = '—';
+   if (r.autorizado_por) {
+    autorizadoPorNome = await getUsuarioById(r.autorizado_por);
+   }
+   document.getElementById('detalheAutorizadoPor').value = autorizadoPorNome;
+   
+    // Lista de itens
+    renderItemList('detalheItens', r.itens);
+
+  }
 
 // Popula modal de autorizar
 function fillModalAutorizar(r) {
@@ -257,6 +280,14 @@ function fillModalAutorizar(r) {
   document.getElementById('btn-autorizar-retirada').dataset.id = r.retirada_id;
   document.getElementById('btn-negar-retirada').dataset.id     = r.retirada_id;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tooltipTriggerList = Array.from(
+    document.querySelectorAll('[data-bs-toggle="tooltip"]')
+  );
+  tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+});
+
 
 
 // 6) Handler dos botões Autorizar / Negar
@@ -335,3 +366,5 @@ document.getElementById('listar-retiradas-pendentes-link')?.addEventListener('cl
 document.getElementById('listar-retiradas-pendentes-quick')?.addEventListener('click', e => {
   e.preventDefault(); renderPendentesRetiradas();
 });
+
+

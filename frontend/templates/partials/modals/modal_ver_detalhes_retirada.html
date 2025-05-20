@@ -16,15 +16,15 @@
             <input type="text" class="form-control" id="detalheStatus" readonly>
           </div>
           <div class="col-md-6">
-            <label for="detalheSetor" class="form-label">Setor ID</label>
+            <label for="detalheSetor" class="form-label">Setor Solicitante</label>
             <input type="text" class="form-control" id="detalheSetor" readonly>
           </div>
           <div class="col-md-6">
-            <label for="detalheUsuario" class="form-label">Usuário ID</label>
+            <label for="detalheUsuario" class="form-label">Usuário Solicitante</label>
             <input type="text" class="form-control" id="detalheUsuario" readonly>
           </div>
           <div class="col-12">
-            <label for="detalheJustificativa" class="form-label">Justificativa</label>
+            <label for="detalheJustificativa" class="form-label">Justificativa da Solicitação</label>
             <textarea class="form-control" id="detalheJustificativa" rows="2" readonly></textarea>
           </div>
           <div class="col-md-6">
@@ -44,7 +44,12 @@
             <input type="text" class="form-control" id="detalheStatusDesc" readonly>
           </div>
           <div class="col-12">
-            <label class="form-label">Itens Solicitados</label>
+            <label class="form-label">
+              Itens Solicitados
+              <small class="text-muted">(clique para ver detalhes)</small>
+              <i class="bi bi-info-circle" data-bs-toggle="tooltip"
+                title="Cada item é clicável para abrir detalhes"></i>
+            </label>
             <div id="detalheItens" class="list-group"></div>
           </div>
         </form>

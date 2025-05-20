@@ -3,7 +3,6 @@
 import os
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from fastapi import HTTPException
 from core.configs import Settings
 from services.categoria_service import CategoriaService
@@ -11,12 +10,10 @@ from services.export_strategy import CSVExportStrategy, XLSXExportStrategy
 from services.item_service import ItemService
 
 
-PASTA_RELATORIOS = Settings.PASTA_RELATORIOS
 
-def get_pasta_relatorios():
-    return os.getenv("PASTA_RELATORIOS", r"C:\Users\Victor\Desktop\projeto_almoxarifado\relatorios")
-
-os.makedirs(get_pasta_relatorios(), exist_ok=True)
+def get_pasta_relatorios() -> str:
+    """Retorna o caminho absoluto para a pasta de relatórios"""
+    return str(Settings.PASTA_RELATORIOS)
 
 def gerar_dataframe_items(dados):
     """  
@@ -39,9 +36,9 @@ def gerar_dataframe_items(dados):
 
     return df  
 
-def salvar_relatorio(df, formato):  
-    arquivo_nome = f"relatorio_quantidade_itens.{formato}"  
-    caminho_arquivo = os.path.join(get_pasta_relatorios(), arquivo_nome)  
+def salvar_relatorio(df, formato):
+    arquivo_nome = f"relatorio_quantidade_itens.{formato}"
+    caminho_arquivo = os.path.join(get_pasta_relatorios(), arquivo_nome)
 
     try:  
         if formato == "csv":  
@@ -85,7 +82,7 @@ async def gerar_relatorio_quantidade_itens(
         df = formatar_dataframe_relatorio(itens)
 
         # 4. Exportar relatório
-        caminho_arquivo = os.path.join(PASTA_RELATORIOS, f"relatorio_quantidade_itens.{formato}")
+        caminho_arquivo = os.path.join(get_pasta_relatorios(), f"relatorio_quantidade_itens.{formato}")        
         export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy()
         export_strategy.export(df, caminho_arquivo)
 

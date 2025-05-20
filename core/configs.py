@@ -1,14 +1,11 @@
-#core\configs.py
-
 from sqlalchemy.ext.declarative import declarative_base
 from core.config_loader import ConfigLoader
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import pytz
+from pathlib import Path
 
 class Settings:
     API_STR = "/api/almoxarifado"
-
+    
     # Banco de Dados
     DATABASE_URL = ConfigLoader.get("DATABASE_URL", required=True)
     DBBaseModel = declarative_base()
@@ -21,8 +18,10 @@ class Settings:
     # Timezone
     BRASILIA_TIMEZONE = pytz.timezone("America/Sao_Paulo")
 
-    # Files
-    PASTA_RELATORIOS = r"C:\Users\Victor\Desktop\projeto_almoxarifado\relatorios"
+    # Files (caminho relativo à raiz do projeto)
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Ajustar o .parent conforme estrutura do projeto
+    PASTA_RELATORIOS = PROJECT_ROOT / "relatorios"
+    PASTA_RELATORIOS.mkdir(exist_ok=True)  # Cria a pasta se não existir
 
 
 settings = Settings()
