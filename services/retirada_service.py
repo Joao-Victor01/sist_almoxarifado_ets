@@ -11,26 +11,33 @@ from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus, RetiradaPagin
 from services.alerta_service import AlertaService
 
 class RetiradaService:
-    
+
     @staticmethod
-    async def get_retiradas_paginadas(db: AsyncSession, page: int, page_size: int) -> RetiradaPaginated:
+    async def get_retiradas_paginadas(
+        db: AsyncSession, page: int, page_size: int
+    ) -> RetiradaPaginated:
         total = await RetiradaRepository.count_retiradas(db)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
-
         sqlalchemy_items = await RetiradaRepository.get_retiradas_paginated(db, offset, page_size)
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
-
-        return RetiradaPaginated(
-            total=total,
-            page=page,
-            pages=pages,
-            items=items
-        )
+        return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
-    async def filter_retiradas(db: AsyncSession, params: RetiradaFilterParams) -> list[Retirada]:
-        return await RetiradaRepository.filter_retiradas(db, params)
+    async def filter_retiradas_paginated(
+        db: AsyncSession,
+        params: RetiradaFilterParams,
+        page: int,
+        page_size: int
+    ) -> RetiradaPaginated:
+        total = await RetiradaRepository.count_retiradas_filter(db, params)
+        pages = (total + page_size - 1) // page_size
+        offset = (page - 1) * page_size
+        sqlalchemy_items = await RetiradaRepository.filter_retiradas_paginated(
+            db, params, offset, page_size
+        )
+        items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
+        return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
     async def solicitar_retirada(db: AsyncSession, retirada_data: RetiradaCreate, usuario_id: int):
@@ -114,14 +121,16 @@ class RetiradaService:
             )
 
     @staticmethod
-    async def get_retiradas_pendentes(db: AsyncSession):
-        try:
-            pend = await RetiradaRepository.get_retiradas_pendentes(db)
-            if not pend:
-                raise HTTPException(status.HTTP_404_NOT_FOUND, "Não há retiradas pendentes")
-            return pend
-        except Exception as e:
-            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro: {e}")
+    async def get_retiradas_pendentes_paginated(
+        db: AsyncSession, page: int, page_size: int
+    ) -> RetiradaPaginated:
+        total = await RetiradaRepository.count_retiradas_pendentes(db)
+        pages = (total + page_size - 1) // page_size
+        offset = (page - 1) * page_size
+        sqlalchemy_items = await RetiradaRepository.get_retiradas_pendentes_paginated(db, offset, page_size)
+        items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
+        return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
+
 
     @staticmethod
     async def get_all_retiradas(db: AsyncSession):

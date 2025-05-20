@@ -1,3 +1,4 @@
+# schemas/retirada.py
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
@@ -25,9 +26,7 @@ class RetiradaItemOut(BaseModel):
     quantidade_retirada: int
     item: ItemOut
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 class RetiradaOut(BaseModel):
     retirada_id: int
@@ -41,9 +40,7 @@ class RetiradaOut(BaseModel):
     data_solicitacao: datetime
     itens: List[RetiradaItemOut]
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 class RetiradaPaginated(BaseModel):
     total: int
@@ -51,9 +48,7 @@ class RetiradaPaginated(BaseModel):
     pages: int
     items: List[RetiradaOut]
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 class RetiradaFilterParams(BaseModel):
     status: Optional[int] = None

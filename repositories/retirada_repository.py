@@ -19,6 +19,7 @@ class RetiradaRepository:
     async def count_retiradas(db: AsyncSession) -> int:
         result = await db.execute(select(func.count(Retirada.retirada_id)))
         return result.scalar_one()
+    
 
     @staticmethod
     async def get_retiradas_paginated(db: AsyncSession, offset: int, limit: int):
@@ -32,42 +33,45 @@ class RetiradaRepository:
             .offset(offset)
             .limit(limit)
         )
-        result = await db.execute(q)
-        return result.scalars().all()
+        return (await db.execute(q)).scalars().all()
+    
+    @staticmethod
+    async def count_retiradas_pendentes(db: AsyncSession) -> int:
+        result = await db.execute(select(func.count(Retirada.retirada_id)).where(Retirada.status == StatusEnum.PENDENTE))
+        return result.scalar_one()
 
     @staticmethod
-    async def filter_retiradas(db: AsyncSession, params: RetiradaFilterParams):
-        q = select(Retirada).options(
+    async def filter_retiradas_paginated(
+        db: AsyncSession,
+        params: RetiradaFilterParams,
+        offset: int,
+        limit: int
+    ):
+        q = select(Retirada)
+        q = q.options(
             selectinload(Retirada.itens).selectinload(RetiradaItem.item),
             selectinload(Retirada.usuario),
             selectinload(Retirada.admin),
         )
         conditions = []
-        # filtrar por status
-        if params.status:
+        if params.status is not None:
             conditions.append(Retirada.status == params.status)
-        # filtrar por solicitante (nome ou solicitado_localmente_por)
         if params.solicitante:
-            usuario_alias = aliased(Usuario)
-            q = q.join(usuario_alias, Retirada.usuario)
+            alias = aliased(Usuario)
+            q = q.join(alias, Retirada.usuario)
             conditions.append(
-                or_(
-                    usuario_alias.nome_usuario.ilike(f"%{params.solicitante}%"),
-                    Retirada.solicitado_localmente_por.ilike(f"%{params.solicitante}%")
-                )
+                or_(alias.nome_usuario.ilike(f"%{params.solicitante}%"),
+                    Retirada.solicitado_localmente_por.ilike(f"%{params.solicitante}%"))
             )
-        # filtrar por período
         if params.start_date and params.end_date:
             conditions.append(
-                and_(
-                    Retirada.data_solicitacao >= params.start_date,
-                    Retirada.data_solicitacao <= params.end_date
-                )
+                and_(Retirada.data_solicitacao >= params.start_date,
+                     Retirada.data_solicitacao <= params.end_date)
             )
         if conditions:
             q = q.where(*conditions)
-        result = await db.execute(q)
-        return result.scalars().all()
+        q = q.offset(offset).limit(limit)
+        return (await db.execute(q)).scalars().all()
 
     @staticmethod
     async def criar_retirada(db: AsyncSession, retirada: Retirada):
@@ -95,17 +99,41 @@ class RetiradaRepository:
         return result.scalars().first()
 
     @staticmethod
-    async def get_retiradas_pendentes(db: AsyncSession):
-        result = await db.execute(
+    async def get_retiradas_pendentes_paginated(db: AsyncSession, offset: int, limit: int):
+        q = (
             select(Retirada)
             .options(
                 selectinload(Retirada.itens).selectinload(RetiradaItem.item),
                 selectinload(Retirada.usuario),
                 selectinload(Retirada.admin),
             )
-            .where(Retirada.status == 1)
+            .where(Retirada.status == StatusEnum.PENDENTE)
+            .offset(offset)
+            .limit(limit)
         )
-        return result.scalars().unique().all()
+        return (await db.execute(q)).scalars().all()
+    
+    @staticmethod
+    async def count_retiradas_filter(db: AsyncSession, params: RetiradaFilterParams) -> int:
+        q = select(func.count(Retirada.retirada_id))
+        conditions = []
+        if params.status is not None:
+            conditions.append(Retirada.status == params.status)
+        if params.solicitante:
+            alias = aliased(Usuario)
+            q = q.select_from(Retirada).join(alias, Retirada.usuario)
+            conditions.append(
+                or_(alias.nome_usuario.ilike(f"%{params.solicitante}%"),
+                    Retirada.solicitado_localmente_por.ilike(f"%{params.solicitante}%"))
+            )
+        if params.start_date and params.end_date:
+            conditions.append(
+                and_(Retirada.data_solicitacao >= params.start_date,
+                     Retirada.data_solicitacao <= params.end_date)
+            )
+        if conditions:
+            q = q.where(*conditions)
+        return (await db.execute(q)).scalar_one()
 
     @staticmethod
     async def get_retiradas(db: AsyncSession):
