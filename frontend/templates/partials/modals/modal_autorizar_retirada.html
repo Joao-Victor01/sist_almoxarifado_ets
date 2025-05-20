@@ -12,15 +12,15 @@
           <input type="hidden" id="autorizarRetiradaId">
 
           <div class="col-md-6">
-            <label for="autorizarSetor" class="form-label">Setor ID</label>
+            <label for="autorizarSetor" class="form-label">Setor da Solicitação:</label>
             <input type="text" class="form-control" id="autorizarSetor" readonly>
           </div>
           <div class="col-md-6">
-            <label for="autorizarUsuario" class="form-label">Usuário ID</label>
+            <label for="autorizarUsuario" class="form-label">Solicitado por:</label>
             <input type="text" class="form-control" id="autorizarUsuario" readonly>
           </div>
           <div class="col-12">
-            <label for="autorizarJustificativa" class="form-label">Justificativa</label>
+            <label for="autorizarJustificativa" class="form-label">Justificativa da Solicitação</label>
             <textarea class="form-control" id="autorizarJustificativa" rows="2" readonly></textarea>
           </div>
           <div class="col-12">
@@ -28,10 +28,13 @@
             <input type="text" class="form-control" id="autorizarData" readonly>
           </div>
           <div class="col-12">
-            <label for="autorizarDetalheStatus" class="form-label">Motivo/Comentário</label>
+            <label class="form-label">Itens Solicitados</label>
+          <div id="autorizarItens" class="list-group"></div>
+          </div>
+          <div class="col-12">
+            <label for="autorizarDetalheStatus" class="form-label">Justificativa para Negar/Autorizar</label>
             <textarea class="form-control" id="autorizarDetalheStatus" rows="2"></textarea>
           </div>
-
         </form>
       </div>
       <div class="modal-footer border-0 justify-content-center">

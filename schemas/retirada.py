@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from models.retirada import StatusEnum
+from schemas.item import ItemOut
 
 
 class ItemRetirada(BaseModel):
@@ -23,13 +24,25 @@ class RetiradaUpdateStatus(BaseModel):
     status: StatusEnum
     detalhe_status: Optional[str] = None  # Explicação da autorização/negação
 
-class RetiradaOut(RetiradaBase):
+class RetiradaItemOut(BaseModel):
+    item_id: int
+    quantidade_retirada: int
+    item: ItemOut
+
+    class Config:
+        orm_mode = True
+
+class RetiradaOut(BaseModel):
     retirada_id: int
     usuario_id: int
     autorizado_por: Optional[int] = None
-    status: int
+    setor_id: int
+    status: StatusEnum
     detalhe_status: Optional[str] = None
+    justificativa: Optional[str] = None
+    solicitado_localmente_por: Optional[str] = None
     data_solicitacao: datetime
+    itens: List[RetiradaItemOut]
 
     class Config:
-        from_attributes = True
+        orm_mode = True

@@ -1,25 +1,19 @@
-#services\retirada_service.py
-
 from fastapi import HTTPException, status
-from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus
-from models.retirada import Retirada
+from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+
+from models.retirada import Retirada, StatusEnum
 from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
-from sqlalchemy.ext.asyncio import AsyncSession
-from models.retirada import StatusEnum
-from datetime import datetime
-from services.usuario_service import UsuarioService
+from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus
 from services.alerta_service import AlertaService
-
-
-
 
 class RetiradaService:
 
     @staticmethod
     async def solicitar_retirada(db: AsyncSession, retirada_data: RetiradaCreate, usuario_id: int):
         try:
-            # Criar a entidade Retirada
+            # 1) cria Retirada
             nova_retirada = Retirada(
                 usuario_id=usuario_id,
                 setor_id=retirada_data.setor_id,
@@ -27,11 +21,9 @@ class RetiradaService:
                 solicitado_localmente_por=retirada_data.solicitado_localmente_por,
                 justificativa=retirada_data.justificativa
             )
-
-            # Adicionar a retirada ao banco de dados
             await RetiradaRepository.criar_retirada(db, nova_retirada)
 
-            # Criar os itens da retirada
+            # 2) cria e adiciona itens
             itens_retirada = [
                 RetiradaItem(
                     retirada_id=nova_retirada.retirada_id,
@@ -40,133 +32,108 @@ class RetiradaService:
                 )
                 for item in retirada_data.itens
             ]
-
-            # Adicionar os itens ao banco de dados
             await RetiradaRepository.adicionar_itens_retirada(db, itens_retirada)
 
-            # Commit final
+            # 3) commit
             await db.commit()
-            return nova_retirada
+
+            # 4) recarrega com eager-load para serialização segura
+            retirada_completa = await RetiradaRepository.buscar_retirada_por_id(
+                db, nova_retirada.retirada_id
+            )
+            return retirada_completa
+
         except Exception as e:
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Erro ao solicitar retirada: {str(e)}"
+                detail=f"Erro ao solicitar retirada: {e}"
             )
 
     @staticmethod
     async def atualizar_status(db: AsyncSession, retirada_id: int, status_data: RetiradaUpdateStatus, admin_id: int):
         try:
-            if status_data.status not in {status.value for status in StatusEnum}:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Status inválido. Os valores permitidos são: 1 (PENDENTE), 2 (AUTORIZADA) ou 3 (CONCLUÍDA)."
-                )
+            if status_data.status not in {s.value for s in StatusEnum}:
+                raise HTTPException(400, "Status inválido.")
 
-            # Buscar a retirada no banco de dados
             retirada = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
             if not retirada:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Retirada não encontrada")
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Retirada não encontrada")
 
-            # Verificar se o status é "Concluído" (status == 3)
+            # se concluindo, decrementa estoques
             if status_data.status == StatusEnum.CONCLUIDA:
-                for item in retirada.itens:
-                    item_existente = await RetiradaRepository.buscar_item_por_id(db, item.item_id)
-                    if not item_existente or item_existente.quantidade_item < item.quantidade_retirada:
+                for ri in retirada.itens:
+                    item = await RetiradaRepository.buscar_item_por_id(db, ri.item_id)
+                    if item.quantidade_item < ri.quantidade_retirada:
                         raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Estoque insuficiente para o item {item.item_id}"
+                            status.HTTP_400_BAD_REQUEST,
+                            f"Estoque insuficiente para item {ri.item_id}"
                         )
-                    # Atualizar a quantidade do item no estoque
-                    nova_quantidade = item_existente.quantidade_item - item.quantidade_retirada
-                    await RetiradaRepository.atualizar_quantidade_item(db, item_existente, nova_quantidade)
-                    await AlertaService.verificar_estoque_baixo(db, item.item_id)
+                    await RetiradaRepository.atualizar_quantidade_item(
+                        db, item, item.quantidade_item - ri.quantidade_retirada
+                    )
+                    await AlertaService.verificar_estoque_baixo(db, ri.item_id)
 
-
-            # Atualizar o status da retirada
             retirada.status = status_data.status
             retirada.detalhe_status = status_data.detalhe_status
             retirada.autorizado_por = admin_id
 
-            # Salvar as alterações no banco de dados
-            await RetiradaRepository.atualizar_retirada(db, retirada)
-            return retirada
-        except HTTPException as e:
+            updated = await RetiradaRepository.atualizar_retirada(db, retirada)
+            return updated
+
+        except HTTPException:
             await db.rollback()
-            raise e
+            raise
         except Exception as e:
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Erro ao atualizar status da retirada: {str(e)}"
+                detail=f"Erro ao atualizar status: {e}"
             )
 
     @staticmethod
     async def get_retiradas_pendentes(db: AsyncSession):
         try:
-            retiradas_pendentes = await RetiradaRepository.get_retiradas_pendentes(db)
-            if not retiradas_pendentes:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Não há retiradas pendentes")
-            return retiradas_pendentes
+            pend = await RetiradaRepository.get_retiradas_pendentes(db)
+            if not pend:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Não há retiradas pendentes")
+            return pend
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Erro ao listar retiradas pendentes: {str(e)}"
-            )
-        
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro: {e}")
+
     @staticmethod
     async def get_all_retiradas(db: AsyncSession):
         try:
-            retiradas = await RetiradaRepository.get_retiradas(db)
-            if not retiradas:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Não há retiradas")
-            
-            return retiradas
-        
+            allr = await RetiradaRepository.get_retiradas(db)
+            if not allr:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Não há retiradas")
+            return allr
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Erro ao listar retiradas: {str(e)}"
-            )
-        
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro: {e}")
+
     @staticmethod
     async def get_retirada_by_id(db: AsyncSession, retirada_id: int):
-        result = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Retirada não encontrada"
-            )
-        return result
+        r = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
+        if not r:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Retirada não encontrada")
+        return r
 
     @staticmethod
-    async def get_retiradas_por_setor_periodo(
-        db: AsyncSession,
-        setor_id: int,
-        data_inicio: datetime,
-        data_fim: datetime
-    ):
+    async def get_retiradas_por_setor_periodo(db: AsyncSession, setor_id: int, data_inicio: datetime, data_fim: datetime):
+        try:
+            res = await RetiradaRepository.get_retiradas_por_setor_periodo(db, setor_id, data_inicio, data_fim)
+            if not res:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Nenhuma retirada nesse período/setor")
+            return res
+        except Exception as e:
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro: {e}")
 
-        result = await RetiradaRepository.get_retiradas_por_setor_periodo(db, setor_id, data_inicio, data_fim) 
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                detail="Não há retiradas para esse setor ou período"
-                )
-        return result
-    
-        
     @staticmethod
-    async def get_retiradas_por_usuario_periodo(
-        db: AsyncSession,
-        usuario_id: int,
-        data_inicio: datetime,
-        data_fim: datetime
-    ):
-        user = await UsuarioService.get_usuario_by_id(db, usuario_id)
-
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                                detail="Usuário não encontrado")
-        
-        return await RetiradaRepository.get_retiradas_por_usuario_periodo(db, usuario_id, data_inicio, data_fim)
+    async def get_retiradas_por_usuario_periodo(db: AsyncSession, usuario_id: int, data_inicio: datetime, data_fim: datetime):
+        try:
+            res = await RetiradaRepository.get_retiradas_por_usuario_periodo(db, usuario_id, data_inicio, data_fim)
+            if not res:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Nenhuma retirada para esse usuário")
+            return res
+        except Exception as e:
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro: {e}")

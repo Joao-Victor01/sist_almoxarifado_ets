@@ -15,22 +15,19 @@ const statusMapUpdate = {
   AUTORIZADA: 2,
   NEGADA: 4
 };
+
 function showAlert(message, type = 'success') {
-  // type pode ser 'success' ou 'danger'
   const wrapper = document.createElement('div');
   wrapper.innerHTML = `
     <div class="alert alert-${type} alert-dismissible fade show" role="alert">
       ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   `;
-  // insere no topo do main-content
-  const main = document.getElementById('main-content');
-  main.prepend(wrapper);
+  document.getElementById('main-content').prepend(wrapper);
 }
 
 // --- Helpers de API ---
-
 async function getUsuarioById(id) {
   const token = localStorage.getItem('token');
   try {
@@ -96,17 +93,40 @@ async function buildLookupMaps(retiradas) {
   };
 }
 
+// Abre modal de detalhe de item
+function openItemDetail(item, qtdRetirada) {
+  document.getElementById('itemNome').textContent        = item.nome_item_original;
+  document.getElementById('itemEstoque').textContent     = item.quantidade_item;
+  document.getElementById('itemQtdRetirada').textContent = qtdRetirada;
+  document.getElementById('itemEstoqueMin').textContent  = item.quantidade_minima_item;
+  document.getElementById('itemValidade').textContent    = new Date(item.data_validade_item).toLocaleDateString('pt-BR');
+  new bootstrap.Modal(document.getElementById('modalDetalheItem')).show();
+}
+
+// Monta a lista de itens dentro de um container
+function renderItemList(containerId, itens) {
+  const cont = document.getElementById(containerId);
+  cont.innerHTML = '';
+  itens.forEach(i => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'list-group-item list-group-item-action';
+    btn.textContent = `${i.item.nome_item_original} — ${i.quantidade_retirada}`;
+    btn.onclick = () => openItemDetail(i.item, i.quantidade_retirada);
+    cont.appendChild(btn);
+  });
+}
+
 // Render histórico completo
 async function renderHistoricoRetiradas() {
-  // passa o resultado para o global
   allRetiradas = await fetchAllRetiradas();
   const { usuarioMap } = await buildLookupMaps(allRetiradas);
 
-  // injeta usuario_nome em cada objeto
   allRetiradas.forEach(r => {
     r.usuario_nome = r.solicitado_localmente_por 
-        ? r.solicitado_localmente_por 
-        : usuarioMap[r.usuario_id];});
+      ? r.solicitado_localmente_por 
+      : usuarioMap[r.usuario_id];
+  });
 
   const main = document.getElementById('main-content');
   main.innerHTML = `
@@ -122,14 +142,11 @@ async function renderHistoricoRetiradas() {
           ${allRetiradas.map(r => `
             <tr>
               <td>${r.retirada_id}</td>
-              <td>${ r.solicitado_localmente_por
-                      ? r.solicitado_localmente_por
-                      : usuarioMap[r.usuario_id] }</td>
+              <td>${r.usuario_nome}</td>
               <td>${new Date(r.data_solicitacao).toLocaleDateString()}</td>
-              <td>${statusMap[r.status]}</td>                
+              <td>${statusMap[r.status]}</td>
               <td>
-                <button class="btn btn-sm btn-primary btn-detalhes-retirada"
-                        data-id="${r.retirada_id}">
+                <button class="btn btn-sm btn-primary btn-detalhes-retirada" data-id="${r.retirada_id}">
                   Ver detalhes
                 </button>
               </td>
@@ -148,10 +165,11 @@ async function renderPendentesRetiradas() {
   const { usuarioMap, setorMap } = await buildLookupMaps(pendentesRetiradas);
 
   pendentesRetiradas.forEach(r => {
-  r.usuario_nome = r.solicitado_localmente_por 
-    ? r.solicitado_localmente_por 
-    : usuarioMap[r.usuario_id];
-  r.setor_nome   = setorMap[r.setor_id];});
+    r.usuario_nome = r.solicitado_localmente_por 
+      ? r.solicitado_localmente_por 
+      : usuarioMap[r.usuario_id];
+    r.setor_nome = setorMap[r.setor_id];
+  });
 
   const main = document.getElementById('main-content');
   main.innerHTML = `
@@ -167,18 +185,14 @@ async function renderPendentesRetiradas() {
           ${pendentesRetiradas.map(r => `
             <tr>
               <td>${r.retirada_id}</td>
-              <td>${ r.solicitado_localmente_por
-                      ? r.solicitado_localmente_por
-                      : usuarioMap[r.usuario_id] }</td>
-              <td>${setorMap[r.setor_id]}</td>
+              <td>${r.usuario_nome}</td>
+              <td>${r.setor_nome}</td>
               <td>${new Date(r.data_solicitacao).toLocaleDateString()}</td>
               <td>
-                <button class="btn btn-sm btn-success btn-autorizar-retirada"
-                        data-id="${r.retirada_id}">
+                <button class="btn btn-sm btn-success btn-autorizar-retirada" data-id="${r.retirada_id}">
                   Autorizar/Negar
                 </button>
-                <button class="btn btn-sm btn-info btn-detalhes-retirada"
-                        data-id="${r.retirada_id}">
+                <button class="btn btn-sm btn-info btn-detalhes-retirada" data-id="${r.retirada_id}">
                   Ver detalhes
                 </button>
               </td>
@@ -193,58 +207,53 @@ async function renderPendentesRetiradas() {
 
 // Bind dos botões (detalhes & autorizar)
 function bindRetiradaActions() {
-  // detalhes
   document.querySelectorAll('.btn-detalhes-retirada').forEach(btn => {
     btn.onclick = () => {
       const id = +btn.dataset.id;
-      const r = allRetiradas.find(x=>x.retirada_id===id)
-             || pendentesRetiradas.find(x=>x.retirada_id===id);
+      const r = allRetiradas.find(x => x.retirada_id === id)
+             || pendentesRetiradas.find(x => x.retirada_id === id);
       fillModalDetalhes(r);
-      new bootstrap.Modal(
-        document.getElementById('modalVerDetalhesRetirada')
-      ).show();
+      new bootstrap.Modal(document.getElementById('modalVerDetalhesRetirada')).show();
     };
   });
 
-  // autorizar
   document.querySelectorAll('.btn-autorizar-retirada').forEach(btn => {
     btn.onclick = () => {
       const id = +btn.dataset.id;
-      const r = pendentesRetiradas.find(x=>x.retirada_id===id);
+      const r = pendentesRetiradas.find(x => x.retirada_id === id);
       fillModalAutorizar(r);
-      new bootstrap.Modal(
-        document.getElementById('modalAutorizarRetirada')
-      ).show();
+      new bootstrap.Modal(document.getElementById('modalAutorizarRetirada')).show();
     };
   });
 }
 
-
-// 4) Popula modal de detalhes
+// Popula modal de detalhes
 function fillModalDetalhes(r) {
   document.getElementById('detalheRetiradaId').value     = r.retirada_id;
   document.getElementById('detalheStatus').value        = statusMap[r.status];
-  document.getElementById('detalheSetor').value         = r.setor_nome;
-  document.getElementById('detalheUsuario').value       = r.usuario_nome;
+  document.getElementById('detalheSetor').value         = r.setor_id || '';
+  document.getElementById('detalheUsuario').value       = r.usuario_id;
   document.getElementById('detalheSolicitadoPor').value = r.solicitado_localmente_por || '—';
-  document.getElementById('detalheAutorizadoPor').value = r.autorizado_por_nome || '—';
+  document.getElementById('detalheAutorizadoPor').value = r.autorizado_por || '—';
   document.getElementById('detalheData').value          = new Date(r.data_solicitacao).toLocaleString('pt-BR');
   document.getElementById('detalheJustificativa').value = r.justificativa || '';
   document.getElementById('detalheStatusDesc').value    = r.detalhe_status || '—';
+
+  // novos itens
+  renderItemList('detalheItens', r.itens);
 }
 
-// 5) Popula modal de autorizar
+// Popula modal de autorizar
 function fillModalAutorizar(r) {
   document.getElementById('autorizarRetiradaId').value     = r.retirada_id;
-  document.getElementById('autorizarSetor').value         = r.setor_nome;
+  document.getElementById('autorizarSetor').value         = r.setor_nome || '';
   document.getElementById('autorizarUsuario').value       = r.usuario_nome;
   document.getElementById('autorizarJustificativa').value = r.justificativa || '';
   document.getElementById('autorizarData').value          = new Date(r.data_solicitacao).toLocaleString('pt-BR');
-
-  // limpa o campo de comentário
   document.getElementById('autorizarDetalheStatus').value = '';
 
-  // garante que os botões dentro do modal “saibam” o ID da retirada
+  renderItemList('autorizarItens', r.itens);
+
   document.getElementById('btn-autorizar-retirada').dataset.id = r.retirada_id;
   document.getElementById('btn-negar-retirada').dataset.id     = r.retirada_id;
 }
