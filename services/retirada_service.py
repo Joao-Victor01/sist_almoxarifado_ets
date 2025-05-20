@@ -1,14 +1,36 @@
+# services\retirada_service.py
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-
+from schemas.retirada import RetiradaOut
 from models.retirada import Retirada, StatusEnum
 from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
-from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus
+from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus, RetiradaPaginated, RetiradaFilterParams
 from services.alerta_service import AlertaService
 
 class RetiradaService:
+    
+    @staticmethod
+    async def get_retiradas_paginadas(db: AsyncSession, page: int, page_size: int) -> RetiradaPaginated:
+        total = await RetiradaRepository.count_retiradas(db)
+        pages = (total + page_size - 1) // page_size
+        offset = (page - 1) * page_size
+
+        sqlalchemy_items = await RetiradaRepository.get_retiradas_paginated(db, offset, page_size)
+        items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
+
+        return RetiradaPaginated(
+            total=total,
+            page=page,
+            pages=pages,
+            items=items
+        )
+
+    @staticmethod
+    async def filter_retiradas(db: AsyncSession, params: RetiradaFilterParams) -> list[Retirada]:
+        return await RetiradaRepository.filter_retiradas(db, params)
 
     @staticmethod
     async def solicitar_retirada(db: AsyncSession, retirada_data: RetiradaCreate, usuario_id: int):
