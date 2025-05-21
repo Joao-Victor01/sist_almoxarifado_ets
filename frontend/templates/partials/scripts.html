@@ -46,25 +46,6 @@
     document.getElementById('btn-open-cadastrar-categoria')?.addEventListener('click', e => { e.preventDefault(); modalCat.show(); });
     document.getElementById('listar-categoria-link')?.addEventListener('click', e => { e.preventDefault(); renderizarCategorias(); });
     document.getElementById('listar-categoria-link-quick')?.addEventListener('click', e => { e.preventDefault(); renderizarCategorias(); });
-
-    // Adicionar handlers para Retiradas (Navbar e Quick Access)
-    document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
-      e.preventDefault(); 
-      window.currentPage = 1; 
-      window.renderRetiradas('/paginated'); // 👈 Usa a função global
-    });
-
-    document.getElementById('listar-retiradas-pendentes-link')?.addEventListener('click', e => {
-      e.preventDefault(); 
-      window.currentPage = 1; 
-      window.renderRetiradas('/pendentes/paginated');
-    });
-
-    document.getElementById('listar-retiradas-pendentes-quick')?.addEventListener('click', e => {
-      e.preventDefault(); 
-      window.currentPage = 1; 
-      window.renderRetiradas('/pendentes/paginated');
-    });
   }
 
   function bindLogout() {
