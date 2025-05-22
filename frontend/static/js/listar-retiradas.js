@@ -1,694 +1,623 @@
-// frontend/static/js/listar-retiradas.js
+// frontend/static/js/listar-retiradas-refatorado.js
 
-// Estado global
-let allRetiradas = [];
-let pendentesRetiradas = [];
-let currentHistoricoPage = 1;
-let totalHistoricoPages = 1;
-let currentHistoricoPageSize = 10;
-let currentHistoricoFilters = {};
-
-let currentPendentesPage = 1;
-let totalPendentesPages = 1;
-let currentPendentesPageSize = 10;
-
-const statusMap = {
-  1: 'PENDENTE',
-  2: 'AUTORIZADA',
-  3: 'CONCLUÍDA',
-  4: 'NEGADA'
+// -----------------------------------------------------------------------------
+// 0. CONFIGURAÇÃO E CONSTANTES
+// -----------------------------------------------------------------------------
+const CONFIG = {
+    API_BASE_URL: '/api/almoxarifado',
+    STATUS_MAP: {
+        1: 'PENDENTE',
+        2: 'AUTORIZADA',
+        3: 'CONCLUÍDA',
+        4: 'NEGADA'
+    },
+    STATUS_MAP_UPDATE: {
+        AUTORIZADA: 2,
+        NEGADA: 4
+    },
+    DEFAULT_PAGE_SIZE: 10,
+    PAGE_SIZE_OPTIONS: [5, 10, 25, 50, 100],
+    MAIN_CONTENT_ID: 'main-content',
+    MODAL_DETALHE_ITEM_ID: 'modalDetalheItem',
+    MODAL_VER_DETALHES_RETIRADA_ID: 'modalVerDetalhesRetirada',
+    MODAL_AUTORIZAR_RETIRADA_ID: 'modalAutorizarRetirada',
 };
 
-const statusMapUpdate = {
-  AUTORIZADA: 2,
-  NEGADA: 4
-};
-
-function showAlert(message, type = 'success') {
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-    ${message}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>`;
-  const mainContent = document.getElementById('main-content');
-  if (mainContent) {
-    mainContent.prepend(wrapper);
-  } else {
-    console.error("Elemento 'main-content' não encontrado para exibir alerta.");
-  }
-}
-
-// --- Helpers de API ---
-async function getUsuarioById(id) {
-  const token = localStorage.getItem('token');
-  try {
-    const resp = await fetch(`/api/almoxarifado/usuarios/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!resp.ok) return `#${id}`;
-    const u = await resp.json();
-    return u.nome_usuario;
-  } catch {
-    return `#${id}`;
-  }
-}
-
-async function getSetorById(id) {
-  const token = localStorage.getItem('token');
-  try {
-    const resp = await fetch(`/api/almoxarifado/setores/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!resp.ok) return `#${id}`;
-    const s = await resp.json();
-    return s.nome_setor;
-  } catch {
-    return `#${id}`;
-  }
-}
-
-async function fetchAllRetiradas(page = 1, pageSize = 10, filters = {}) {
-  console.log(`WorkspaceAllRetiradas - page: ${page}, pageSize: ${pageSize}, filters:`, filters);
-  const token = localStorage.getItem('token');
-  const params = new URLSearchParams({ page, page_size: pageSize });
-
-  for (const key in filters) {
-    if (filters[key]) {
-      params.append(key, filters[key]);
+// -----------------------------------------------------------------------------
+// 1. UTILITIES
+// -----------------------------------------------------------------------------
+const Utils = {
+    getToken: () => localStorage.getItem('token'),
+    formatDate: (dateString) => dateString ? new Date(dateString).toLocaleDateString('pt-BR') : 'N/A',
+    formatDateTime: (dateString) => dateString ? new Date(dateString).toLocaleString('pt-BR') : 'N/A',
+    getElement: (selector) => document.querySelector(selector),
+    getElements: (selector) => document.querySelectorAll(selector),
+    getValue: (selector) => Utils.getElement(selector)?.value || '',
+    setValue: (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+    },
+    setText: (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    },
+    hideModal: (modalId) => {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
+        }
+    },
+    showModal: (modalId) => {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            new bootstrap.Modal(modalElement).show();
+        }
     }
-  }
+};
 
-  const url = Object.values(filters).some(val => val) ? // Verifica se algum filtro tem valor
-    `/api/almoxarifado/retiradas/search?${params.toString()}` :
-    `/api/almoxarifado/retiradas/paginated?${params.toString()}`;
+// -----------------------------------------------------------------------------
+// 2. API SERVICE
+// -----------------------------------------------------------------------------
+const ApiService = {
+    _fetch: async function(endpoint, options = {}) {
+        const token = Utils.getToken();
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...options.headers,
+        };
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}`, { ...options, headers });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: `Erro na requisição: ${response.statusText}` }));
+                throw new Error(errorData.detail || `Falha na operação (${response.status})`);
+            }
+            return response.status === 204 ? null : response.json(); // Handle 204 No Content
+        } catch (error) {
+            console.error(`API Error (${endpoint}):`, error);
+            throw error; // Re-throw para ser tratado pelo chamador
+        }
+    },
 
-  const resp = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  if (!resp.ok) {
-    const errorData = await resp.json().catch(() => ({ detail: 'Falha ao carregar histórico. Resposta não JSON.'}));
-    throw new Error(errorData.detail || 'Falha ao carregar histórico');
-  }
-  const data = await resp.json();
-  console.log("fetchAllRetiradas - data received:", data);
-  return data;
-}
+    getUsuarioById: async (id) => {
+        if (!id) return 'N/A';
+        try {
+            const u = await ApiService._fetch(`/usuarios/${id}`);
+            return u.nome_usuario;
+        } catch { return `#${id}`; }
+    },
 
-async function fetchRetiradasPendentes(page = 1, pageSize = 10) {
-  console.log(`WorkspaceRetiradasPendentes - page: ${page}, pageSize: ${pageSize}`);
-  const token = localStorage.getItem('token');
-  const resp = await fetch(`/api/almoxarifado/retiradas/pendentes/paginated?page=${page}&page_size=${pageSize}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  if (!resp.ok) {
-    const errorData = await resp.json().catch(() => ({ detail: 'Falha ao carregar pendentes. Resposta não JSON.'}));
-    throw new Error(errorData.detail || 'Falha ao carregar pendentes');
-  }
-  const data = await resp.json();
-  console.log("fetchRetiradasPendentes - data received:", data);
-  return data;
-}
+    getSetorById: async (id) => {
+        if (!id) return 'N/A';
+        try {
+            const s = await ApiService._fetch(`/setores/${id}`);
+            return s.nome_setor;
+        } catch { return `#${id}`; }
+    },
 
-async function buildLookupMaps(retiradas) {
-  const userIds = [...new Set(retiradas.map(r => r.usuario_id).filter(id => id != null))];
-  const setorIds = [...new Set(retiradas.map(r => r.setor_id).filter(id => id != null))];
+    fetchAllRetiradas: (page, pageSize, filters) => {
+        const params = new URLSearchParams({ page, page_size: pageSize });
+        for (const key in filters) {
+            if (filters[key]) params.append(key, filters[key]);
+        }
+        const endpoint = Object.values(filters).some(val => val) ?
+            `/retiradas/search?${params.toString()}` :
+            `/retiradas/paginated?${params.toString()}`;
+        return ApiService._fetch(endpoint);
+    },
 
-  const usuariosArr = await Promise.all(
-    userIds.map(id => getUsuarioById(id).then(name => [id, name]))
-  );
-  const setoresArr = await Promise.all(
-    setorIds.map(id => getSetorById(id).then(name => [id, name]))
-  );
+    fetchRetiradasPendentes: (page, pageSize) => {
+        const params = new URLSearchParams({ page, page_size: pageSize });
+        return ApiService._fetch(`/retiradas/pendentes/paginated?${params.toString()}`);
+    },
 
-  return {
-    usuarioMap: Object.fromEntries(usuariosArr),
-    setorMap: Object.fromEntries(setoresArr)
-  };
-}
+    updateRetiradaStatus: (id, status, detalheStatus) => {
+        return ApiService._fetch(`/retiradas/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ status, detalhe_status: detalheStatus })
+        });
+    },
 
-function openItemDetail(item, qtdRetirada) {
-  document.getElementById('itemNome').textContent = item.nome_item_original;
-  document.getElementById('itemEstoque').textContent = item.quantidade_item;
-  document.getElementById('itemQtdRetirada').textContent = qtdRetirada;
-  document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item;
-  document.getElementById('itemValidade').textContent = new Date(item.data_validade_item).toLocaleDateString('pt-BR');
-  new bootstrap.Modal(document.getElementById('modalDetalheItem')).show();
-}
+    buildLookupMaps: async (retiradas) => {
+        const userIds = [...new Set(retiradas.map(r => r.usuario_id).filter(Boolean))];
+        const setorIds = [...new Set(retiradas.map(r => r.setor_id).filter(Boolean))];
 
-function renderItemList(containerId, itens) {
-  const cont = document.getElementById(containerId);
-  cont.innerHTML = '';
-  itens.forEach(i => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'list-group-item list-group-item-action';
-    btn.textContent = `${i.item.nome_item_original} — ${i.quantidade_retirada}`;
-    btn.onclick = () => openItemDetail(i.item, i.quantidade_retirada);
-    cont.appendChild(btn);
-  });
-}
+        const usuariosArr = await Promise.all(userIds.map(id => ApiService.getUsuarioById(id).then(name => [id, name])));
+        const setoresArr = await Promise.all(setorIds.map(id => ApiService.getSetorById(id).then(name => [id, name])));
 
-// Render histórico de retiradas
-async function renderHistoricoRetiradas(page = 1, filters = currentHistoricoFilters, pageSize = currentHistoricoPageSize) {
-  try {
-    const data = await fetchAllRetiradas(page, pageSize, filters);
-    currentHistoricoPage = data.current_page;
-    totalHistoricoPages = data.total_pages;
-    currentHistoricoPageSize = pageSize;
-    currentHistoricoFilters = filters;
+        return {
+            usuarioMap: Object.fromEntries(usuariosArr),
+            setorMap: Object.fromEntries(setoresArr)
+        };
+    }
+};
 
-    console.log(`renderHistoricoRetiradas - Atualizado: currentHistoricoPage=${currentHistoricoPage}, totalHistoricoPages=${totalHistoricoPages}`);
+// -----------------------------------------------------------------------------
+// 3. UI MANAGER & TEMPLATES
+// -----------------------------------------------------------------------------
+const Templates = {
+    alert: (message, type) => `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`,
 
-    const { usuarioMap } = await buildLookupMaps(data.items);
+    pagination: (currentPage, totalPages, actionPrefix, pageSize, pageSizeOptions) => {
+        if (totalPages <= 0) return '';
+        let pageLinks = '';
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
 
-    allRetiradas = data.items.map(r => ({
-      ...r,
-      usuario_nome: r.solicitado_localmente_por || usuarioMap[r.usuario_id] || 'N/A'
-    }));
+        if (totalPages <= 5) {
+            startPage = 1; endPage = totalPages;
+        } else {
+            if (currentPage <= 3) { startPage = 1; endPage = 5; }
+            else if (currentPage + 2 >= totalPages) { startPage = totalPages - 4; endPage = totalPages; }
+        }
 
-    const main = document.getElementById('main-content');
-    main.innerHTML = `
-      <h3 class="mb-3">Histórico de Retiradas</h3>
-      <div class="card mb-4">
-        <div class="card-header">Filtros de Busca</div>
-        <div class="card-body">
-          <form id="form-filter-historico">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label for="filterStatus" class="form-label">Status</label>
-                <select class="form-select" id="filterStatus">
-                  <option value="">Todos</option>
-                  <option value="PENDENTE" ${filters.status === 'PENDENTE' ? 'selected' : ''}>Pendente</option>
-                  <option value="AUTORIZADA" ${filters.status === 'AUTORIZADA' ? 'selected' : ''}>Autorizada</option>
-                  <option value="CONCLUIDA" ${filters.status === 'CONCLUIDA' ? 'selected' : ''}>Concluída</option>
-                  <option value="NEGADA" ${filters.status === 'NEGADA' ? 'selected' : ''}>Negada</option>
+        if (startPage > 1) {
+            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-action="${actionPrefix}-page" data-page="1">1</a></li>`;
+            if (startPage > 2) pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        for (let i = startPage; i <= endPage; i++) {
+            pageLinks += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" data-action="${actionPrefix}-page" data-page="${i}">${i}</a>
+                </li>`;
+        }
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-action="${actionPrefix}-page" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+
+        const pageSizeSelectOptions = pageSizeOptions.map(size =>
+            `<option value="${size}" ${size === pageSize ? 'selected' : ''}>${size}</option>`
+        ).join('');
+
+        return `
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-action="${actionPrefix}-prev">Anterior</a>
+                    </li>
+                    ${pageLinks}
+                    <li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-action="${actionPrefix}-next">Próximo</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="d-flex justify-content-center my-2">
+                <label class="me-2 align-self-center">Itens por página:</label>
+                <select class="form-select w-auto" data-action="${actionPrefix}-pagesize">
+                    ${pageSizeSelectOptions}
                 </select>
-              </div>
-              <div class="col-md-4">
-                <label for="filterSolicitante" class="form-label">Solicitante</label>
-                <input type="text" class="form-control" id="filterSolicitante" value="${filters.solicitante || ''}">
-              </div>
-              <div class="col-md-4">
-                <label for="filterStartDate" class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" id="filterStartDate" value="${filters.start_date || ''}">
-              </div>
-              <div class="col-md-4">
-                <label for="filterEndDate" class="form-label">Data Final</label>
-                <input type="date" class="form-control" id="filterEndDate" value="${filters.end_date || ''}">
-              </div>
-              <div class="col-12">
-                <button type="submit" class="btn btn-primary" id="btn-search-historico">Buscar</button>
-                <button type="button" class="btn btn-secondary ms-2" id="btn-clear-filters">Limpar Filtros</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
+            </div>`;
+    },
 
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped">
-          <thead class="table-secondary">
+    itemList: (items, onOpenDetail) => items.map(i => `
+        <button type="button" class="list-group-item list-group-item-action item-detail-trigger"
+            data-item='${JSON.stringify(i.item)}' data-qtd-retirada="${i.quantidade_retirada}">
+            ${i.item.nome_item_original} — ${i.quantidade_retirada}
+        </button>
+    `).join(''),
+
+    historicoFilters: (filters) => `
+        <div class="card mb-4">
+            <div class="card-header">Filtros de Busca</div>
+            <div class="card-body">
+                <form id="form-filter-historico">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="filterStatus" class="form-label">Status</label>
+                            <select class="form-select" id="filterStatus">
+                                <option value="">Todos</option>
+                                <option value="PENDENTE" ${filters.status === 'PENDENTE' ? 'selected' : ''}>Pendente</option>
+                                <option value="AUTORIZADA" ${filters.status === 'AUTORIZADA' ? 'selected' : ''}>Autorizada</option>
+                                <option value="CONCLUIDA" ${filters.status === 'CONCLUIDA' ? 'selected' : ''}>Concluída</option>
+                                <option value="NEGADA" ${filters.status === 'NEGADA' ? 'selected' : ''}>Negada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterSolicitante" class="form-label">Solicitante</label>
+                            <input type="text" class="form-control" id="filterSolicitante" value="${filters.solicitante || ''}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterStartDate" class="form-label">Data Inicial</label>
+                            <input type="date" class="form-control" id="filterStartDate" value="${filters.start_date || ''}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterEndDate" class="form-label">Data Final</label>
+                            <input type="date" class="form-control" id="filterEndDate" value="${filters.end_date || ''}">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Buscar</button>
+                            <button type="button" class="btn btn-secondary ms-2" id="btn-clear-filters">Limpar Filtros</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>`,
+
+    table: (headers, rowsHtml, noDataMessage = "Nenhum item encontrado.") => `
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-secondary">
+                    <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml || `<tr><td colspan="${headers.length}" class="text-center">${noDataMessage}</td></tr>`}
+                </tbody>
+            </table>
+        </div>`
+};
+
+const UIManager = {
+    showAlert: (message, type = 'success') => {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = Templates.alert(message, type);
+        const mainContent = document.getElementById(CONFIG.MAIN_CONTENT_ID);
+        if (mainContent) {
+            mainContent.prepend(wrapper.firstChild);
+        } else {
+            console.error(`Elemento '${CONFIG.MAIN_CONTENT_ID}' não encontrado para exibir alerta.`);
+        }
+        // Auto-remove alert after 5 seconds
+        setTimeout(() => {
+            const alertElement = mainContent?.querySelector('.alert');
+            if (alertElement) {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alertElement);
+                if(bsAlert) bsAlert.close();
+            }
+        }, 5000);
+    },
+
+    render: (containerId, html) => {
+        const container = document.getElementById(containerId);
+        if (container) container.innerHTML = html;
+        else console.error(`Container #${containerId} não encontrado para renderização.`);
+    },
+
+    openItemDetailModal: (item, qtdRetirada) => {
+        Utils.setText('itemNome', item.nome_item_original);
+        Utils.setText('itemEstoque', item.quantidade_item);
+        Utils.setText('itemQtdRetirada', qtdRetirada);
+        Utils.setText('itemEstoqueMin', item.quantidade_minima_item);
+        Utils.setText('itemValidade', Utils.formatDate(item.data_validade_item));
+        Utils.showModal(CONFIG.MODAL_DETALHE_ITEM_ID);
+    },
+
+    renderItemListInModal: (containerId, itens) => {
+        const html = Templates.itemList(itens);
+        UIManager.render(containerId, html);
+        Utils.getElements(`#${containerId} .item-detail-trigger`).forEach(btn => {
+            btn.onclick = () => {
+                const item = JSON.parse(btn.dataset.item);
+                const qtdRetirada = btn.dataset.qtdRetirada;
+                UIManager.openItemDetailModal(item, qtdRetirada);
+            };
+        });
+    },
+
+    fillDetalhesRetiradaModal: (r) => {
+        Utils.setValue('detalheRetiradaId', r.retirada_id);
+        Utils.setValue('detalheStatus', CONFIG.STATUS_MAP[r.status]);
+        Utils.setValue('detalheSetor', r.setor_nome || '—');
+        Utils.setValue('detalheUsuario', r.usuario_nome || '—');
+        Utils.setValue('detalheSolicitadoPor', r.solicitado_localmente_por || '—');
+        Utils.setValue('detalheAutorizadoPor', r.autorizado_por || '—');
+        Utils.setValue('detalheData', Utils.formatDateTime(r.data_solicitacao));
+        Utils.setValue('detalheJustificativa', r.justificativa || '');
+        Utils.setValue('detalheStatusDesc', r.detalhe_status || '—');
+        UIManager.renderItemListInModal('detalheItens', r.itens);
+        Utils.showModal(CONFIG.MODAL_VER_DETALHES_RETIRADA_ID);
+    },
+
+    fillAutorizarRetiradaModal: (r) => {
+        Utils.setValue('autorizarRetiradaId', r.retirada_id);
+        Utils.setValue('autorizarSetor', r.setor_nome || '');
+        Utils.setValue('autorizarUsuario', r.usuario_nome);
+        Utils.setValue('autorizarJustificativa', r.justificativa || '');
+        Utils.setValue('autorizarData', Utils.formatDateTime(r.data_solicitacao));
+        Utils.setValue('autorizarDetalheStatus', ''); // Limpa o campo
+        UIManager.renderItemListInModal('autorizarItens', r.itens);
+
+        Utils.getElement('#btn-confirmar-autorizar-retirada').dataset.id = r.retirada_id;
+        Utils.getElement('#btn-confirmar-negar-retirada').dataset.id = r.retirada_id;
+        Utils.showModal(CONFIG.MODAL_AUTORIZAR_RETIRADA_ID);
+    }
+};
+
+// -----------------------------------------------------------------------------
+// 4. STATE MANAGER
+// -----------------------------------------------------------------------------
+const StateManager = {
+    historico: {
+        items: [],
+        currentPage: 1,
+        totalPages: 1,
+        pageSize: CONFIG.DEFAULT_PAGE_SIZE,
+        filters: {},
+        isLoading: false,
+    },
+    pendentes: {
+        items: [],
+        currentPage: 1,
+        totalPages: 1,
+        pageSize: CONFIG.DEFAULT_PAGE_SIZE,
+        isLoading: false,
+    },
+    // Funções para atualizar o estado de forma segura poderiam ser adicionadas aqui
+    // Ex: updateHistoricoState(newData), updatePendentesState(newData)
+};
+
+// -----------------------------------------------------------------------------
+// 5. CONTROLLERS (Lógica de cada View)
+// -----------------------------------------------------------------------------
+const HistoricoController = {
+    async loadAndRender(page = 1, filters = StateManager.historico.filters, pageSize = StateManager.historico.pageSize) {
+        if (StateManager.historico.isLoading) return;
+        StateManager.historico.isLoading = true;
+        console.log(`Historico: Carregando page=${page}, pageSize=${pageSize}, filters:`, filters);
+
+        try {
+            const data = await ApiService.fetchAllRetiradas(page, pageSize, filters);
+            const { usuarioMap } = await ApiService.buildLookupMaps(data.items);
+
+            StateManager.historico.items = data.items.map(r => ({
+                ...r,
+                usuario_nome: r.solicitado_localmente_por || usuarioMap[r.usuario_id] || 'N/A'
+            }));
+            StateManager.historico.currentPage = data.current_page;
+            StateManager.historico.totalPages = data.total_pages;
+            StateManager.historico.pageSize = pageSize; // O backend pode retornar um page_size diferente do solicitado
+            StateManager.historico.filters = filters;
+
+            this.renderView();
+        } catch (error) {
+            UIManager.showAlert(error.message || 'Falha ao carregar histórico.', 'danger');
+        } finally {
+            StateManager.historico.isLoading = false;
+        }
+    },
+
+    renderView: () => {
+        const { items, currentPage, totalPages, pageSize, filters } = StateManager.historico;
+        const tableHeaders = ['ID', 'Usuário', 'Data', 'Status', 'Ações'];
+        const tableRows = items.map(r => `
             <tr>
-              <th>ID</th><th>Usuário</th><th>Data</th><th>Status</th><th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${allRetiradas.length > 0 ? allRetiradas.map(r => `
-              <tr>
                 <td>${r.retirada_id}</td>
                 <td>${r.usuario_nome}</td>
-                <td>${new Date(r.data_solicitacao).toLocaleDateString('pt-BR')}</td>
-                <td>${statusMap[r.status]}</td>
+                <td>${Utils.formatDate(r.data_solicitacao)}</td>
+                <td>${CONFIG.STATUS_MAP[r.status]}</td>
                 <td>
-                  <button class="btn btn-sm btn-primary btn-detalhes-retirada" data-id="${r.retirada_id}">
-                    Ver detalhes
-                  </button>
+                    <button class="btn btn-sm btn-primary btn-detalhes-retirada" data-id="${r.retirada_id}">
+                        Ver detalhes
+                    </button>
                 </td>
-              </tr>
-            `).join('') : `<tr><td colspan="5" class="text-center">Nenhuma retirada encontrada.</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-      <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-          <li class="page-item ${currentHistoricoPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-action="prev-historico">Anterior</a>
-          </li>
-          ${(() => {
-            let pageLinks = '';
-            let startPage = Math.max(1, currentHistoricoPage - 2);
-            let endPage = Math.min(totalHistoricoPages, currentHistoricoPage + 2);
-
-            if (totalHistoricoPages <= 5) {
-                startPage = 1;
-                endPage = totalHistoricoPages;
-            } else {
-                if (currentHistoricoPage <= 3) {
-                    startPage = 1;
-                    endPage = 5;
-                } else if (currentHistoricoPage + 2 >= totalHistoricoPages) {
-                    startPage = totalHistoricoPages - 4;
-                    endPage = totalHistoricoPages;
-                }
-            }
-
-            if (startPage > 1) {
-              pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page-historico="1">1</a></li>`;
-              if (startPage > 2) {
-                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-              }
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-              pageLinks += `
-                <li class="page-item ${i === currentHistoricoPage ? 'active' : ''}">
-                  <a class="page-link" href="#" data-page-historico="${i}">${i}</a>
-                </li>
-              `;
-            }
-
-            if (endPage < totalHistoricoPages) {
-              if (endPage < totalHistoricoPages - 1) {
-                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-              }
-              pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page-historico="${totalHistoricoPages}">${totalHistoricoPages}</a></li>`;
-            }
-            return pageLinks;
-          })()}
-          <li class="page-item ${currentHistoricoPage === totalHistoricoPages || totalHistoricoPages === 0 ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-action="next-historico">Próximo</a>
-          </li>
-        </ul>
-      </nav>
-      <div class="d-flex justify-content-center my-2">
-        <label class="me-2 align-self-center">Itens por página:</label>
-        <select class="form-select w-auto" id="historicoPageSize">
-          <option value="5" ${currentHistoricoPageSize === 5 ? 'selected' : ''}>5</option>
-          <option value="10" ${currentHistoricoPageSize === 10 ? 'selected' : ''}>10</option>
-          <option value="25" ${currentHistoricoPageSize === 25 ? 'selected' : ''}>25</option>
-          <option value="50" ${currentHistoricoPageSize === 50 ? 'selected' : ''}>50</option>
-          <option value="100" ${currentHistoricoPageSize === 100 ? 'selected' : ''}>100</option>
-        </select>
-      </div>
-    `;
-
-    bindRetiradaActions();
-    bindHistoricoPagination(totalHistoricoPages); // Passando totalHistoricoPages
-
-    document.getElementById('form-filter-historico').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const status = document.getElementById('filterStatus').value;
-      const solicitante = document.getElementById('filterSolicitante').value;
-      const startDate = document.getElementById('filterStartDate').value;
-      const endDate = document.getElementById('filterEndDate').value;
-
-      const newFilters = { status, solicitante, start_date: startDate, end_date: endDate };
-      await renderHistoricoRetiradas(1, newFilters, currentHistoricoPageSize);
-    });
-
-    document.getElementById('btn-clear-filters').addEventListener('click', async () => {
-      document.getElementById('filterStatus').value = '';
-      document.getElementById('filterSolicitante').value = '';
-      document.getElementById('filterStartDate').value = '';
-      document.getElementById('filterEndDate').value = '';
-      await renderHistoricoRetiradas(1, {}, currentHistoricoPageSize);
-    });
-
-  } catch (error) {
-    console.error("Erro em renderHistoricoRetiradas:", error);
-    showAlert(error.message || 'Ocorreu um erro inesperado.', 'danger');
-  }
-}
-
-// Render retiradas pendentes
-async function renderPendentesRetiradas(page = 1, pageSize = currentPendentesPageSize) {
-  try {
-    const data = await fetchRetiradasPendentes(page, pageSize);
-    currentPendentesPage = data.current_page;
-    totalPendentesPages = data.total_pages;
-    currentPendentesPageSize = pageSize;
-
-    console.log(`renderPendentesRetiradas - Atualizado: currentPendentesPage=${currentPendentesPage}, totalPendentesPages=${totalPendentesPages}`);
-
-
-    const { usuarioMap, setorMap } = await buildLookupMaps(data.items);
-
-    pendentesRetiradas = data.items.map(r => ({
-      ...r,
-      usuario_nome: r.solicitado_localmente_por || usuarioMap[r.usuario_id] || 'N/A',
-      setor_nome: setorMap[r.setor_id] || 'N/A'
-    }));
-
-    const main = document.getElementById('main-content');
-    main.innerHTML = `
-      <h3 class="mb-3">Retiradas Pendentes</h3>
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped">
-          <thead class="table-secondary">
-            <tr>
-              <th>ID</th><th>Usuário</th><th>Setor</th><th>Data</th><th>Ações</th>
             </tr>
-          </thead>
-          <tbody>
-            ${pendentesRetiradas.length > 0 ? pendentesRetiradas.map(r => `
-              <tr>
+        `).join('');
+
+        const mainHtml = `
+            <h3 class="mb-3">Histórico de Retiradas</h3>
+            ${Templates.historicoFilters(filters)}
+            ${Templates.table(tableHeaders, tableRows, "Nenhum histórico de retirada encontrado.")}
+            ${Templates.pagination(currentPage, totalPages, 'historico', pageSize, CONFIG.PAGE_SIZE_OPTIONS)}
+        `;
+        UIManager.render(CONFIG.MAIN_CONTENT_ID, mainHtml);
+        HistoricoController.bindEvents();
+    },
+
+    bindEvents: () => {
+        // Filtros
+        const form = Utils.getElement('#form-filter-historico');
+        if (form) {
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                const newFilters = {
+                    status: Utils.getValue('#filterStatus'),
+                    solicitante: Utils.getValue('#filterSolicitante'),
+                    start_date: Utils.getValue('#filterStartDate'),
+                    end_date: Utils.getValue('#filterEndDate'),
+                };
+                HistoricoController.loadAndRender(1, newFilters, StateManager.historico.pageSize);
+            };
+        }
+        const btnClear = Utils.getElement('#btn-clear-filters');
+        if (btnClear) {
+            btnClear.onclick = () => {
+                Utils.getElement('#form-filter-historico').reset(); // Limpa o formulário visualmente
+                HistoricoController.loadAndRender(1, {}, StateManager.historico.pageSize);
+            };
+        }
+
+        // Paginação
+        Utils.getElements('[data-action^="historico-"]').forEach(el => {
+            el.onclick = (e) => {
+                e.preventDefault();
+                const action = e.currentTarget.dataset.action;
+                let newPage = StateManager.historico.currentPage;
+                let newPageSize = StateManager.historico.pageSize;
+
+                if (action === 'historico-prev') newPage--;
+                else if (action === 'historico-next') newPage++;
+                else if (action === 'historico-page') newPage = parseInt(e.currentTarget.dataset.page);
+                else if (action === 'historico-pagesize') {
+                    newPageSize = parseInt(e.currentTarget.value);
+                    newPage = 1; // Reset to first page on page size change
+                }
+                HistoricoController.loadAndRender(newPage, StateManager.historico.filters, newPageSize);
+            };
+        });
+
+        // Detalhes da Retirada
+        Utils.getElements('.btn-detalhes-retirada').forEach(btn => {
+            btn.onclick = () => {
+                const id = parseInt(btn.dataset.id);
+                const retirada = StateManager.historico.items.find(r => r.retirada_id === id);
+                if (retirada) UIManager.fillDetalhesRetiradaModal(retirada);
+            };
+        });
+    }
+};
+
+const PendentesController = {
+    async loadAndRender(page = 1, pageSize = StateManager.pendentes.pageSize) {
+        if (StateManager.pendentes.isLoading) return;
+        StateManager.pendentes.isLoading = true;
+        console.log(`Pendentes: Carregando page=${page}, pageSize=${pageSize}`);
+
+        try {
+            const data = await ApiService.fetchRetiradasPendentes(page, pageSize);
+            const { usuarioMap, setorMap } = await ApiService.buildLookupMaps(data.items);
+
+            StateManager.pendentes.items = data.items.map(r => ({
+                ...r,
+                usuario_nome: r.solicitado_localmente_por || usuarioMap[r.usuario_id] || 'N/A',
+                setor_nome: setorMap[r.setor_id] || 'N/A'
+            }));
+            StateManager.pendentes.currentPage = data.current_page;
+            StateManager.pendentes.totalPages = data.total_pages;
+            StateManager.pendentes.pageSize = pageSize;
+
+            this.renderView();
+        } catch (error) {
+            UIManager.showAlert(error.message || 'Falha ao carregar retiradas pendentes.', 'danger');
+        } finally {
+            StateManager.pendentes.isLoading = false;
+        }
+    },
+
+    renderView: () => {
+        const { items, currentPage, totalPages, pageSize } = StateManager.pendentes;
+        const tableHeaders = ['ID', 'Usuário', 'Setor', 'Data', 'Ações'];
+        const tableRows = items.map(r => `
+            <tr>
                 <td>${r.retirada_id}</td>
                 <td>${r.usuario_nome}</td>
                 <td>${r.setor_nome}</td>
-                <td>${new Date(r.data_solicitacao).toLocaleDateString('pt-BR')}</td>
+                <td>${Utils.formatDate(r.data_solicitacao)}</td>
                 <td>
-                  <button class="btn btn-sm btn-success btn-autorizar-retirada-trigger" data-id="${r.retirada_id}">
-                    Autorizar/Negar
-                  </button>
-                  <button class="btn btn-sm btn-info btn-detalhes-retirada" data-id="${r.retirada_id}">
-                    Ver detalhes
-                  </button>
+                    <button class="btn btn-sm btn-success btn-autorizar-negar-trigger" data-id="${r.retirada_id}">
+                        Autorizar/Negar
+                    </button>
+                    <button class="btn btn-sm btn-info btn-detalhes-retirada" data-id="${r.retirada_id}">
+                        Ver detalhes
+                    </button>
                 </td>
-              </tr>
-            `).join('') : `<tr><td colspan="5" class="text-center">Nenhuma retirada pendente encontrada.</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-      <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-          <li class="page-item ${currentPendentesPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-action="prev-pendentes">Anterior</a>
-          </li>
-          ${(() => {
-            let pageLinks = '';
-            let startPage = Math.max(1, currentPendentesPage - 2);
-            let endPage = Math.min(totalPendentesPages, currentPendentesPage + 2);
+            </tr>
+        `).join('');
 
-            if (totalPendentesPages <= 5) {
-                startPage = 1;
-                endPage = totalPendentesPages;
-            } else {
-                if (currentPendentesPage <= 3) {
-                    startPage = 1;
-                    endPage = 5;
-                } else if (currentPendentesPage + 2 >= totalPendentesPages) {
-                    startPage = totalPendentesPages - 4;
-                    endPage = totalPendentesPages;
+        const mainHtml = `
+            <h3 class="mb-3">Retiradas Pendentes</h3>
+            ${Templates.table(tableHeaders, tableRows, "Nenhuma retirada pendente encontrada.")}
+            ${Templates.pagination(currentPage, totalPages, 'pendentes', pageSize, CONFIG.PAGE_SIZE_OPTIONS)}
+        `;
+        UIManager.render(CONFIG.MAIN_CONTENT_ID, mainHtml);
+        PendentesController.bindEvents();
+    },
+
+    bindEvents: () => {
+        // Paginação
+        Utils.getElements('[data-action^="pendentes-"]').forEach(el => {
+            el.onclick = (e) => {
+                e.preventDefault();
+                const action = e.currentTarget.dataset.action;
+                let newPage = StateManager.pendentes.currentPage;
+                let newPageSize = StateManager.pendentes.pageSize;
+
+                if (action === 'pendentes-prev') newPage--;
+                else if (action === 'pendentes-next') newPage++;
+                else if (action === 'pendentes-page') newPage = parseInt(e.currentTarget.dataset.page);
+                else if (action === 'pendentes-pagesize') {
+                    newPageSize = parseInt(e.currentTarget.value);
+                    newPage = 1;
                 }
-            }
+                PendentesController.loadAndRender(newPage, newPageSize);
+            };
+        });
 
-            if (startPage > 1) {
-              pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page-pendentes="1">1</a></li>`;
-              if (startPage > 2) {
-                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-              }
-            }
+        // Detalhes da Retirada
+        Utils.getElements('.btn-detalhes-retirada').forEach(btn => {
+            btn.onclick = () => {
+                const id = parseInt(btn.dataset.id);
+                // Tenta encontrar em pendentes primeiro, depois em histórico (caso o modal seja reutilizado em outros contextos)
+                const retirada = StateManager.pendentes.items.find(r => r.retirada_id === id) || StateManager.historico.items.find(r => r.retirada_id === id);
+                if (retirada) UIManager.fillDetalhesRetiradaModal(retirada);
+            };
+        });
 
-            for (let i = startPage; i <= endPage; i++) {
-              pageLinks += `
-                <li class="page-item ${i === currentPendentesPage ? 'active' : ''}">
-                  <a class="page-link" href="#" data-page-pendentes="${i}">${i}</a>
-                </li>
-              `;
-            }
+        // Abrir Modal de Autorizar/Negar
+        Utils.getElements('.btn-autorizar-negar-trigger').forEach(btn => {
+            btn.onclick = () => {
+                const id = parseInt(btn.dataset.id);
+                const retirada = StateManager.pendentes.items.find(r => r.retirada_id === id);
+                if (retirada) UIManager.fillAutorizarRetiradaModal(retirada);
+            };
+        });
+    },
 
-            if (endPage < totalPendentesPages) {
-              if (endPage < totalPendentesPages - 1) {
-                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-              }
-              pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page-pendentes="${totalPendentesPages}">${totalPendentesPages}</a></li>`;
-            }
-            return pageLinks;
-          })()}
-          <li class="page-item ${currentPendentesPage === totalPendentesPages || totalPendentesPages === 0 ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-action="next-pendentes">Próximo</a>
-          </li>
-        </ul>
-      </nav>
-      <div class="d-flex justify-content-center my-2">
-        <label class="me-2 align-self-center">Itens por página:</label>
-        <select class="form-select w-auto" id="pendentesPageSize">
-          <option value="5" ${currentPendentesPageSize === 5 ? 'selected' : ''}>5</option>
-          <option value="10" ${currentPendentesPageSize === 10 ? 'selected' : ''}>10</option>
-          <option value="25" ${currentPendentesPageSize === 25 ? 'selected' : ''}>25</option>
-          <option value="50" ${currentPendentesPageSize === 50 ? 'selected' : ''}>50</option>
-          <option value="100" ${currentPendentesPageSize === 100 ? 'selected' : ''}>100</option>
-        </select>
-      </div>
-    `;
-    bindRetiradaActions();
-    bindPendentesPagination(totalPendentesPages); // Passando totalPendentesPages
+    handleAutorizarNegar: async (id, actionType) => {
+        const detalheStatus = Utils.getValue('autorizarDetalheStatus').trim();
+        const status = (actionType === 'autorizar') ? CONFIG.STATUS_MAP_UPDATE.AUTORIZADA : CONFIG.STATUS_MAP_UPDATE.NEGADA;
 
-  } catch (error) {
-    console.error("Erro em renderPendentesRetiradas:", error);
-    showAlert(error.message || 'Ocorreu um erro inesperado.', 'danger');
-  }
-}
+        if (actionType === 'negar' && !detalheStatus) {
+            UIManager.showAlert('O detalhe do status (justificativa da negação) é obrigatório ao negar.', 'warning');
+            Utils.getElement('#autorizarDetalheStatus').focus();
+            return;
+        }
 
-function bindRetiradaActions() {
-  document.querySelectorAll('.btn-detalhes-retirada').forEach(btn => {
-    btn.onclick = () => {
-      const id = +btn.dataset.id;
-      const r = allRetiradas.find(x => x.retirada_id === id) || pendentesRetiradas.find(x => x.retirada_id === id);
-      if (r) {
-        fillModalDetalhes(r);
-        new bootstrap.Modal(document.getElementById('modalVerDetalhesRetirada')).show();
-      }
-    };
-  });
+        try {
+            await ApiService.updateRetiradaStatus(id, status, detalheStatus);
+            UIManager.showAlert(`Retirada ${actionType === 'autorizar' ? 'autorizada' : 'negada'} com sucesso!`, 'success');
+            Utils.hideModal(CONFIG.MODAL_AUTORIZAR_RETIRADA_ID);
+            PendentesController.loadAndRender(StateManager.pendentes.currentPage, StateManager.pendentes.pageSize); // Recarrega a lista
+        } catch (error) {
+            UIManager.showAlert(error.message || `Erro ao ${actionType} retirada.`, 'danger');
+        }
+    }
+};
 
-  document.querySelectorAll('.btn-autorizar-retirada-trigger').forEach(btn => {
-    btn.onclick = () => {
-      const id = +btn.dataset.id;
-      const r = pendentesRetiradas.find(x => x.retirada_id === id);
-      if (r) {
-        fillModalAutorizar(r);
-        new bootstrap.Modal(document.getElementById('modalAutorizarRetirada')).show();
-      }
-    };
-  });
-}
-
-function bindHistoricoPagination(totalPagesParam) {
-  console.log('Bind Histórico - totalPagesParam:', totalPagesParam, 'currentHistoricoPage global:', currentHistoricoPage);
-  const prevButton = document.querySelector('[data-action="prev-historico"]');
-  const nextButton = document.querySelector('[data-action="next-historico"]');
-  
-  console.log('Bind Histórico - Prev Button encontrado:', prevButton);
-  console.log('Bind Histórico - Next Button encontrado:', nextButton);
-
-  if (prevButton) {
-    prevButton.onclick = e => {
-      e.preventDefault();
-      console.log('Prev Histórico clicado. currentHistoricoPage:', currentHistoricoPage);
-      if (currentHistoricoPage > 1) {
-        renderHistoricoRetiradas(currentHistoricoPage - 1, currentHistoricoFilters, currentHistoricoPageSize);
-      } else {
-        console.log('Prev Histórico - Já na primeira página.');
-      }
-    };
-  }
-
-  if (nextButton) {
-    nextButton.onclick = e => {
-      e.preventDefault();
-      console.log('Next Histórico clicado. currentHistoricoPage:', currentHistoricoPage, 'totalPagesParam:', totalPagesParam);
-      if (currentHistoricoPage < totalPagesParam) {
-        renderHistoricoRetiradas(currentHistoricoPage + 1, currentHistoricoFilters, currentHistoricoPageSize);
-      } else {
-        console.log('Next Histórico - Já na última página ou totalPagesParam inválido.');
-      }
-    };
-  }
-
-  document.querySelectorAll('[data-page-historico]').forEach(link => {
-    link.onclick = e => {
-      e.preventDefault();
-      const page = parseInt(e.target.dataset.pageHistorico);
-      console.log('Link de página Histórico clicado:', page);
-      renderHistoricoRetiradas(page, currentHistoricoFilters, currentHistoricoPageSize);
-    };
-  });
-
-  const pageSizeSelect = document.getElementById('historicoPageSize');
-  if (pageSizeSelect) {
-    pageSizeSelect.onchange = e => {
-      const newPageSize = parseInt(e.target.value);
-      console.log('Page size Histórico alterado para:', newPageSize);
-      renderHistoricoRetiradas(1, currentHistoricoFilters, newPageSize);
-    };
-  }
-}
-
-function bindPendentesPagination(totalPagesParam) {
-  console.log('Bind Pendentes - totalPagesParam:', totalPagesParam, 'currentPendentesPage global:', currentPendentesPage);
-  const prevButton = document.querySelector('[data-action="prev-pendentes"]');
-  const nextButton = document.querySelector('[data-action="next-pendentes"]');
-
-  console.log('Bind Pendentes - Prev Button encontrado:', prevButton);
-  console.log('Bind Pendentes - Next Button encontrado:', nextButton);
-
-  if (prevButton) {
-    prevButton.onclick = e => {
-      e.preventDefault();
-      console.log('Prev Pendentes clicado. currentPendentesPage:', currentPendentesPage);
-      if (currentPendentesPage > 1) {
-        renderPendentesRetiradas(currentPendentesPage - 1, currentPendentesPageSize);
-      } else {
-         console.log('Prev Pendentes - Já na primeira página.');
-      }
-    };
-  }
-
-  if (nextButton) {
-    nextButton.onclick = e => {
-      e.preventDefault();
-      console.log('Next Pendentes clicado. currentPendentesPage:', currentPendentesPage, 'totalPagesParam:', totalPagesParam);
-      if (currentPendentesPage < totalPagesParam) {
-        renderPendentesRetiradas(currentPendentesPage + 1, currentPendentesPageSize);
-      } else {
-        console.log('Next Pendentes - Já na última página ou totalPagesParam inválido.');
-      }
-    };
-  }
-
-  document.querySelectorAll('[data-page-pendentes]').forEach(link => {
-    link.onclick = e => {
-      e.preventDefault();
-      const page = parseInt(e.target.dataset.pagePendentes);
-      console.log('Link de página Pendentes clicado:', page);
-      renderPendentesRetiradas(page, currentPendentesPageSize);
-    };
-  });
-
-  const pageSizeSelect = document.getElementById('pendentesPageSize');
-  if (pageSizeSelect) {
-    pageSizeSelect.onchange = e => {
-      const newPageSize = parseInt(e.target.value);
-      console.log('Page size Pendentes alterado para:', newPageSize);
-      renderPendentesRetiradas(1, newPageSize);
-    };
-  }
-}
-
-function fillModalDetalhes(r) {
-  document.getElementById('detalheRetiradaId').value = r.retirada_id;
-  document.getElementById('detalheStatus').value = statusMap[r.status];
-  document.getElementById('detalheSetor').value = r.setor_nome || '—';
-  document.getElementById('detalheUsuario').value = r.usuario_nome || '—';
-  document.getElementById('detalheSolicitadoPor').value = r.solicitado_localmente_por || '—';
-  document.getElementById('detalheAutorizadoPor').value = r.autorizado_por || '—';
-  document.getElementById('detalheData').value = new Date(r.data_solicitacao).toLocaleString('pt-BR');
-  document.getElementById('detalheJustificativa').value = r.justificativa || '';
-  document.getElementById('detalheStatusDesc').value = r.detalhe_status || '—';
-
-  renderItemList('detalheItens', r.itens);
-}
-
-function fillModalAutorizar(r) {
-  document.getElementById('autorizarRetiradaId').value = r.retirada_id;
-  document.getElementById('autorizarSetor').value = r.setor_nome || '';
-  document.getElementById('autorizarUsuario').value = r.usuario_nome;
-  document.getElementById('autorizarJustificativa').value = r.justificativa || '';
-  document.getElementById('autorizarData').value = new Date(r.data_solicitacao).toLocaleString('pt-BR');
-  document.getElementById('autorizarDetalheStatus').value = '';
-
-  renderItemList('autorizarItens', r.itens);
-
-  document.getElementById('btn-confirmar-autorizar-retirada').dataset.id = r.retirada_id;
-  document.getElementById('btn-confirmar-negar-retirada').dataset.id = r.retirada_id;
-}
-
+// -----------------------------------------------------------------------------
+// 6. INICIALIZAÇÃO E EVENTOS GLOBAIS
+// -----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    const btnConfirmarAutorizar = document.getElementById('btn-confirmar-autorizar-retirada');
-    if (btnConfirmarAutorizar) {
-        btnConfirmarAutorizar.onclick = async e => {
-            const id = +e.currentTarget.dataset.id;
-            const detalhe = document.getElementById('autorizarDetalheStatus').value.trim();
-            const token = localStorage.getItem('token');
+    // Navegação principal
+    Utils.getElement('#listar-retiradas-link')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        HistoricoController.loadAndRender(1, {}, StateManager.historico.pageSize);
+    });
+    Utils.getElement('#listar-retiradas-pendentes-link')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        PendentesController.loadAndRender(1, StateManager.pendentes.pageSize);
+    });
+     Utils.getElement('#listar-retiradas-pendentes-quick')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        PendentesController.loadAndRender(1, StateManager.pendentes.pageSize);
+    });
 
-            try {
-                const resp = await fetch(`/api/almoxarifado/retiradas/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    status: statusMapUpdate.AUTORIZADA,
-                    detalhe_status: detalhe
-                })
-                });
+    // Ações do Modal de Autorizar/Negar
+    Utils.getElement('#btn-confirmar-autorizar-retirada')?.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        PendentesController.handleAutorizarNegar(id, 'autorizar');
+    });
+    Utils.getElement('#btn-confirmar-negar-retirada')?.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        PendentesController.handleAutorizarNegar(id, 'negar');
+    });
 
-                const modalElement = document.getElementById('modalAutorizarRetirada');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+    // Carregar a view padrão (opcional, ex: histórico)
+    // HistoricoController.loadAndRender();
+    // Ou, se preferir, pode deixar a página inicial vazia ou com uma mensagem.
+    // Se houver um parâmetro na URL para indicar a view, pode ser tratado aqui.
 
-                if (resp.ok) {
-                    showAlert('Retirada autorizada com sucesso!', 'success');
-                    if (modalInstance) modalInstance.hide();
-
-                    renderPendentesRetiradas(currentPendentesPage, currentPendentesPageSize);
-                } else {
-                    const err = await resp.json().catch(() => ({detail: 'Erro desconhecido'}));
-                    showAlert(err?.detail || 'Erro ao autorizar retirada.', 'danger');
-                }
-            } catch(error) {
-                console.error("Erro ao autorizar:", error);
-                showAlert('Erro de conexão ao autorizar.', 'danger');
-            }
-        };
+    // Exemplo: se a URL tiver #historico, carrega histórico
+    if (window.location.hash === '#historico') {
+        HistoricoController.loadAndRender();
+    } else if (window.location.hash === '#pendentes') {
+        PendentesController.loadAndRender();
+    } else {
+        // Default view or leave empty
+        // HistoricoController.loadAndRender(); // ou renderPendentesRetiradas();
     }
-
-    const btnConfirmarNegar = document.getElementById('btn-confirmar-negar-retirada');
-    if (btnConfirmarNegar) {
-        btnConfirmarNegar.onclick = async e => {
-            const id = +e.currentTarget.dataset.id;
-            const detalhe = document.getElementById('autorizarDetalheStatus').value.trim();
-            const token = localStorage.getItem('token');
-
-            if (!detalhe) {
-                showAlert('O detalhe do status (justificativa da negação) é obrigatório ao negar.', 'warning');
-                document.getElementById('autorizarDetalheStatus').focus();
-                return;
-            }
-
-            try {
-                const resp = await fetch(`/api/almoxarifado/retiradas/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    status: statusMapUpdate.NEGADA,
-                    detalhe_status: detalhe
-                })
-                });
-                
-                const modalElement = document.getElementById('modalAutorizarRetirada');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
-
-                if (resp.ok) {
-                    showAlert('Retirada negada com sucesso.', 'success');
-                    if (modalInstance) modalInstance.hide();
-                    renderPendentesRetiradas(currentPendentesPage, currentPendentesPageSize);
-                } else {
-                    const err = await resp.json().catch(() => ({detail: 'Erro desconhecido'}));
-                    showAlert(err?.detail || 'Erro ao negar retirada.', 'danger');
-                }
-            } catch(error) {
-                console.error("Erro ao negar:", error);
-                showAlert('Erro de conexão ao negar.', 'danger');
-            }
-        };
-    }
-
-    // Hooks para chamar as views
-    document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
-      e.preventDefault();
-      renderHistoricoRetiradas(1, {}, currentHistoricoPageSize); // Mantem o page size atual ou default
-    });
-    document.getElementById('listar-retiradas-pendentes-link')?.addEventListener('click', e => {
-      e.preventDefault();
-      renderPendentesRetiradas(1, currentPendentesPageSize); // Mantem o page size atual ou default
-    });
-    document.getElementById('listar-retiradas-pendentes-quick')?.addEventListener('click', e => {
-      e.preventDefault();
-      renderPendentesRetiradas(1, currentPendentesPageSize); // Mantem o page size atual ou default
-    });
 });
