@@ -1,3 +1,4 @@
+// frontend\static\js\estadoGlobal.js
 const estadoGlobal = {
     allRetiradas: [],
     pendentesRetiradas: [],
@@ -8,6 +9,9 @@ const estadoGlobal = {
     currentPendentesPage: 1,
     totalPendentesPages: 1,
     currentPendentesPageSize: 10,
+
+    PAGE_SIZE_OPTIONS: [5, 10, 25, 50, 100], 
+
 
     statusMap: { // converter de INT para STRING (para exibição)
         1: 'PENDENTE',

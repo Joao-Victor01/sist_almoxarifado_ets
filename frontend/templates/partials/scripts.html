@@ -1,58 +1,20 @@
-<!-- frontend\templates\partials\scripts.html -->
-<!-- Scripts JS obrigatórios -->
 <script src="/static/js/bootstrap.bundle.min.js"></script>
 <script src="/static/js/validar-acesso.js"></script>
-
-<!-- Scripts de cada funcionalidade -->
+<script src="/static/js/logout.js"></script>
 <script src="/static/js/listar-itens.js"></script>
 <script src="/static/js/listar-categorias.js"></script>
 <script src="/static/js/cadastrar-item.js"></script>
 <script src="/static/js/cadastrar-categorias.js"></script>
 
+
+<script type="module" src="/static/js/estadoGlobal.js"></script>
+<script type="module" src="/static/js/utils.js"></script>
+<script type="module" src="/static/js/apiService.js"></script>
+<script type="module" src="/static/js/dataService.js"></script>
+<script type="module" src="/static/js/uiService.js"></script>
+<script type="module" src="/static/js/retiradasModule.js"></script>
+
 <script type="module" src="/static/js/main.js"></script>
-<!-- Inicialização da dashboard -->
-<script>
-  document.addEventListener('DOMContentLoaded', initPage);
 
-  function initPage() {
-    const main = document.getElementById('main-content');
-    const defaultHTML = main.innerHTML;
-
-    document.getElementById('home-button').addEventListener('click', e => {
-      e.preventDefault();
-      main.innerHTML = defaultHTML;
-      initBindings();
-    });
-
-    initBindings();
-  }
-
-  function initBindings() {
-    bindQuickAccess();
-    bindLogout();
-  }
-
-  function bindQuickAccess() {
-    const modalItem = new bootstrap.Modal(document.getElementById('modalCadastrarItem'));
-    document.querySelectorAll('#btn-open-cadastrar-item').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.preventDefault(); modalItem.show();
-      });
-    });
-    document.getElementById('listar-item-link')?.addEventListener('click', e => { e.preventDefault(); renderizarListaItens(); });
-    document.getElementById('listar-item-link-quick')?.addEventListener('click', e => { e.preventDefault(); renderizarListaItens(); });
-
-    const modalCat = new bootstrap.Modal(document.getElementById('modalCadastrarCategoria'));
-    document.getElementById('btn-open-cadastrar-categoria')?.addEventListener('click', e => { e.preventDefault(); modalCat.show(); });
-    document.getElementById('listar-categoria-link')?.addEventListener('click', e => { e.preventDefault(); renderizarCategorias(); });
-    document.getElementById('listar-categoria-link-quick')?.addEventListener('click', e => { e.preventDefault(); renderizarCategorias(); });
-  }
-
-  function bindLogout() {
-    document.getElementById('logout-link')?.addEventListener('click', e => {
-      e.preventDefault(); logout();
-    });
-  }
-</script>
 </body>
 </html>

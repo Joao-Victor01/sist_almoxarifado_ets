@@ -1,6 +1,6 @@
 // frontend/static/js/uiService.js
 import { formatDate, formatDateTime, getStatusText, showAlert } from './utils.js';
-import estadoGlobal from './estadoGlobal.js';
+import estadoGlobal from './estadoGlobal.js'; 
 
 class UiService {
     constructor() {
@@ -30,7 +30,6 @@ class UiService {
                     <thead class="table-secondary">
                         <tr>
                             ${headers.map(header => `<th>${header}</th>`).join('')}
-                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -81,19 +80,28 @@ class UiService {
             pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page-${type}="${totalPages}">${totalPages}</a></li>`;
         }
 
+        const pageSizeSelectOptions = estadoGlobal.PAGE_SIZE_OPTIONS.map(size =>
+            `<option value="${size}" ${size === currentPageSize ? 'selected' : ''}>${size}</option>`
+        ).join('');
+
         return `
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center">
                     <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                        <a class="page-link" href="#" data-action="prev-${type}">Anterior</a>
+                        <a class="page-link" href="#" data-action="${type}-prev">Anterior</a>
                     </li>
                     ${pageLinks}
                     <li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
-                        <a class="page-link" href="#" data-action="next-${type}">Próximo</a>
+                        <a class="page-link" href="#" data-action="${type}-next">Próximo</a>
                     </li>
                 </ul>
             </nav>
-        `;
+            <div class="d-flex justify-content-center my-2">
+                <label class="me-2 align-self-center">Itens por página:</label>
+                <select class="form-select w-auto" id="${pageSizeSelectId}" data-action="${type}-pagesize">
+                    ${pageSizeSelectOptions}
+                </select>
+            </div>`;
     }
 
     renderPageSizeSelect(id, currentPageSize) {
@@ -151,7 +159,6 @@ class UiService {
     }
 
     fillModalAutorizar(retirada) {
-        // Use o operador de encadeamento opcional (?.) para evitar erros se o elemento for null
         document.getElementById('autorizarRetiradaId').value = retirada.retirada_id;
         document.getElementById('autorizarSetor').value = retirada.setor_nome || '';
         document.getElementById('autorizarUsuario').value = retirada.usuario_nome;
@@ -161,22 +168,34 @@ class UiService {
 
         this.renderItemList('autorizarItens', retirada.itens);
 
-        // AQUI: Os botões de confirmar/negar são estáticos. Apenas atualizamos o dataset.id.
-        // Os event listeners são anexados uma única vez no main.js.
         const btnConfirmarAutorizar = document.getElementById('btn-confirmar-autorizar-retirada');
         if (btnConfirmarAutorizar) {
             btnConfirmarAutorizar.dataset.id = retirada.retirada_id;
         } else {
-            console.warn("Elemento 'btn-confirmar-autorizar-retirada' não encontrado.");
+            // Este console.error indica que o elemento NÃO ESTÁ NO DOM ou o ID está errado.
+            // Se você corrigiu o HTML, isso não deveria mais aparecer.
+            console.error("Elemento 'btn-confirmar-autorizar-retirada' não encontrado em fillModalAutorizar.");
         }
 
         const btnConfirmarNegar = document.getElementById('btn-confirmar-negar-retirada');
         if (btnConfirmarNegar) {
             btnConfirmarNegar.dataset.id = retirada.retirada_id;
         } else {
-            console.warn("Elemento 'btn-confirmar-negar-retirada' não encontrado.");
+            // Se você corrigiu o HTML, isso não deveria mais aparecer.
+            console.error("Elemento 'btn-confirmar-negar-retirada' não encontrado em fillModalAutorizar.");
         }
     }
+
+    getModalInstance(id) {
+        const modalElement = document.getElementById(id);
+        if (!modalElement) {
+            console.error(`Elemento do modal com ID '${id}' não encontrado para getModalInstance. Verifique se o modal foi incluído no HTML.`);
+            return null; // Retorna null para evitar erro posterior se o elemento não for encontrado
+        }
+        // Tenta obter a instância existente do Bootstrap Modal, ou cria uma nova se não existir
+        return bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+    }
+
 }
 
 export const uiService = new UiService();
