@@ -40,7 +40,7 @@ class UiService {
         `;
     }
 
-    renderPagination(currentPage, totalPages, type) {
+    renderPagination(currentPage, totalPages, type, pageSizeSelectId, currentPageSize) { // Added currentPageSize here
         let pageLinks = '';
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, currentPage + 2);
@@ -81,7 +81,7 @@ class UiService {
         }
 
         const pageSizeSelectOptions = estadoGlobal.PAGE_SIZE_OPTIONS.map(size =>
-            `<option value="${size}" ${size === currentPageSize ? 'selected' : ''}>${size}</option>`
+            `<option value="${size}" ${size === currentPageSize ? 'selected' : ''}>${size}</option>` // currentPageSize is now defined
         ).join('');
 
         return `
@@ -172,8 +172,7 @@ class UiService {
         if (btnConfirmarAutorizar) {
             btnConfirmarAutorizar.dataset.id = retirada.retirada_id;
         } else {
-            // Este console.error indica que o elemento NÃO ESTÁ NO DOM ou o ID está errado.
-            // Se você corrigiu o HTML, isso não deveria mais aparecer.
+
             console.error("Elemento 'btn-confirmar-autorizar-retirada' não encontrado em fillModalAutorizar.");
         }
 
@@ -181,7 +180,6 @@ class UiService {
         if (btnConfirmarNegar) {
             btnConfirmarNegar.dataset.id = retirada.retirada_id;
         } else {
-            // Se você corrigiu o HTML, isso não deveria mais aparecer.
             console.error("Elemento 'btn-confirmar-negar-retirada' não encontrado em fillModalAutorizar.");
         }
     }
@@ -190,7 +188,7 @@ class UiService {
         const modalElement = document.getElementById(id);
         if (!modalElement) {
             console.error(`Elemento do modal com ID '${id}' não encontrado para getModalInstance. Verifique se o modal foi incluído no HTML.`);
-            return null; // Retorna null para evitar erro posterior se o elemento não for encontrado
+            return null; 
         }
         // Tenta obter a instância existente do Bootstrap Modal, ou cria uma nova se não existir
         return bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
