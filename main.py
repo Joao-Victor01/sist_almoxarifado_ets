@@ -1,4 +1,5 @@
-#main.py
+# main.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.configs import settings
@@ -14,12 +15,17 @@ from api.v1.endpoints.relatorios import router as relatorio_router
 from api.v1.endpoints.alerta import router as alerta_router
 from fastapi.staticfiles import StaticFiles
 from frontend.routes.home import router as frontend_router
+import mimetypes 
+
+# Forçar o tipo MIME para arquivos .js. Isso deve ser feito ANTES de StaticFiles ser montado.
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('application/javascript', '.mjs') # Para módulos ES6 com extensão .mjs, se houver
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Executado antes do app iniciar
     try:
-        scheduler.add_job
+        scheduler.add_job # Isso parece incompleto, talvez scheduler.add_job(tarefa_diaria, 'interval', minutes=1)
         scheduler.start()
         print("Scheduler iniciado com sucesso via lifespan.")
     except Exception as e:
@@ -41,7 +47,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8082"],  # mudar para domínio que será usado quando fizer o deploy, deve ser a URL do front
+    allow_origins=["http://localhost:8082"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
