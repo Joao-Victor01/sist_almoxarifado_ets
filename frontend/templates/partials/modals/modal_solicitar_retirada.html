@@ -33,17 +33,12 @@
                         
                         <div class="row g-3 align-items-end">
                             <div class="col-md-6">
-                                <label for="select_item_retirada" class="form-label">Selecionar Item</label>
-                                <select class="form-select" id="select_item_retirada">
-                                    <option value="" disabled selected>Busque ou selecione um item</option>
-                                    </select>
+                                <label for="quantidade_add_item" class="form-label">Quantidade</label>
+                                <input type="number" class="form-control" id="quantidade_add_item" min="1" value="1" placeholder="Qtd. do item selecionado">
                             </div>
-                            <div class="col-md-3">
-                                <label for="quantidade_item_retirada" class="form-label">Quantidade</label>
-                                <input type="number" class="form-control" id="quantidade_item_retirada" min="1" value="1">
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <button type="button" class="btn btn-success w-100" id="btn-adicionar-item-retirada">Adicionar Item</button>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <button type="button" class="btn btn-info w-100 me-2" id="btn-abrir-selecionar-item-modal">Selecionar Item</button>
+                                <button type="button" class="btn btn-success w-100" id="btn-adicionar-item-retirada">Adicionar à Lista</button>
                             </div>
                         </div>
 

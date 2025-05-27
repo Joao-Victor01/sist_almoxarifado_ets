@@ -2,6 +2,7 @@
 import { apiService } from './apiService.js';
 import { uiService } from './uiService.js';
 import { showAlert } from './utils.js';
+import { selecionarItemModule } from './selecionar-item-module.js'; // IMPORTAR O NOVO MÓDULO AQUI
 
 class SolicitarRetiradaModule {
     constructor() {
@@ -10,15 +11,17 @@ class SolicitarRetiradaModule {
         this.selectSetor = document.getElementById('solicitar_setor_id');
         this.inputSolicitadoLocalmentePor = document.getElementById('solicitado_localmente_por');
         this.inputJustificativa = document.getElementById('solicitar_justificativa');
-        this.selectItemRetirada = document.getElementById('select_item_retirada');
-        this.inputQuantidadeItemRetirada = document.getElementById('quantidade_item_retirada');
-        this.btnAdicionarItemRetirada = document.getElementById('btn-adicionar-item-retirada');
+        
+        this.btnAbrirSelecionarItemModal = document.getElementById('btn-abrir-selecionar-item-modal');
+        this.inputQuantidadeAddItem = document.getElementById('quantidade_add_item'); // Novo input de quantidade ao adicionar item
+
         this.itensParaRetiradaContainer = document.getElementById('itens-para-retirada-container');
         this.btnSalvarSolicitacaoRetirada = document.getElementById('btn-salvar-solicitacao-retirada');
         this.noItemsMessage = document.getElementById('no-items-message');
 
         this.itensSelecionados = []; // Guarda os itens que o usuário adicionou para a retirada
-        this.todosItensDisponiveis = []; // Guarda todos os itens do almoxarifado
+        this.todosItensDisponiveis = []; // Pode ser removido, pois o novo modal fará a busca. Manter temporariamente se houver outras dependências.
+        this.currentItemToAddToCart = null; // Armazena o item selecionado do modal de busca
     }
 
     init() {
@@ -26,46 +29,33 @@ class SolicitarRetiradaModule {
     }
 
     _bindEvents() {
-        // Evento para abrir o modal
         document.getElementById('btn-open-solicitar-retirada')?.addEventListener('click', e => {
             e.preventDefault();
             this.openModal();
         });
 
-        // Evento para adicionar item à lista de retirada
-        this.btnAdicionarItemRetirada.addEventListener('click', () => this._adicionarItemParaRetirada());
+        // NOVO: Evento para abrir o modal de seleção de item
+        this.btnAbrirSelecionarItemModal?.addEventListener('click', () => {
+            this.openSelecionarItemModal();
+        });
 
         // Evento para enviar a solicitação
         this.btnSalvarSolicitacaoRetirada.addEventListener('click', () => this._enviarSolicitacao());
 
         // Evento para limpar o formulário ao fechar o modal
         document.getElementById('modalSolicitarRetirada').addEventListener('hidden.bs.modal', () => this._resetForm());
+
+        // Escutar o evento personalizado de seleção de item
+        document.addEventListener('itemSelectedForRetirada', (event) => {
+            this.handleItemSelected(event.detail.item);
+        });
     }
 
     async openModal() {
-        try {
-            await this._loadInitialData();
-            this.modalSolicitarRetirada.show();
-        } catch (error) {
-            console.error("Erro ao abrir modal de solicitação de retirada:", error);
-            showAlert('Não foi possível carregar os dados para a solicitação de retirada.', 'danger');
-        }
-    }
-
-    async _loadInitialData() {
-        // Limpa os dados anteriores
-        this.itensSelecionados = [];
-        this.todosItensDisponiveis = [];
-        this._renderItensParaRetirada(); // Limpa a lista no modal
-
         uiService.showLoading();
         try {
-            const [setoresData, itensData] = await Promise.all([
-                apiService.fetchAllSetores(),
-                apiService.fetchAllItens()
-            ]);
-
-            this.todosItensDisponiveis = itensData; // Armazena todos os itens
+            // Apenas carrega os setores, pois os itens serão carregados no novo modal
+            const setoresData = await apiService.fetchAllSetores();
 
             // Popular select de setores
             this.selectSetor.innerHTML = '<option value="" disabled selected>Selecione um setor</option>';
@@ -75,47 +65,57 @@ class SolicitarRetiradaModule {
                 option.textContent = setor.nome_setor;
                 this.selectSetor.appendChild(option);
             });
+            
+            // Limpa a lista de itens selecionados e renderiza novamente
+            this.itensSelecionados = [];
+            this._renderItensParaRetirada();
 
-            // Popular select de itens
-            this.selectItemRetirada.innerHTML = '<option value="" disabled selected>Busque ou selecione um item</option>';
-            itensData.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.item_id;
-                option.textContent = `${item.nome_item} (Estoque: ${item.quantidade_item})`;
-                option.dataset.quantidade = item.quantidade_item; // Armazena a quantidade disponível
-                this.selectItemRetirada.appendChild(option);
-            });
             uiService.hideLoading();
+            this.modalSolicitarRetirada.show();
 
         } catch (error) {
             uiService.hideLoading();
             console.error("Erro ao carregar dados iniciais para solicitação:", error);
-            showAlert('Erro ao carregar setores e itens. Tente novamente.', 'danger');
+            showAlert('Erro ao carregar setores. Tente novamente.', 'danger');
             this.modalSolicitarRetirada.hide();
         }
     }
 
+    openSelecionarItemModal() {
+        selecionarItemModule.openModal(); // Chama o método openModal do novo módulo
+    }
+
+    handleItemSelected(selectedItem) {
+        // Recebe o item selecionado do modal de busca
+        this.currentItemToAddToCart = selectedItem;
+        this.inputQuantidadeAddItem.value = 1; // Reseta a quantidade para 1
+        showAlert(`Item selecionado: ${selectedItem.nome_item_original}. Agora, informe a quantidade.`, 'info');
+        
+        // Adiciona o item automaticamente após a seleção, ou permite que o usuário adicione manualmente
+        this._adicionarItemParaRetirada();
+    }
+
     _adicionarItemParaRetirada() {
-        const itemId = parseInt(this.selectItemRetirada.value);
-        const quantidade = parseInt(this.inputQuantidadeItemRetirada.value);
-
-        if (isNaN(itemId) || isNaN(quantidade) || quantidade <= 0) {
-            showAlert('Por favor, selecione um item e informe uma quantidade válida.', 'warning');
+        if (!this.currentItemToAddToCart) {
+            showAlert('Nenhum item selecionado para adicionar.', 'warning');
             return;
         }
 
-        const itemExistente = this.itensSelecionados.find(item => item.item_id === itemId);
-        const itemDisponivel = this.todosItensDisponiveis.find(item => item.item_id === itemId);
+        const quantidade = parseInt(this.inputQuantidadeAddItem.value);
 
-        if (!itemDisponivel) {
-            showAlert('Item selecionado não encontrado nos itens disponíveis.', 'danger');
+        if (isNaN(quantidade) || quantidade <= 0) {
+            showAlert('Por favor, informe uma quantidade válida.', 'warning');
             return;
         }
 
-        // Verifica o estoque
+        const itemExistente = this.itensSelecionados.find(item => item.item_id === this.currentItemToAddToCart.item_id);
+        
+        // Verifica o estoque disponível do item que acabou de ser selecionado
+        const quantidadeDisponivel = this.currentItemToAddToCart.quantidade_item;
         const quantidadeTotalSolicitada = quantidade + (itemExistente ? itemExistente.quantidade_retirada : 0);
-        if (quantidadeTotalSolicitada > itemDisponivel.quantidade_item) {
-            showAlert(`Quantidade solicitada para ${itemDisponivel.nome_item} excede o estoque disponível (${itemDisponivel.quantidade_item}).`, 'warning');
+
+        if (quantidadeTotalSolicitada > quantidadeDisponivel) {
+            showAlert(`Quantidade solicitada para ${this.currentItemToAddToCart.nome_item_original} excede o estoque disponível (${quantidadeDisponivel}).`, 'warning');
             return;
         }
 
@@ -123,17 +123,15 @@ class SolicitarRetiradaModule {
             itemExistente.quantidade_retirada += quantidade;
         } else {
             this.itensSelecionados.push({
-                item_id: itemId,
-                nome_item: itemDisponivel.nome_item, // Para exibição no modal
+                item_id: this.currentItemToAddToCart.item_id,
+                nome_item: this.currentItemToAddToCart.nome_item_original, // Para exibição no modal
                 quantidade_retirada: quantidade
             });
         }
 
         this._renderItensParaRetirada();
-        // Resetar o input de quantidade para 1 após adicionar
-        this.inputQuantidadeItemRetirada.value = 1;
-        // Opcional: resetar o select de item, ou manter o último selecionado
-        this.selectItemRetirada.value = ""; 
+        this.currentItemToAddToCart = null; // Limpa o item para adicionar um novo
+        this.inputQuantidadeAddItem.value = 1; // Reseta a quantidade
     }
 
     _renderItensParaRetirada() {
@@ -159,7 +157,6 @@ class SolicitarRetiradaModule {
             this.itensParaRetiradaContainer.appendChild(itemElement);
         });
 
-        // Adicionar event listeners para os botões de remover
         this.itensParaRetiradaContainer.querySelectorAll('.btn-remover-item').forEach(btn => {
             btn.addEventListener('click', (e) => this._removerItemParaRetirada(parseInt(e.currentTarget.dataset.itemId)));
         });
@@ -185,7 +182,7 @@ class SolicitarRetiradaModule {
             return;
         }
 
-        uiService.showLoading(); // Mostra um spinner de carregamento
+        uiService.showLoading();
 
         try {
             const retiradaData = {
@@ -200,26 +197,23 @@ class SolicitarRetiradaModule {
 
             await apiService.solicitarRetirada(retiradaData);
             showAlert('Solicitação de retirada enviada com sucesso!', 'success');
-            this.modalSolicitarRetirada.hide(); // Fecha o modal
-            this._resetForm(); // Reseta o formulário
-            // Opcional: Você pode recarregar a lista de retiradas pendentes aqui, se estiver visível
-            // retiradasModule.renderPendentesRetiradas(); 
+            this.modalSolicitarRetirada.hide();
+            this._resetForm();
         } catch (error) {
             console.error("Erro ao enviar solicitação de retirada:", error);
             showAlert(error.message || 'Erro ao enviar a solicitação de retirada.', 'danger');
         } finally {
-            uiService.hideLoading(); // Esconde o spinner de carregamento
+            uiService.hideLoading();
         }
     }
 
     _resetForm() {
-        this.form.reset(); // Reseta os campos do formulário
-        this.itensSelecionados = []; // Limpa os itens selecionados
-        this.todosItensDisponiveis = []; // Limpa os itens disponíveis
-        this._renderItensParaRetirada(); // Limpa a exibição dos itens no modal
-        this.noItemsMessage.style.display = 'block'; // Garante que a mensagem "Nenhum item adicionado" apareça
-        this.selectItemRetirada.innerHTML = '<option value="" disabled selected>Busque ou selecione um item</option>'; // Reseta as opções de item
-        this.inputQuantidadeItemRetirada.value = 1; // Reseta a quantidade para 1
+        this.form.reset();
+        this.itensSelecionados = [];
+        this._renderItensParaRetirada();
+        this.noItemsMessage.style.display = 'block';
+        this.inputQuantidadeAddItem.value = 1;
+        this.currentItemToAddToCart = null;
     }
 }
 

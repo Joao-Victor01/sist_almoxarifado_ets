@@ -123,22 +123,40 @@ class ApiService {
         };
     }
 
-    async updateRetiradaStatus(id, status, detail) {
+ async updateRetiradaStatus(id, status, detail) {
         return this.put(`/retiradas/${id}`, { status, detalhe_status: detail });
     }
 
-    // NOVOS MÉTODOS PARA SOLICITAÇÃO DE RETIRADA
     async fetchAllItens() {
-        return this.get('/itens'); // endpoint '/itens' que retorna todos os itens.
+        // Este endpoint retorna todos os itens. 
+        return this.get('/itens'); 
     }
 
     async fetchAllSetores() {
-        return this.get('/setores'); // endpoint '/setores' que retorna todos os setores.
+        // Este endpoint retorna todos os setores. 
+        return this.get('/setores'); 
     }
 
     async solicitarRetirada(data) {
         return this.post('/retiradas/', data);
     }
-}
 
+    // Buscar itens paginados com filtro de nome e categoria
+    async searchItems(nome = null, categoria = null, page = 1, size = 10) {
+        const params = { page, size };
+        if (nome) {
+            params.nome = nome;
+        }
+        if (categoria) {
+            params.categoria = categoria;
+        }
+        //  endpoint /api/almoxarifado/itens/buscar
+        return this.get('/itens/buscar', params);
+    }
+
+    // Buscar item por ID (necessário para pegar detalhes completos após seleção)
+    async getItemById(itemId) {
+        return this.get(`/itens/${itemId}`);
+    }
+}
 export const apiService = new ApiService();

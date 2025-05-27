@@ -1,19 +1,40 @@
 // frontend/static/js/utils.js
 import estadoGlobal from './estadoGlobal.js';
 
-export function showAlert(message, type = 'success') {
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>`;
-    const mainContent = document.getElementById('main-content');
-    if (mainContent) {
-        mainContent.prepend(wrapper);
-    } else {
-        console.error("Elemento 'main-content' não encontrado para exibir alerta.");
+export function showAlert(message, type = 'success', duration = 5000) {
+    const toastContainer = document.getElementById('toast-container'); //  procura o ID correto
+    if (!toastContainer) {
+        console.error("Elemento 'toast-container' não encontrado para exibir alerta.");
+        return;
     }
+
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-white bg-${type} border-0 fade show`; // RE-ADICIONA 'fade show'
+    toastElement.setAttribute('role', 'alert');
+    toastElement.setAttribute('aria-live', 'assertive');
+    toastElement.setAttribute('aria-atomic', 'true');
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+
+    toastContainer.appendChild(toastElement);
+
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: duration
+    });
+    toast.show();
+
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
 }
+
 
 export function formatDate(dateString) {
     if (!dateString) return 'N/A';
@@ -33,9 +54,4 @@ export function getStatusText(statusCode) {
 
 export function getStatusValue(statusName) {
     return estadoGlobal.statusMapUpdate[statusName];
-}
-
-export function getModalInstance(modalId) {
-    const modalElement = document.getElementById(modalId);
-    return bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
 }
