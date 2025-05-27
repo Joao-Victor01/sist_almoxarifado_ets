@@ -2,7 +2,7 @@
 import { apiService } from './apiService.js';
 import { uiService } from './uiService.js';
 import { showAlert } from './utils.js';
-import { selecionarItemModule } from './selecionar-item-module.js'; // IMPORTAR O NOVO MÓDULO AQUI
+import { selecionarItemModule } from './selecionar-item-module.js';
 
 class SolicitarRetiradaModule {
     constructor() {
@@ -13,15 +13,21 @@ class SolicitarRetiradaModule {
         this.inputJustificativa = document.getElementById('solicitar_justificativa');
         
         this.btnAbrirSelecionarItemModal = document.getElementById('btn-abrir-selecionar-item-modal');
-        this.inputQuantidadeAddItem = document.getElementById('quantidade_add_item'); // Novo input de quantidade ao adicionar item
+        this.inputQuantidadeAddItem = document.getElementById('quantidade_add_item');
+        this.btnAdicionarItemRetirada = document.getElementById('btn-adicionar-item-retirada');
 
         this.itensParaRetiradaContainer = document.getElementById('itens-para-retirada-container');
         this.btnSalvarSolicitacaoRetirada = document.getElementById('btn-salvar-solicitacao-retirada');
         this.noItemsMessage = document.getElementById('no-items-message');
 
-        this.itensSelecionados = []; // Guarda os itens que o usuário adicionou para a retirada
-        this.todosItensDisponiveis = []; // Pode ser removido, pois o novo modal fará a busca. Manter temporariamente se houver outras dependências.
-        this.currentItemToAddToCart = null; // Armazena o item selecionado do modal de busca
+        // NOVAS REFERÊNCIAS PARA FEEDBACK VISUAL
+        this.selectedItemDisplay = document.getElementById('selected-item-display'); //
+        this.selectedItemName = document.getElementById('selected-item-name'); //
+        // Linha removida: this.selectedItemStock = document.getElementById('selected-item-stock');
+
+        this.itensSelecionados = [];
+        this.todosItensDisponiveis = [];
+        this.currentItemToAddToCart = null;
     }
 
     init() {
@@ -34,18 +40,16 @@ class SolicitarRetiradaModule {
             this.openModal();
         });
 
-        // NOVO: Evento para abrir o modal de seleção de item
         this.btnAbrirSelecionarItemModal?.addEventListener('click', () => {
             this.openSelecionarItemModal();
         });
 
-        // Evento para enviar a solicitação
         this.btnSalvarSolicitacaoRetirada.addEventListener('click', () => this._enviarSolicitacao());
 
-        // Evento para limpar o formulário ao fechar o modal
+        this.btnAdicionarItemRetirada?.addEventListener('click', () => this._adicionarItemParaRetirada());
+
         document.getElementById('modalSolicitarRetirada').addEventListener('hidden.bs.modal', () => this._resetForm());
 
-        // Escutar o evento personalizado de seleção de item
         document.addEventListener('itemSelectedForRetirada', (event) => {
             this.handleItemSelected(event.detail.item);
         });
@@ -54,10 +58,8 @@ class SolicitarRetiradaModule {
     async openModal() {
         uiService.showLoading();
         try {
-            // Apenas carrega os setores, pois os itens serão carregados no novo modal
             const setoresData = await apiService.fetchAllSetores();
 
-            // Popular select de setores
             this.selectSetor.innerHTML = '<option value="" disabled selected>Selecione um setor</option>';
             setoresData.forEach(setor => {
                 const option = document.createElement('option');
@@ -66,9 +68,9 @@ class SolicitarRetiradaModule {
                 this.selectSetor.appendChild(option);
             });
             
-            // Limpa a lista de itens selecionados e renderiza novamente
             this.itensSelecionados = [];
             this._renderItensParaRetirada();
+            this._clearSelectedItemDisplay(); //
 
             uiService.hideLoading();
             this.modalSolicitarRetirada.show();
@@ -82,17 +84,20 @@ class SolicitarRetiradaModule {
     }
 
     openSelecionarItemModal() {
-        selecionarItemModule.openModal(); // Chama o método openModal do novo módulo
+        selecionarItemModule.openModal();
     }
 
     handleItemSelected(selectedItem) {
-        // Recebe o item selecionado do modal de busca
         this.currentItemToAddToCart = selectedItem;
-        this.inputQuantidadeAddItem.value = 1; // Reseta a quantidade para 1
+        this.inputQuantidadeAddItem.value = 1;
+
+        // ATUALIZA O FEEDBACK VISUAL
+        this.selectedItemName.textContent = selectedItem.nome_item_original; //
+        // Linha removida: this.selectedItemStock.textContent = selectedItem.quantidade_item;
+        this.selectedItemDisplay.style.display = 'block'; //
+        this.btnAdicionarItemRetirada.disabled = false; //
+
         showAlert(`Item selecionado: ${selectedItem.nome_item_original}. Agora, informe a quantidade.`, 'info');
-        
-        // Adiciona o item automaticamente após a seleção, ou permite que o usuário adicione manualmente
-        this._adicionarItemParaRetirada();
     }
 
     _adicionarItemParaRetirada() {
@@ -110,7 +115,6 @@ class SolicitarRetiradaModule {
 
         const itemExistente = this.itensSelecionados.find(item => item.item_id === this.currentItemToAddToCart.item_id);
         
-        // Verifica o estoque disponível do item que acabou de ser selecionado
         const quantidadeDisponivel = this.currentItemToAddToCart.quantidade_item;
         const quantidadeTotalSolicitada = quantidade + (itemExistente ? itemExistente.quantidade_retirada : 0);
 
@@ -124,18 +128,19 @@ class SolicitarRetiradaModule {
         } else {
             this.itensSelecionados.push({
                 item_id: this.currentItemToAddToCart.item_id,
-                nome_item: this.currentItemToAddToCart.nome_item_original, // Para exibição no modal
+                nome_item: this.currentItemToAddToCart.nome_item_original,
                 quantidade_retirada: quantidade
             });
         }
 
         this._renderItensParaRetirada();
-        this.currentItemToAddToCart = null; // Limpa o item para adicionar um novo
-        this.inputQuantidadeAddItem.value = 1; // Reseta a quantidade
+        this._clearSelectedItemDisplay(); //
+        this.currentItemToAddToCart = null;
+        this.inputQuantidadeAddItem.value = 1;
     }
 
     _renderItensParaRetirada() {
-        this.itensParaRetiradaContainer.innerHTML = ''; // Limpa o container
+        this.itensParaRetiradaContainer.innerHTML = '';
 
         if (this.itensSelecionados.length === 0) {
             this.noItemsMessage.style.display = 'block';
@@ -214,6 +219,14 @@ class SolicitarRetiradaModule {
         this.noItemsMessage.style.display = 'block';
         this.inputQuantidadeAddItem.value = 1;
         this.currentItemToAddToCart = null;
+        this._clearSelectedItemDisplay(); //
+    }
+
+    _clearSelectedItemDisplay() {
+        this.selectedItemName.textContent = ''; //
+        // Linha removida: this.selectedItemStock.textContent = '';
+        this.selectedItemDisplay.style.display = 'none'; //
+        this.btnAdicionarItemRetirada.disabled = true; //
     }
 }
 

@@ -32,13 +32,16 @@
                         </div>
                         
                         <div class="row g-3 align-items-end">
+                            <div class="col-12" id="selected-item-display" style="display: none;">
+                                <p class="mb-1">Item Selecionado: <strong id="selected-item-name"></strong></p>
+                                </div>
                             <div class="col-md-6">
                                 <label for="quantidade_add_item" class="form-label">Quantidade</label>
                                 <input type="number" class="form-control" id="quantidade_add_item" min="1" value="1" placeholder="Qtd. do item selecionado">
                             </div>
                             <div class="col-md-6 d-flex align-items-end">
                                 <button type="button" class="btn btn-info w-100 me-2" id="btn-abrir-selecionar-item-modal">Selecionar Item</button>
-                                <button type="button" class="btn btn-success w-100" id="btn-adicionar-item-retirada">Adicionar à Lista</button>
+                                <button type="button" class="btn btn-success w-100" id="btn-adicionar-item-retirada" disabled>Adicionar à Lista</button>
                             </div>
                         </div>
 
