@@ -1,0 +1,59 @@
+<div class="modal fade" id="modalSolicitarRetirada" tabindex="-1" aria-labelledby="modalSolicitarRetiradaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalSolicitarRetiradaLabel">Solicitar Retirada de Itens</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-solicitar-retirada">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="solicitar_setor_id" class="form-label">Setor*</label>
+                            <select class="form-select" id="solicitar_setor_id" name="setor_id" required>
+                                <option value="" disabled selected>Selecione um setor</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="solicitado_localmente_por" class="form-label">Solicitado Localmente Por (Opcional)</label>
+                            <input type="text" class="form-control" id="solicitado_localmente_por" name="solicitado_localmente_por" placeholder="Nome do solicitante (se não for usuário logado)">
+                            <small class="form-text text-muted">Preencha se a solicitação for feita por alguém presencialmente em seu nome.</small>
+                        </div>
+                        <div class="col-12">
+                            <label for="solicitar_justificativa" class="form-label">Justificativa da Retirada</label>
+                            <textarea class="form-control" id="solicitar_justificativa" name="justificativa" rows="3" placeholder="Motivo da retirada (Ex: Manutenção de Equipamento)"></textarea>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5>Itens para Retirada</h5>
+                        <div id="itens-para-retirada-container" class="row g-3 mb-3">
+                            <div class="col-12 text-muted" id="no-items-message">Nenhum item adicionado ainda.</div>
+                        </div>
+                        
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label for="select_item_retirada" class="form-label">Selecionar Item</label>
+                                <select class="form-select" id="select_item_retirada">
+                                    <option value="" disabled selected>Busque ou selecione um item</option>
+                                    </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="quantidade_item_retirada" class="form-label">Quantidade</label>
+                                <input type="number" class="form-control" id="quantidade_item_retirada" min="1" value="1">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-success w-100" id="btn-adicionar-item-retirada">Adicionar Item</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-salvar-solicitacao-retirada">Solicitar Retirada</button>
+            </div>
+        </div>
+    </div>
+</div>

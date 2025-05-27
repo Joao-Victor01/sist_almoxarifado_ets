@@ -1,0 +1,18 @@
+<div id="loading-spinner" style="
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1060; /* Acima de modais do Bootstrap (z-index padrão do modal é 1050) */
+    background-color: rgba(255, 255, 255, 0.7); /* Fundo semi-transparente */
+    border-radius: 10px;
+    padding: 20px;
+    backdrop-filter: blur(2px); /* Adiciona um leve desfoque ao fundo */
+    -webkit-backdrop-filter: blur(2px); /* Para compatibilidade com navegadores WebKit */
+">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p class="mt-2 text-primary">Carregando...</p>
+</div>

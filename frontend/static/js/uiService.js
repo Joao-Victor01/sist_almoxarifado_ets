@@ -5,6 +5,7 @@ import estadoGlobal from './estadoGlobal.js';
 class UiService {
     constructor() {
         this.mainContent = document.getElementById('main-content');
+        this.loadingSpinner = document.getElementById('loading-spinner'); // REFERENCIA O NOVO SPINNER
     }
 
     renderPage(title, contentHtml) {
@@ -40,7 +41,7 @@ class UiService {
         `;
     }
 
-    renderPagination(currentPage, totalPages, type, pageSizeSelectId, currentPageSize) { // Added currentPageSize here
+    renderPagination(currentPage, totalPages, type, pageSizeSelectId, currentPageSize) {
         let pageLinks = '';
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, currentPage + 2);
@@ -81,7 +82,7 @@ class UiService {
         }
 
         const pageSizeSelectOptions = estadoGlobal.PAGE_SIZE_OPTIONS.map(size =>
-            `<option value="${size}" ${size === currentPageSize ? 'selected' : ''}>${size}</option>` // currentPageSize is now defined
+            `<option value="${size}" ${size === currentPageSize ? 'selected' : ''}>${size}</option>`
         ).join('');
 
         return `
@@ -172,7 +173,6 @@ class UiService {
         if (btnConfirmarAutorizar) {
             btnConfirmarAutorizar.dataset.id = retirada.retirada_id;
         } else {
-
             console.error("Elemento 'btn-confirmar-autorizar-retirada' não encontrado em fillModalAutorizar.");
         }
 
@@ -190,10 +190,21 @@ class UiService {
             console.error(`Elemento do modal com ID '${id}' não encontrado para getModalInstance. Verifique se o modal foi incluído no HTML.`);
             return null; 
         }
-        // Tenta obter a instância existente do Bootstrap Modal, ou cria uma nova se não existir
         return bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
     }
 
+    // NOVAS FUNÇÕES PARA O SPINNER DE CARREGAMENTO
+    showLoading() {
+        if (this.loadingSpinner) {
+            this.loadingSpinner.style.display = 'block';
+        }
+    }
+
+    hideLoading() {
+        if (this.loadingSpinner) {
+            this.loadingSpinner.style.display = 'none';
+        }
+    }
 }
 
 export const uiService = new UiService();

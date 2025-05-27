@@ -93,19 +93,17 @@ class ApiService {
             queryParamsForApi.end_date = filters.end_date;
         }
 
-        console.log('Filtros que serão enviados para a API (apiService):', queryParamsForApi); // Adicionar este log
-
+        console.log('Filtros que serão enviados para a API (apiService):', queryParamsForApi);
         const hasActiveFilters = Object.keys(queryParamsForApi).length > 0;
         const endpoint = hasActiveFilters ? '/retiradas/search' : '/retiradas/paginated';
 
-        console.log('Endpoint escolhido:', endpoint); // Adicionar este log
-        console.log('Parâmetros finais para a requisição:', { ...params, ...queryParamsForApi }); // Adicionar este log
+        console.log('Endpoint escolhido:', endpoint);
+        console.log('Parâmetros finais para a requisição:', { ...params, ...queryParamsForApi });
 
         const finalParams = { ...params, ...queryParamsForApi };
 
         const responseData = await this.get(endpoint, finalParams);
         
-        // Mapear 'pages' para 'total_pages' e 'page' para 'current_page'
         return {
             current_page: responseData.page,
             total_pages: responseData.pages,
@@ -117,7 +115,6 @@ class ApiService {
     async fetchRetiradasPendentes(page, pageSize) {
         const responseData = await this.get(`/retiradas/pendentes/paginated`, { page, page_size: pageSize });
         
-        // Mapear 'pages' para 'total_pages' e 'page' para 'current_page'
         return {
             current_page: responseData.page,
             total_pages: responseData.pages,
@@ -128,6 +125,19 @@ class ApiService {
 
     async updateRetiradaStatus(id, status, detail) {
         return this.put(`/retiradas/${id}`, { status, detalhe_status: detail });
+    }
+
+    // NOVOS MÉTODOS PARA SOLICITAÇÃO DE RETIRADA
+    async fetchAllItens() {
+        return this.get('/itens'); // endpoint '/itens' que retorna todos os itens.
+    }
+
+    async fetchAllSetores() {
+        return this.get('/setores'); // endpoint '/setores' que retorna todos os setores.
+    }
+
+    async solicitarRetirada(data) {
+        return this.post('/retiradas/', data);
     }
 }
 
