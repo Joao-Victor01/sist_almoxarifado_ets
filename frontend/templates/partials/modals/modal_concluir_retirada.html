@@ -1,0 +1,25 @@
+<div class="modal fade" id="modalConcluirRetirada" tabindex="-1" aria-labelledby="modalConcluirRetiradaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalConcluirRetiradaLabel">Concluir Retirada</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-concluir-retirada">
+                    <input type="hidden" id="concluirRetiradaId">
+                    <p>Você tem certeza que deseja **concluir** a retirada ID: <strong id="concluirRetiradaDisplayId"></strong>?</p>
+                    <p>Esta ação decrementar o estoque dos itens!</p>
+                    <div class="mb-3">
+                        <label for="concluirDetalheStatus" class="form-label">Detalhe do Status (Opcional)</label>
+                        <textarea class="form-control" id="concluirDetalheStatus" rows="3" placeholder="Adicione observações sobre a conclusão da retirada (Ex: entregue por Carla, recebido por João)."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn-confirmar-concluir-retirada">Confirmar Conclusão</button>
+            </div>
+        </div>
+    </div>
+</div>

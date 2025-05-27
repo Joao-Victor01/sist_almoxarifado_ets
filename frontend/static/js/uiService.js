@@ -5,7 +5,7 @@ import estadoGlobal from './estadoGlobal.js';
 class UiService {
     constructor() {
         this.mainContent = document.getElementById('main-content');
-        this.loadingSpinner = document.getElementById('loading-spinner'); // REFERENCIA O NOVO SPINNER
+        this.loadingSpinner = document.getElementById('loading-spinner');
     }
 
     renderPage(title, contentHtml) {
@@ -151,7 +151,7 @@ class UiService {
         document.getElementById('detalheSetor').value = retirada.setor_nome || '—';
         document.getElementById('detalheUsuario').value = retirada.usuario_nome || '—';
         document.getElementById('detalheSolicitadoPor').value = retirada.solicitado_localmente_por || '—';
-        document.getElementById('detalheAutorizadoPor').value = retirada.autorizado_por || '—';
+        document.getElementById('detalheAutorizadoPor').value = retirada.autorizado_por_nome || '—'; // Adicionei 'autorizado_por_nome'
         document.getElementById('detalheData').value = formatDateTime(retirada.data_solicitacao);
         document.getElementById('detalheJustificativa').value = retirada.justificativa || '';
         document.getElementById('detalheStatusDesc').value = retirada.detalhe_status || '—';
@@ -184,6 +184,13 @@ class UiService {
         }
     }
 
+    // NOVO: Função para preencher o modal de concluir retirada
+    fillModalConcluir(retirada) {
+        document.getElementById('concluirRetiradaId').value = retirada.retirada_id;
+        document.getElementById('concluirRetiradaDisplayId').textContent = retirada.retirada_id;
+        document.getElementById('concluirDetalheStatus').value = retirada.detalhe_status || ''; // Preenche com o detalhe atual se houver
+    }
+
     getModalInstance(id) {
         const modalElement = document.getElementById(id);
         if (!modalElement) {
@@ -193,7 +200,6 @@ class UiService {
         return bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
     }
 
-    // NOVAS FUNÇÕES PARA O SPINNER DE CARREGAMENTO
     showLoading() {
         if (this.loadingSpinner) {
             this.loadingSpinner.style.display = 'block';
