@@ -1,6 +1,8 @@
 // frontend/static/js/apiService.js
+
 class ApiService {
-    constructor(baseUrl = '/api/almoxarifado') {
+
+    constructor (baseUrl = '/api/almoxarifado') {
         this.baseUrl = baseUrl;
         this.token = localStorage.getItem('token');
         if (!this.token) {
@@ -15,7 +17,8 @@ class ApiService {
         };
     }
 
-    async _fetch(endpoint, options = {}) {
+    async _fetch(endpoint, options = { }){
+        // Construção da URL ajustada: this.baseUrl já está no construtor
         const url = `${this.baseUrl}${endpoint}`;
         try {
             const response = await fetch(url, {
@@ -32,19 +35,18 @@ class ApiService {
             }
             return response.json();
         } catch (error) {
-            console.error(`Falha na requisição para ${url}:`, error);
+            console.error(`Falha na requisição para ${url}`, error);
             throw error;
         }
     }
 
-    async get(endpoint, params = {}) {
-        const token = localStorage.getItem('token');
-        const queryString = new URLSearchParams(params).toString(); // Converte params para query string
-        const url = `${endpoint}${queryString ? `?${queryString}` : ''}`; // Adiciona query string se houver
-        return await this._fetch(url, 'GET', null, token);
+    async get (endpoint, params = {}) {
+        // A API de alertas espera "tipo_alerta" e "search_term" que podem ser nulos/vazios
+        // A _fetch já lida com a base URL, então o endpoint deve ser relativo
+        const queryString = new URLSearchParams (params).toString();
+        const urlWithParams = `${endpoint}${queryString ? `?${queryString}` : ''}`;
+        return await this._fetch(urlWithParams, { method: 'GET' });
     }
-
-
 
     async post(endpoint, data) {
         return this._fetch(endpoint, {
@@ -60,7 +62,16 @@ class ApiService {
         });
     }
 
-    // Métodos específicos
+    // NOVO: Método PATCH
+    async patch(endpoint, data = {}) {
+        return this._fetch(endpoint, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    }
+
+    // Métodos específicos (mantidos do seu código original)
+
     async getUsuarioById(id) {
         try {
             const user = await this.get(`/usuarios/${id}`);
@@ -79,10 +90,10 @@ class ApiService {
         }
     }
 
-    async fetchAllRetiradas(page, pageSize, filters) {
+    async fetchAllRetiradas (page, pageSize, filters) {
         const params = { page, page_size: pageSize };
-        
         const queryParamsForApi = {};
+
         if (filters.status !== null && filters.status !== undefined && filters.status !== '') {
             queryParamsForApi.status = filters.status;
         }
@@ -96,17 +107,16 @@ class ApiService {
             queryParamsForApi.end_date = filters.end_date;
         }
 
-        console.log('Filtros que serão enviados para a API (apiService):', queryParamsForApi);
+        console.log('Filtros que serão enviados para a API (apiService)', queryParamsForApi);
+
         const hasActiveFilters = Object.keys(queryParamsForApi).length > 0;
         const endpoint = hasActiveFilters ? '/retiradas/search' : '/retiradas/paginated';
 
         console.log('Endpoint escolhido:', endpoint);
         console.log('Parâmetros finais para a requisição:', { ...params, ...queryParamsForApi });
 
-        const finalParams = { ...params, ...queryParamsForApi };
+        const responseData = await this.get(endpoint, { ...params, ...queryParamsForApi });
 
-        const responseData = await this.get(endpoint, finalParams);
-        
         return {
             current_page: responseData.page,
             total_pages: responseData.pages,
@@ -115,9 +125,8 @@ class ApiService {
         };
     }
 
-    async fetchRetiradasPendentes(page, pageSize) {
+    async fetchRetiradasPendentes (page, pageSize) {
         const responseData = await this.get(`/retiradas/pendentes/paginated`, { page, page_size: pageSize });
-        
         return {
             current_page: responseData.page,
             total_pages: responseData.pages,
@@ -126,21 +135,21 @@ class ApiService {
         };
     }
 
- async updateRetiradaStatus(id, status, detail) {
+    async updateRetiradaStatus(id, status, detail) {
         return this.put(`/retiradas/${id}`, { status, detalhe_status: detail });
     }
 
     async fetchAllItens() {
-        // Este endpoint retorna todos os itens. 
-        return this.get('/itens'); 
+        // Este endpoint retorna todos os itens.
+        return this.get('/itens');
     }
 
     async fetchAllSetores() {
-        // Este endpoint retorna todos os setores. 
-        return this.get('/setores'); 
+        // Este endpoint retorna todos os setores.
+        return this.get('/setores');
     }
 
-    async solicitarRetirada(data) {
+    async solicitarRetirada (data) {
         return this.post('/retiradas/', data);
     }
 
@@ -153,7 +162,7 @@ class ApiService {
         if (categoria) {
             params.categoria = categoria;
         }
-        //  endpoint /api/almoxarifado/itens/buscar
+        // endpoint /api/almoxarifado/itens/buscar
         return this.get('/itens/buscar', params);
     }
 
@@ -162,4 +171,5 @@ class ApiService {
         return this.get(`/itens/${itemId}`);
     }
 }
+
 export const apiService = new ApiService();

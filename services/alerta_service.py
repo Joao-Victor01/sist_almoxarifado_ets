@@ -12,11 +12,6 @@ from fastapi import HTTPException, status
 import math
 
 class AlertaService:
-
-    @staticmethod
-    async def ignorar_alertas(db: AsyncSession, alerta_id: int):
-        alerta = await AlertaRepository.ignorar_alerta(db, alerta_id)
-        return alerta        
     
     @staticmethod
     async def generate_daily_alerts(db: AsyncSession):
@@ -56,13 +51,6 @@ class AlertaService:
             query = query.where(Item.item_id == item_id)
         query = query.where(Item.quantidade_item <= Item.quantidade_minima_item)
 
-        # if item.quantidade_item > item.quantidade_minima_item:
-        #     await db.execute(
-        #     update(Alerta)
-        #     .where(Alerta.item_id == item.item_id)
-        #     .values(ignorar_novos=False)
-        # )
-        
         items = await db.execute(query)
         for item in items.scalars():
             alerta_existe = await AlertaRepository.alerta_ja_existe(
@@ -87,9 +75,12 @@ class AlertaService:
 
     @staticmethod
     async def get_alertas_paginated(
-        db: AsyncSession, page: int, size: int
+        db: AsyncSession,
+        page: int,
+        size: int,
+        tipo_alerta: int = None,    # tipo_alerta
+        search_term: str = None     # search_term
     ) -> PaginatedAlertas:
-        # Validação do tamanho da página
         allowed_sizes = [5, 10, 25, 50, 100]
         if size not in allowed_sizes:
             raise HTTPException(
@@ -102,12 +93,12 @@ class AlertaService:
                 detail="page deve ser >= 1"
             )
 
-        total_alertas = await AlertaRepository.count_alertas(db)
+        total_alertas = await AlertaRepository.count_alertas(db, tipo_alerta, search_term) # Passar filtros
         
         total_pages = math.ceil(total_alertas / size) if total_alertas > 0 else 1
         offset = (page - 1) * size
 
-        alertas_db = await AlertaRepository.get_alertas_paginated(db, offset, size) 
+        alertas_db = await AlertaRepository.get_alertas_paginated(db, offset, size, tipo_alerta, search_term) # Passar filtros
         
         items_out = [AlertaOut.model_validate(alerta) for alerta in alertas_db]
 
@@ -118,3 +109,12 @@ class AlertaService:
             total_pages=total_pages,
             items=items_out
         )
+    
+    @staticmethod
+    async def mark_alerta_as_ignorar_novos(db: AsyncSession, alerta_id: int):
+
+        alerta = await AlertaRepository.ignorar_alerta(db, alerta_id)
+        if not alerta:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta não encontrado.")
+        return alerta        
+
