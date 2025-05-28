@@ -1,0 +1,33 @@
+<div class="modal fade" id="modalReportQuantidadeItens" tabindex="-1" aria-labelledby="modalReportQuantidadeItensLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalReportQuantidadeItensLabel">Relatório de Quantidade de Itens</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-report-quantidade-itens">
+                    <div class="mb-3">
+                        <label for="filtroCategoria" class="form-label">Filtrar por Categoria (opcional)</label>
+                        <input type="text" class="form-control" id="filtroCategoria" name="filtro_categoria">
+                    </div>
+                    <div class="mb-3">
+                        <label for="filtroProduto" class="form-label">Filtrar por Produto (opcional)</label>
+                        <input type="text" class="form-control" id="filtroProduto" name="filtro_produto">
+                    </div>
+                    <div class="mb-3">
+                        <label for="formatoQuantidadeItens" class="form-label">Formato do Relatório*</label>
+                        <select class="form-select" id="formatoQuantidadeItens" name="formato" required>
+                            <option value="csv" selected>CSV</option>
+                            <option value="xlsx">XLSX</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGerarReportQuantidadeItens">Gerar Relatório</button>
+            </div>
+        </div>
+    </div>
+</div>

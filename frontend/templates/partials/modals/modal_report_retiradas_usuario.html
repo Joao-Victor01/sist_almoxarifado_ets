@@ -1,0 +1,39 @@
+<div class="modal fade" id="modalReportRetiradasUsuario" tabindex="-1" aria-labelledby="modalReportRetiradasUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalReportRetiradasUsuarioLabel">Relatório de Retiradas por Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-report-retiradas-usuario">
+                    <div class="mb-3">
+                        <label for="selectUsuario" class="form-label">Usuário*</label>
+                        <select class="form-select" id="selectUsuario" name="usuario_id" required>
+                            <option value="" disabled selected>Carregando usuários...</option>
+                            </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dataInicioRetiradaUsuario" class="form-label">Data Inicial*</label>
+                        <input type="date" class="form-control" id="dataInicioRetiradaUsuario" name="data_inicio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dataFimRetiradaUsuario" class="form-label">Data Final*</label>
+                        <input type="date" class="form-control" id="dataFimRetiradaUsuario" name="data_fim" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="formatoRetiradasUsuario" class="form-label">Formato do Relatório*</label>
+                        <select class="form-select" id="formatoRetiradasUsuario" name="formato" required>
+                            <option value="csv" selected>CSV</option>
+                            <option value="xlsx">XLSX</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGerarReportRetiradasUsuario">Gerar Relatório</button>
+            </div>
+        </div>
+    </div>
+</div>

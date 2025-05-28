@@ -1,0 +1,39 @@
+<div class="modal fade" id="modalReportRetiradasSetor" tabindex="-1" aria-labelledby="modalReportRetiradasSetorLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalReportRetiradasSetorLabel">Relatório de Retiradas por Setor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-report-retiradas-setor">
+                    <div class="mb-3">
+                        <label for="selectSetor" class="form-label">Setor*</label>
+                        <select class="form-select" id="selectSetor" name="setor_id" required>
+                            <option value="" disabled selected>Carregando setores...</option>
+                            </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dataInicioRetiradaSetor" class="form-label">Data Inicial*</label>
+                        <input type="date" class="form-control" id="dataInicioRetiradaSetor" name="data_inicio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dataFimRetiradaSetor" class="form-label">Data Final*</label>
+                        <input type="date" class="form-control" id="dataFimRetiradaSetor" name="data_fim" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="formatoRetiradasSetor" class="form-label">Formato do Relatório*</label>
+                        <select class="form-select" id="formatoRetiradasSetor" name="formato" required>
+                            <option value="csv" selected>CSV</option>
+                            <option value="xlsx">XLSX</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGerarReportRetiradasSetor">Gerar Relatório</button>
+            </div>
+        </div>
+    </div>
+</div>

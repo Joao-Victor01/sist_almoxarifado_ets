@@ -1,0 +1,33 @@
+<div class="modal fade" id="modalReportEntradaItens" tabindex="-1" aria-labelledby="modalReportEntradaItensLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalReportEntradaItensLabel">Relatório de Entrada de Itens</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-report-entrada-itens">
+                    <div class="mb-3">
+                        <label for="dataInicioEntrada" class="form-label">Data Inicial*</label>
+                        <input type="date" class="form-control" id="dataInicioEntrada" name="data_inicio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dataFimEntrada" class="form-label">Data Final*</label>
+                        <input type="date" class="form-control" id="dataFimEntrada" name="data_fim" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="formatoEntradaItens" class="form-label">Formato do Relatório*</label>
+                        <select class="form-select" id="formatoEntradaItens" name="formato" required>
+                            <option value="csv" selected>CSV</option>
+                            <option value="xlsx">XLSX</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGerarReportEntradaItens">Gerar Relatório</button>
+            </div>
+        </div>
+    </div>
+</div>

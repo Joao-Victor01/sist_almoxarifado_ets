@@ -68,7 +68,7 @@ class RelatorioService:
         # Formatar DataFrame com acesso via dicionário
         df = pd.DataFrame([{
             "ID_Item": item["item_id"],
-            "Nome": item["nome_item"],
+            "Nome": item["nome_item_original"],
             "Quantidade": item["quantidade_item"],
             "Data_Entrada": item["data_entrada_item"].strftime('%d/%m/%Y'),
             "Categoria": item["nome_categoria"]  # Nome da categoria do JOIN
