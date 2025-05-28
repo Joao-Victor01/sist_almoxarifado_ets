@@ -159,6 +159,18 @@ class UiService {
         this.renderItemList('detalheItens', retirada.itens);
     }
 
+    fillModalDetalhesItem(item) {
+        if (!item) {
+            console.error("Item inválido para preencher detalhes do modal.");
+            return;
+        }
+        document.getElementById('itemNome').textContent = item.nome_item_original || 'N/A';
+        document.getElementById('itemEstoque').textContent = item.quantidade_item || 0;
+        document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item || 0;
+        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A';
+
+    }
+
     fillModalAutorizar(retirada) {
         document.getElementById('autorizarRetiradaId').value = retirada.retirada_id;
         document.getElementById('autorizarSetor').value = retirada.setor_nome || '';
