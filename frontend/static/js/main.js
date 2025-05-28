@@ -4,6 +4,7 @@ import { retiradasModule } from './retiradasModule.js';
 import { solicitarRetiradaModule } from './solicitar-retirada.js'; 
 import { selecionarItemModule } from './selecionar-item-module.js'; 
 import { reportsModule } from './reportsModule.js'; 
+import { alertasModule } from './alertasModule.js'; 
 
 document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.getElementById('main-content'); 
@@ -68,10 +69,16 @@ document.addEventListener('DOMContentLoaded', () => {
             retiradasModule.renderPendentesRetiradas(); 
         });
 
-        // --- New: Open Reports Dashboard Modal ---
+        // --- Modal de relatorios---
         document.getElementById('open-reports-dashboard')?.addEventListener('click', e => {
             e.preventDefault();
             reportsModule.modalReportsDashboard.show();
+        });
+
+        // ---  Modal de Alertas ---
+        document.getElementById('open-alertas-modal')?.addEventListener('click', e => {
+            e.preventDefault();
+            alertasModule.modalAlertas.show();
         });
     }
 
@@ -110,5 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar os módulos
     solicitarRetiradaModule.init(); 
     selecionarItemModule.init(); 
-    reportsModule.init(); // Initialize the new reports module
+    reportsModule.init();
+    alertasModule.init();
 });

@@ -1,4 +1,6 @@
 #repositories\alerta_repository.py
+
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.alerta import Alerta
@@ -56,3 +58,20 @@ class AlertaRepository:
         alerta.ignorar_novos = True  
         await db.commit()
         return alerta
+
+    @staticmethod
+    async def count_alertas(db: AsyncSession) -> int:
+        result = await db.execute(select(func.count()).select_from(Alerta))
+        return result.scalar_one()
+
+    @staticmethod
+    async def get_alertas_paginated(
+        db: AsyncSession, offset: int, limit: int
+    ) -> list[Alerta]:
+        result = await db.execute(
+            select(Alerta)
+            .offset(offset)
+            .limit(limit)
+            .order_by(Alerta.data_alerta.desc()) # Ordenar por data mais recente
+        )
+        return result.scalars().all()

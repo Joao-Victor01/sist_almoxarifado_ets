@@ -7,8 +7,9 @@ from models.alerta import TipoAlerta
 from models.item import Item
 from repositories.item_repository import ItemRepository
 from repositories.alerta_repository import AlertaRepository
-from schemas.alerta import AlertaBase
+from schemas.alerta import AlertaBase, PaginatedAlertas, AlertaOut
 from fastapi import HTTPException, status
+import math
 
 class AlertaService:
 
@@ -34,7 +35,7 @@ class AlertaService:
             if not alerta_existe:
                 await AlertaRepository.create_alerta(db, AlertaBase(
                     tipo_alerta=2,
-                    mensagem_alerta=f"Item {item.nome_item} próximo da validade",
+                    mensagem_alerta=f"Item {item.nome_item_original} próximo da validade",
                     item_id=item.item_id,
                     data_alerta=datetime.now()
                 ))
@@ -70,7 +71,7 @@ class AlertaService:
             if not alerta_existe:
                 await AlertaRepository.create_alerta(db, AlertaBase(
                     tipo_alerta=1,
-                    mensagem_alerta=f"Estoque de {item.nome_item} abaixo do mínimo",
+                    mensagem_alerta=f"Estoque de {item.nome_item_original} abaixo do mínimo",
                     item_id=item.item_id,
                     data_alerta=datetime.now()
                 ))
@@ -82,3 +83,38 @@ class AlertaService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta não encontrado")
         return result
     
+
+
+    @staticmethod
+    async def get_alertas_paginated(
+        db: AsyncSession, page: int, size: int
+    ) -> PaginatedAlertas:
+        # Validação do tamanho da página
+        allowed_sizes = [5, 10, 25, 50, 100]
+        if size not in allowed_sizes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"size deve ser um de {allowed_sizes}"
+            )
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="page deve ser >= 1"
+            )
+
+        total_alertas = await AlertaRepository.count_alertas(db)
+        
+        total_pages = math.ceil(total_alertas / size) if total_alertas > 0 else 1
+        offset = (page - 1) * size
+
+        alertas_db = await AlertaRepository.get_alertas_paginated(db, offset, size) 
+        
+        items_out = [AlertaOut.model_validate(alerta) for alerta in alertas_db]
+
+        return PaginatedAlertas(
+            page=page,
+            size=size,
+            total=total_alertas,
+            total_pages=total_pages,
+            items=items_out
+        )

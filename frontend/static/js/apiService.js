@@ -38,10 +38,13 @@ class ApiService {
     }
 
     async get(endpoint, params = {}) {
-        const queryString = new URLSearchParams(params).toString();
-        const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-        return this._fetch(url, { method: 'GET' });
+        const token = localStorage.getItem('token');
+        const queryString = new URLSearchParams(params).toString(); // Converte params para query string
+        const url = `${endpoint}${queryString ? `?${queryString}` : ''}`; // Adiciona query string se houver
+        return await this._fetch(url, 'GET', null, token);
     }
+
+
 
     async post(endpoint, data) {
         return this._fetch(endpoint, {
