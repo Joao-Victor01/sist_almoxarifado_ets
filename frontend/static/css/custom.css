@@ -1,58 +1,69 @@
 /* frontend\static\css\custom.css */
+
 /* === Header superior === */
+
 .custom-header {
-  background-color:  #0052cc;
-  color: #fff;
+    background-color: #0052cc;
+    color: #fff;
 }
-.custom-header .header-logo {
-  height: 40px;
+
+.custom-header header-logo {
+    height: 40px;
 }
+
 .custom-header .header-title {
-  font-weight: bold;
-  font-size: 1rem;
+    font-weight: bold;
+    font-size: 1rem;
 }
 
 /* === Navbar === */
+
 .custom-navbar {
-  background-color:  #0052cc;
+    background-color: #0052cc;
 }
 
 /* Dropdown menus */
+
 .navbar-nav .dropdown-menu {
-  border-radius: 0.25rem;
-  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
 }
 
 /* Itens do dropdown */
-.navbar-nav .dropdown-item {
-  padding: 0.5rem 1rem;
-  font-size: 0.95rem;
+
+.navbar-nav .dropdown-item { /* Corrigido de .navbar-nav.dropdown-item */
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
 }
-.navbar-nav .dropdown-item:hover {
-  background-color: #f8f9fa;
+
+.navbar-nav .dropdown-item:hover { /* Corrigido de .navbar-nav.dropdown-item:hover */
+    background-color: #f8f9fa;
 }
 
 /* Links do navbar */
+
 .nav-link {
-  padding: 0.5rem 1rem;
+    padding: 0.5rem 1rem;
 }
+
 .nav-link:hover, .nav-link:focus {
-  background-color: rgba(255,255,255,0.1);
-  border-radius: 0.25rem;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 0.25rem;
 }
 
 /* Ícones */
+
 .navbar-nav .bi {
-  font-size: 1.3rem;
-  margin: 0 0.3rem;
-  cursor: pointer;
+    font-size: 1.3rem;
+    margin: 0 0.3rem;
+    cursor: pointer;
 }
 
 /* Ajuste responsivo: evitar que o ícone de dropdown quebre linha */
-.nav-item.dropdown {
-  white-space: nowrap;
-}
 
+.nav-item.dropdown {
+    white-space: nowrap;
+}
 
 /* Estilos para o contêiner de toasts (alvo a classe Bootstrap diretamente) */
 .toast-container {
@@ -65,9 +76,9 @@
 }
 
 .toast {
-    width: 100% !important; 
-    word-wrap: break-word !important; 
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; 
+    width: 100% !important;
+    word-wrap: break-word !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     margin-bottom: 0.5rem !important; /* Espaçamento entre toasts empilhados */
 }
 
@@ -77,6 +88,7 @@
 }
 
 /* Estilos para os itens do dashboard de relatórios */
+
 .report-item-style {
     background-color: #f8f9fa; /* Um tom claro para o fundo */
     border-radius: 0.5rem; /* Bordas arredondadas */
@@ -94,4 +106,34 @@
 
 .report-item-style i {
     margin-left: 1rem; /* Espaçamento entre o texto e o ícone */
+}
+
+/* Estilos para o sino de notificação */
+.notification-dot {
+    width: 10px; /* Tamanho da bolinha */
+    height: 10px; /* Tamanho da bolinha */
+    border-radius: 50%;
+    background-color: red;
+    display: inline-block; /* Garante que a bolinha apareça */
+    position: absolute;
+    top: -10px;   /* Ajustado para sobrepor uma pequena parte do sino */
+    right: -10px; /* Ajustado para sobrepor uma pequena parte do sino */
+    animation: pulse 1.5s infinite; /* Animação sutil */
+}
+
+
+/* Animação de pulso */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }

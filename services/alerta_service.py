@@ -12,23 +12,23 @@ from fastapi import HTTPException, status
 import math
 
 class AlertaService:
-    
+
     @staticmethod
     async def generate_daily_alerts(db: AsyncSession):
         # Verificar validade e estoque juntos
         await AlertaService.verificar_validade_itens(db)
-        await AlertaService.verificar_estoque_baixo(db)
+        await AlertaService.verificar_estoque_baixo (db)
 
     @staticmethod
-    async def verificar_validade_itens(db: AsyncSession):
-        threshold_date = datetime.now() + timedelta(days=60)
+    async def verificar_validade_itens (db: AsyncSession):
+        threshold_date = datetime.now() + timedelta (days=60)
         items = await ItemRepository.find_items_expiring_before(db, threshold_date)
         for item in items:
             alerta_existe = await AlertaRepository.alerta_ja_existe(
                 db, TipoAlerta.VALIDADE_PROXIMA.value, item.item_id
             )
             if not alerta_existe:
-                await AlertaRepository.create_alerta(db, AlertaBase(
+                await AlertaRepository.create_alerta (db, AlertaBase (
                     tipo_alerta=2,
                     mensagem_alerta=f"Item {item.nome_item_original} próximo da validade",
                     item_id=item.item_id,
@@ -36,28 +36,26 @@ class AlertaService:
                 ))
 
     @staticmethod
-    async def get_alertas(db:AsyncSession):
-        result = await AlertaRepository.get_alertas(db)
+    async def get_alertas (db: AsyncSession):
+        result = await AlertaRepository.get_alertas (db)
         if not result:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="Não foram encontrados alertas na base de dados"
-                                )
+                                detail="Não foram encontrados alertas na base de dados")
         return result
 
     @staticmethod
-    async def verificar_estoque_baixo(db: AsyncSession, item_id: int = None):
-        query = select(Item)
+    async def verificar_estoque_baixo (db: AsyncSession, item_id: int = None):
+        query = select (Item)
         if item_id:
             query = query.where(Item.item_id == item_id)
         query = query.where(Item.quantidade_item <= Item.quantidade_minima_item)
-
         items = await db.execute(query)
         for item in items.scalars():
             alerta_existe = await AlertaRepository.alerta_ja_existe(
                 db, TipoAlerta.ESTOQUE_BAIXO.value, item.item_id
             )
             if not alerta_existe:
-                await AlertaRepository.create_alerta(db, AlertaBase(
+                await AlertaRepository.create_alerta (db, AlertaBase (
                     tipo_alerta=1,
                     mensagem_alerta=f"Estoque de {item.nome_item_original} abaixo do mínimo",
                     item_id=item.item_id,
@@ -70,17 +68,15 @@ class AlertaService:
         if not result:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta não encontrado")
         return result
-    
-
 
     @staticmethod
     async def get_alertas_paginated(
         db: AsyncSession,
         page: int,
         size: int,
-        tipo_alerta: int = None,    # tipo_alerta
-        search_term: str = None     # search_term
-    ) -> PaginatedAlertas:
+        tipo_alerta: int = None,
+        search_term: str = None
+    )-> PaginatedAlertas:
         allowed_sizes = [5, 10, 25, 50, 100]
         if size not in allowed_sizes:
             raise HTTPException(
@@ -94,12 +90,15 @@ class AlertaService:
             )
 
         total_alertas = await AlertaRepository.count_alertas(db, tipo_alerta, search_term) # Passar filtros
-        
         total_pages = math.ceil(total_alertas / size) if total_alertas > 0 else 1
         offset = (page - 1) * size
 
-        alertas_db = await AlertaRepository.get_alertas_paginated(db, offset, size, tipo_alerta, search_term) # Passar filtros
-        
+        alertas_db = await AlertaRepository.get_alertas_paginated(db, offset, size, tipo_alerta, search_term)
+
+        # Ao listar alertas paginados, marque-os como visualizados
+        # Isso pode ser feito aqui ou em um endpoint separado para "marcar como lido"
+        # Para o sino, vamos usar um endpoint separado para "marcar todos como visualizados"
+
         items_out = [AlertaOut.model_validate(alerta) for alerta in alertas_db]
 
         return PaginatedAlertas(
@@ -109,12 +108,20 @@ class AlertaService:
             total_pages=total_pages,
             items=items_out
         )
-    
+
     @staticmethod
     async def mark_alerta_as_ignorar_novos(db: AsyncSession, alerta_id: int):
-
-        alerta = await AlertaRepository.ignorar_alerta(db, alerta_id)
+        alerta = await AlertaRepository.ignorar_alerta (db, alerta_id)
         if not alerta:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta não encontrado.")
-        return alerta        
+        return alerta
 
+    # NOVO: Obter contagem de alertas não visualizados
+    @staticmethod
+    async def get_unviewed_alerts_count(db: AsyncSession) -> int:
+        return await AlertaRepository.count_unviewed_alerts(db)
+
+    # NOVO: Marcar todos os alertas como visualizados
+    @staticmethod
+    async def mark_all_alerts_as_viewed(db: AsyncSession):
+        await AlertaRepository.mark_all_alerts_as_viewed(db)

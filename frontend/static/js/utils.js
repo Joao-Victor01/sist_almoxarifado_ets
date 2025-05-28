@@ -1,26 +1,26 @@
 // frontend/static/js/utils.js
+
 import estadoGlobal from './estadoGlobal.js';
 
-export function showAlert(message, type = 'success', duration = 5000) {
-    const toastContainer = document.getElementById('toast-container'); //  procura o ID correto
+export function showAlert (message, type = 'success', duration = 5000) {
+    const toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
         console.error("Elemento 'toast-container' não encontrado para exibir alerta.");
         return;
     }
 
     const toastElement = document.createElement('div');
-    toastElement.className = `toast align-items-center text-white bg-${type} border-0 fade show`; // RE-ADICIONA 'fade show'
+    toastElement.className = `toast align-items-center text-white bg-${type} border-0 fade show`;
     toastElement.setAttribute('role', 'alert');
     toastElement.setAttribute('aria-live', 'assertive');
     toastElement.setAttribute('aria-atomic', 'true');
     toastElement.innerHTML = `
-        <div class="d-flex">
+        <div class="d-flex" >
             <div class="toast-body">
                 ${message}
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
+        </div>`;
 
     toastContainer.appendChild(toastElement);
 
@@ -28,6 +28,7 @@ export function showAlert(message, type = 'success', duration = 5000) {
         autohide: true,
         delay: duration
     });
+
     toast.show();
 
     toastElement.addEventListener('hidden.bs.toast', () => {
@@ -35,23 +36,59 @@ export function showAlert(message, type = 'success', duration = 5000) {
     });
 }
 
-
 export function formatDate(dateString) {
-    if (!dateString) return 'N/A';
+    if (!dateString) return `N/A`;
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
 }
 
-export function formatDateTime(dateString) {
-    if (!dateString) return 'N/A';
+export function formatDateTime (dateString) {
+    if (!dateString) return `N/A`;
     const date = new Date(dateString);
     return date.toLocaleString('pt-BR');
 }
 
 export function getStatusText(statusCode) {
-    return estadoGlobal.statusMap[statusCode] || 'Desconhecido';
+    return estadoGlobal.statusMap [statusCode] || 'Desconhecido';
 }
 
 export function getStatusValue(statusName) {
-    return estadoGlobal.statusMapUpdate[statusName];
+    return estadoGlobal.statusMapUpdate [statusName];
+}
+
+const NEW_ALERTS_FLAG_KEY = 'hasNewAlerts';
+
+export function setNewAlertsFlag(hasNewAlerts) {
+    console.log('setNewAlertsFlag: Tentando definir flag para:', hasNewAlerts);
+    if (hasNewAlerts) {
+        localStorage.setItem(NEW_ALERTS_FLAG_KEY, 'true');
+    } else {
+        localStorage.removeItem(NEW_ALERTS_FLAG_KEY);
+    }
+    console.log('setNewAlertsFlag: Flag no localStorage após operação:', localStorage.getItem(NEW_ALERTS_FLAG_KEY));
+    updateNotificationBellUI(); // Atualiza a UI imediatamente
+}
+
+export function getNewAlertsFlag() {
+    const flag = localStorage.getItem(NEW_ALERTS_FLAG_KEY) === 'true';
+    console.log('getNewAlertsFlag: Valor da flag no localStorage:', flag);
+    return flag;
+}
+
+export function updateNotificationBellUI() {
+    console.log('updateNotificationBellUI: Tentando atualizar a UI do sino...');
+    const notificationDot = document.getElementById('notification-dot');
+    if (notificationDot) {
+        if (getNewAlertsFlag()) {
+            console.log('updateNotificationBellUI: Exibindo bolinha de notificação.');
+            notificationDot.style.display = 'block';
+            notificationDot.classList.add('animate__animated', 'animate__pulse');
+        } else {
+            console.log('updateNotificationBellUI: Ocultando bolinha de notificação.');
+            notificationDot.style.display = 'none';
+            notificationDot.classList.remove('animate__animated', 'animate__pulse');
+        }
+    } else {
+        console.warn('updateNotificationBellUI: Elemento #notification-dot não encontrado.');
+    }
 }

@@ -18,7 +18,6 @@ class ApiService {
     }
 
     async _fetch(endpoint, options = { }){
-        // Construção da URL ajustada: this.baseUrl já está no construtor
         const url = `${this.baseUrl}${endpoint}`;
         try {
             const response = await fetch(url, {
@@ -33,6 +32,11 @@ class ApiService {
                 const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido na resposta da API.' }));
                 throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
             }
+            // Se a resposta for 204 No Content, response.json() falhará.
+            // Verifique o status antes de tentar parsear como JSON.
+            if (response.status === 204) {
+                return {}; // Retorna um objeto vazio para 204 No Content
+            }
             return response.json();
         } catch (error) {
             console.error(`Falha na requisição para ${url}`, error);
@@ -41,8 +45,6 @@ class ApiService {
     }
 
     async get (endpoint, params = {}) {
-        // A API de alertas espera "tipo_alerta" e "search_term" que podem ser nulos/vazios
-        // A _fetch já lida com a base URL, então o endpoint deve ser relativo
         const queryString = new URLSearchParams (params).toString();
         const urlWithParams = `${endpoint}${queryString ? `?${queryString}` : ''}`;
         return await this._fetch(urlWithParams, { method: 'GET' });
@@ -62,7 +64,6 @@ class ApiService {
         });
     }
 
-    // NOVO: Método PATCH
     async patch(endpoint, data = {}) {
         return this._fetch(endpoint, {
             method: 'PATCH',
@@ -140,12 +141,10 @@ class ApiService {
     }
 
     async fetchAllItens() {
-        // Este endpoint retorna todos os itens.
         return this.get('/itens');
     }
 
     async fetchAllSetores() {
-        // Este endpoint retorna todos os setores.
         return this.get('/setores');
     }
 
@@ -153,7 +152,6 @@ class ApiService {
         return this.post('/retiradas/', data);
     }
 
-    // Buscar itens paginados com filtro de nome e categoria
     async searchItems(nome = null, categoria = null, page = 1, size = 10) {
         const params = { page, size };
         if (nome) {
@@ -162,13 +160,32 @@ class ApiService {
         if (categoria) {
             params.categoria = categoria;
         }
-        // endpoint /api/almoxarifado/itens/buscar
         return this.get('/itens/buscar', params);
     }
 
-    // Buscar item por ID (necessário para pegar detalhes completos após seleção)
     async getItemById(itemId) {
         return this.get(`/itens/${itemId}`);
+    }
+
+    // NOVO: Obter contagem de alertas não visualizados
+    async getUnviewedAlertsCount() {
+        try {
+            const response = await this.get('/alertas/unviewed-count');
+            return response.count;
+        } catch (error) {
+            console.error('Erro ao buscar contagem de alertas não visualizados:', error);
+            return 0;
+        }
+    }
+
+    //  Marcar todos os alertas como visualizados
+    async markAllAlertsAsViewed() {
+        try {
+            await this.patch('/alertas/mark-viewed');
+            console.log('Todos os alertas marcados como visualizados.');
+        } catch (error) {
+            console.error('Erro ao marcar alertas como visualizados:', error);
+        }
     }
 }
 

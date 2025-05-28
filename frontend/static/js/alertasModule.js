@@ -2,7 +2,7 @@
 
 import { apiService } from './apiService.js';
 import { uiService } from './uiService.js';
-import { showAlert, formatDateTime } from './utils.js';
+import { showAlert, formatDateTime, setNewAlertsFlag } from './utils.js'; // Importar setNewAlertsFlag
 import estadoGlobal from './estadoGlobal.js'; // For PAGE_SIZE_OPTIONS
 
 class AlertasModule {
@@ -20,7 +20,7 @@ class AlertasModule {
     }
 
     // Função principal para renderizar a página de alertas
-    async renderAlertsPage(){
+    async renderAlertsPage() {
         uiService.showLoading();
         try {
             const params = {
@@ -28,24 +28,19 @@ class AlertasModule {
                 size: this.pageSize
             };
 
-            // Only add tipo_alerta if it has a value
             if (this.currentTipoAlerta !== null && this.currentTipoAlerta !== undefined && this.currentTipoAlerta !== '') {
                 params.tipo_alerta = this.currentTipoAlerta;
             }
 
-            // Only add search_term if it has a non-empty value
             if (this.currentSearchTerm !== null && this.currentSearchTerm !== undefined && this.currentSearchTerm !== '') {
                 params.search_term = this.currentSearchTerm;
             }
 
-            // Buscando alertas paginados com os filtros atuais.
-            const data = await apiService.get('/alertas/paginated', params); 
-
+            const data = await apiService.get('/alertas/paginated', params);
 
             const alerts = data.items;
             const tableHeaders = ['Tipo', 'Mensagem', 'Item ID', 'Data do Alerta', 'Ações'];
 
-            // Adiciona a barra de busca e filtros no HTML gerado
             const searchAndFilterHtml = `
                 <div id="alertas-search-bar" class="row mb-3">
                     <div class="col-md-4 mb-2">
@@ -91,20 +86,22 @@ class AlertasModule {
             const paginationHtml = uiService.renderPagination(
                 data.page,
                 data.total_pages,
-                'alerts', // Type para paginação (ex: data-page-alerts, data-action="alerts-prev")
-                'alertsPageSizeSelect', // ID para o select de tamanho de página
+                'alerts',
+                'alertsPageSizeSelect',
                 this.pageSize
             );
 
-            // Renderiza tudo no main-content
             uiService.renderPage(
                 'Lista de Alertas',
                 `${searchAndFilterHtml}${tableHtml}${paginationHtml}`
             );
 
-            // Agora, bindar os eventos aos elementos que acabaram de ser renderizados
             this._bindPageEvents(data.total_pages);
-            this._bindTableActions(); // Novo método para ações da tabela
+            this._bindTableActions();
+
+            // NOVO: Marcar todos os alertas como visualizados e limpar o sino
+            await apiService.markAllAlertsAsViewed();
+            setNewAlertsFlag(false); // Limpa o flag no localStorage e atualiza a UI do sino
 
         } catch (error) {
             console.error('Erro ao carregar alertas:', error);
@@ -118,7 +115,6 @@ class AlertasModule {
     }
 
     _bindPageEvents(totalPages) {
-        // Bind para a barra de busca
         document.getElementById('btn-search-alert')?.addEventListener('click', () => {
             this.currentSearchTerm = document.getElementById('alert-search-term').value.trim();
             const selectedType = document.getElementById('alert-type-filter').value;
@@ -129,14 +125,13 @@ class AlertasModule {
 
         document.getElementById('btn-clear-alert-search')?.addEventListener('click', () => {
             document.getElementById('alert-search-term').value = '';
-            document.getElementById('alert-type-filter').value = ''; // Reset the select dropdown
+            document.getElementById('alert-type-filter').value = '';
             this.currentSearchTerm = '';
-            this.currentTipoAlerta = null; // Ensure it's null
+            this.currentTipoAlerta = null;
             this.currentPage = 1;
             this.renderAlertsPage();
         });
-    
-        // Bind para paginação
+
         const paginationContainer = document.getElementById('alertas-pagination-container');
         if (paginationContainer) {
             paginationContainer.addEventListener('click', (e) => {
@@ -164,7 +159,6 @@ class AlertasModule {
             });
         }
 
-        // Bind para mudança de tamanho da página
         const pageSizeSelect = document.getElementById('alertsPageSizeSelect');
         if (pageSizeSelect) {
             pageSizeSelect.addEventListener('change', (e) => {
@@ -176,10 +170,6 @@ class AlertasModule {
     }
 
     _bindTableActions() {
-        // Lógica para ações na tabela de alertas (ex: ignorar, ver item)
-        const alertasListContainer = document.getElementById('alertas-list-container');
-        // Usar event delegation no main-content ou no container que envolve a tabela
-        // porque a tabela é recriada a cada renderização.
         const mainContent = document.getElementById('main-content');
         if (mainContent) {
             mainContent.addEventListener('click', async (e) => {
@@ -194,11 +184,8 @@ class AlertasModule {
                     const itemId = button.dataset.itemId;
                     uiService.showLoading();
                     try {
-                        // Busca os detalhes do item usando apiService
                         const itemDetails = await apiService.getItemById(itemId);
-                        // Preenche o modal com os detalhes do item
                         uiService.fillModalDetalhesItem(itemDetails);
-                        // Abre o modal de detalhes do item
                         uiService.getModalInstance('modalDetalheItem').show();
                     } catch (error) {
                         console.error("Erro ao carregar detalhes do item:", error);
@@ -214,9 +201,9 @@ class AlertasModule {
     async ignoreAlert(alertId) {
         uiService.showLoading();
         try {
-            await apiService.patch(`/alertas/ignorar/${alertId}`); 
+            await apiService.patch(`/alertas/ignorar/${alertId}`);
             showAlert('Alerta ignorado com sucesso. Futuros alertas para este item/motivo não serão gerados.', 'success');
-            this.renderAlertsPage(); // Recarrega a página de alertas
+            this.renderAlertsPage();
         } catch (error) {
             console.error('Erro ao ignorar alerta:', error);
             showAlert(error.message || 'Erro ao ignorar o alerta.', 'danger');

@@ -113,3 +113,21 @@ class AlertaRepository:
         alerta.ignorar_novos = True
         await db.commit()
         return alerta
+
+    # NOVO: Conta alertas não visualizados
+    @staticmethod
+    async def count_unviewed_alerts(db: AsyncSession) -> int:
+        result = await db.execute(select(func.count()).select_from(Alerta).where(Alerta.visualizado == False))
+        return result.scalar_one()
+
+    # NOVO: Marca todos os alertas como visualizados
+    @staticmethod
+    async def mark_all_alerts_as_viewed(db: AsyncSession):
+        # Atualiza o campo 'visualizado' para True para todos os alertas
+        # ou apenas para os que estão como False
+        await db.execute(
+            Alerta.__table__.update()
+            .where(Alerta.visualizado == False)
+            .values(visualizado=True)
+        )
+        await db.commit()
