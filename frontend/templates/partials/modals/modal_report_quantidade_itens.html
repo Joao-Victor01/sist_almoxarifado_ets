@@ -8,12 +8,23 @@
             <div class="modal-body">
                 <form id="form-report-quantidade-itens">
                     <div class="mb-3">
-                        <label for="filtroCategoria" class="form-label">Filtrar por Categoria (opcional)</label>
-                        <input type="text" class="form-control" id="filtroCategoria" name="filtro_categoria">
+                        <label for="filterCategoryReport" class="form-label">Filtrar por Categoria (opcional)</label>
+                        <select class="form-select" id="filterCategoryReport" name="filtro_categoria">
+                            <option value="">Todas as Categorias</option>
+                            </select>
                     </div>
                     <div class="mb-3">
-                        <label for="filtroProduto" class="form-label">Filtrar por Produto (opcional)</label>
-                        <input type="text" class="form-control" id="filtroProduto" name="filtro_produto">
+                        <label for="selectedProductNameReport" class="form-label">Filtrar por Produto (opcional)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="selectedProductNameReport" name="filtro_produto_display" readonly placeholder="Nenhum produto selecionado">
+                            <button class="btn btn-outline-secondary" type="button" id="btnOpenSelectProductReportModal">
+                                <i class="bi bi-search"></i> Selecionar
+                            </button>
+                            <button class="btn btn-outline-danger" type="button" id="btnClearSelectedProductReport">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" id="selectedProductIdReport" name="filtro_produto_id">
                     </div>
                     <div class="mb-3">
                         <label for="formatoQuantidadeItens" class="form-label">Formato do Relatório*</label>

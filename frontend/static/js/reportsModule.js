@@ -1,8 +1,9 @@
 // frontend/static/js/reportsModule.js
 
-import { apiService } from './apiService.js'; // [cite: 36]
-import { uiService } from './uiService.js'; // [cite: 196]
-import { showAlert } from './utils.js'; // [cite: 211]
+import { apiService } from './apiService.js';
+import { uiService } from './uiService.js';
+import { showAlert } from './utils.js';
+import { selecionarItemModule } from './selecionar-item-module.js';
 
 class ReportsModule {
     constructor() {
@@ -13,6 +14,13 @@ class ReportsModule {
         this.modalReportQuantidadeItens = uiService.getModalInstance('modalReportQuantidadeItens');
         this.formReportQuantidadeItens = document.getElementById('form-report-quantidade-itens');
         this.btnGerarReportQuantidadeItens = document.getElementById('btnGerarReportQuantidadeItens');
+        this.filterCategoryReportSelect = document.getElementById('filterCategoryReport');
+
+        // Novas referências para seleção de produto
+        this.selectedProductNameReportInput = document.getElementById('selectedProductNameReport');
+        this.selectedProductIdReportInput = document.getElementById('selectedProductIdReport'); // Campo hidden para o ID
+        this.btnOpenSelectProductReportModal = document.getElementById('btnOpenSelectProductReportModal');
+        this.btnClearSelectedProductReport = document.getElementById('btnClearSelectedProductReport');
 
         // References for Entrada de Itens report modal
         this.modalReportEntradaItens = uiService.getModalInstance('modalReportEntradaItens');
@@ -63,19 +71,52 @@ class ReportsModule {
             this.modalReportRetiradasUsuario._element.addEventListener('show.bs.modal', () => this._populateUsuarios());
             this.modalReportRetiradasUsuario._element.addEventListener('hidden.bs.modal', () => this.formReportRetiradasUsuario.reset());
         }
-        if (this.modalReportQuantidadeItens) {
-            this.modalReportQuantidadeItens._element.addEventListener('hidden.bs.modal', () => this.formReportQuantidadeItens.reset());
+         if (this.modalReportQuantidadeItens) {
+            this.modalReportQuantidadeItens._element.addEventListener('show.bs.modal', () => this._populateCategoriesForReport());
+            this.modalReportQuantidadeItens._element.addEventListener('hidden.bs.modal', () => {
+                this.formReportQuantidadeItens.reset();
+                this._clearSelectedProductFilter();
+            });
+
+            // Eventos para o novo botão de seleção de produto e limpeza
+            if (this.btnOpenSelectProductReportModal) {
+                this.btnOpenSelectProductReportModal.addEventListener('click', () => {
+                    this.modalReportQuantidadeItens.hide();
+                    // Opcional: Adicione um listener temporário para reabrir o modal
+                    // quando o modal de seleção for escondido, independente de seleção.
+                    const reOpenReportModal = () => {
+                        this.modalReportQuantidadeItens.show();
+                        // Remove o listener temporário para evitar que ele reabra o modal em outros contextos
+                        selecionarItemModule.modalSelecionarItem._element.removeEventListener('hidden.bs.modal', reOpenReportModal);
+                    };
+                    selecionarItemModule.modalSelecionarItem._element.addEventListener('hidden.bs.modal', reOpenReportModal);
+
+                    setTimeout(() => {
+                        selecionarItemModule.openModal('itemSelectedForReportFilter', 10);
+                    }, 300);
+                });
+            }
+            if (this.btnClearSelectedProductReport) {
+                this.btnClearSelectedProductReport.addEventListener('click', () => this._clearSelectedProductFilter());
+            }
         }
         if (this.modalReportEntradaItens) {
             this.modalReportEntradaItens._element.addEventListener('hidden.bs.modal', () => this.formReportEntradaItens.reset());
         }
+
+        // Listener para o evento customizado disparado pelo selecionarItemModule (quando um item É selecionado)
+        document.addEventListener('itemSelectedForReportFilter', (event) => {
+            this._handleItemSelectedForReportFilter(event.detail.item);
+            // O modal de seleção já se fechou ao despachar o evento.
+            // O listener 'hidden.bs.modal' adicionado acima já cuidará de reabrir o modal de relatório.
+        });
     }
 
     async _populateSetores() {
         this.selectSetor.innerHTML = '<option value="" disabled selected>Carregando setores...</option>';
-        uiService.showLoading(); // [cite: 210]
+        uiService.showLoading();
         try {
-            const setores = await apiService.fetchAllSetores(); // Assuming apiService has a fetchAllSetores() method [cite: 45]
+            const setores = await apiService.fetchAllSetores();
             this.selectSetor.innerHTML = '<option value="" disabled selected>Selecione um setor</option>';
             setores.forEach(setor => {
                 const option = document.createElement('option');
@@ -85,34 +126,66 @@ class ReportsModule {
             });
         } catch (error) {
             console.error('Erro ao carregar setores:', error);
-            showAlert('Erro ao carregar setores para o relatório.', 'danger'); // [cite: 211]
+            showAlert('Erro ao carregar setores para o relatório.', 'danger');
             this.selectSetor.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
         } finally {
-            uiService.hideLoading(); // [cite: 210]
+            uiService.hideLoading();
         }
     }
 
     async _populateUsuarios() {
         this.selectUsuario.innerHTML = '<option value="" disabled selected>Carregando usuários...</option>';
-        uiService.showLoading(); // [cite: 210]
+        uiService.showLoading();
         try {
-            // Assuming an endpoint to fetch all users, or users allowed for reports.
-            // You might need to add a new method to apiService for this if it doesn't exist.
-            // For now, let's mock it or assume apiService.get('/usuarios') returns a list.
-            const usuarios = await apiService.get('/usuarios'); // Placeholder: adjust this API call as needed
+            const usuarios = await apiService.get('/usuarios');
             this.selectUsuario.innerHTML = '<option value="" disabled selected>Selecione um usuário</option>';
             usuarios.forEach(usuario => {
                 const option = document.createElement('option');
                 option.value = usuario.usuario_id;
-                option.textContent = usuario.nome_usuario; // Assuming 'nome_usuario' is the display name
+                option.textContent = usuario.nome_usuario;
                 this.selectUsuario.appendChild(option);
             });
         } catch (error) {
             console.error('Erro ao carregar usuários:', error);
-            showAlert('Erro ao carregar usuários para o relatório.', 'danger'); // [cite: 211]
+            showAlert('Erro ao carregar usuários para o relatório.', 'danger');
             this.selectUsuario.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
         } finally {
-            uiService.hideLoading(); // [cite: 210]
+            uiService.hideLoading();
+        }
+    }
+
+    async _populateCategoriesForReport() {
+        this.filterCategoryReportSelect.innerHTML = '<option value="">Todas as Categorias</option>';
+        uiService.showLoading();
+        try {
+            const categorias = await apiService.get('/categorias');
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.categoria_id;
+                option.textContent = cat.nome_original;
+                this.filterCategoryReportSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Erro ao carregar categorias para o relatório:', error);
+            showAlert('Erro ao carregar categorias.', 'danger');
+        } finally {
+            uiService.hideLoading();
+        }
+    }
+
+    _clearSelectedProductFilter() {
+        this.selectedProductNameReportInput.value = '';
+        this.selectedProductIdReportInput.value = '';
+    }
+
+    _handleItemSelectedForReportFilter(selectedItem) {
+        if (selectedItem) {
+            this.selectedProductNameReportInput.value = selectedItem.nome_item_original;
+            this.selectedProductIdReportInput.value = selectedItem.item_id;
+            showAlert(`Produto "${selectedItem.nome_item_original}" selecionado para filtro.`, 'info');
+        } else {
+            this._clearSelectedProductFilter();
+            showAlert('Nenhum produto selecionado.', 'warning');
         }
     }
 
@@ -122,22 +195,23 @@ class ReportsModule {
             return;
         }
 
-        const filtro_categoria = document.getElementById('filtroCategoria').value.trim();
-        const filtro_produto = document.getElementById('filtroProduto').value.trim();
+        const filtro_categoria = this.filterCategoryReportSelect.value;
+        const filtro_produto_id = this.selectedProductIdReportInput.value;
         const formato = document.getElementById('formatoQuantidadeItens').value;
 
         const params = new URLSearchParams({ formato });
         if (filtro_categoria) params.append('filtro_categoria', filtro_categoria);
-        if (filtro_produto) params.append('filtro_produto', filtro_produto);
+        if (filtro_produto_id) {
+            params.append('filtro_produto', this.selectedProductNameReportInput.value); // Envia o nome, pois o backend espera o nome
+        }
 
-        uiService.showLoading(); // [cite: 210]
+        uiService.showLoading();
         try {
-            // Use fetch directly to handle FileResponse
-            const token = localStorage.getItem('token'); // [cite: 37]
+            const token = localStorage.getItem('token');
             const response = await fetch(`/api/almoxarifado/relatorios/quantidade-itens/?${params.toString()}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}` // [cite: 37]
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -146,33 +220,31 @@ class ReportsModule {
                 throw new Error(errorData.detail || `Erro HTTP: ${response.status}`);
             }
 
-            // Trigger file download
             const blob = await response.blob();
             const contentDisposition = response.headers.get('content-disposition');
-            let filename = `relatorio_quantidade_itens.${formato}`; // Fallback default filename
+            let filename = `relatorio_quantidade_itens.${formato}`;
 
             if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i); // Better regex to handle RFC 6266 filename* and filename
+                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i);
                 if (filenameMatch && filenameMatch[1]) {
-                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, '')); // Remove surrounding quotes and decode
+                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, ''));
                 } else {
-                    // Fallback to simpler split if regex fails (older browsers, or specific cases)
                     const simpleSplit = contentDisposition.split('filename=')[1];
                     if (simpleSplit) {
-                        filename = simpleSplit.replace(/^"|"$/g, ''); // Remove surrounding quotes
+                        filename = simpleSplit.replace(/^"|"$/g, '');
                     }
                 }
             }
 
             this._downloadFile(blob, filename);
 
-            showAlert('Relatório de quantidade de itens gerado com sucesso!', 'success'); // [cite: 211]
-            this.modalReportQuantidadeItens.hide(); // [cite: 210]
+            showAlert('Relatório de quantidade de itens gerado com sucesso!', 'success');
+            this.modalReportQuantidadeItens.hide();
         } catch (error) {
             console.error('Erro ao gerar relatório de quantidade de itens:', error);
-            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de quantidade de itens.', 'danger'); // [cite: 211]
+            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de quantidade de itens.', 'danger');
         } finally {
-            uiService.hideLoading(); // [cite: 210]
+            uiService.hideLoading();
         }
     }
 
@@ -187,19 +259,19 @@ class ReportsModule {
         const formato = document.getElementById('formatoEntradaItens').value;
 
         if (!data_inicio || !data_fim) {
-            showAlert('Por favor, preencha as datas inicial e final.', 'warning'); // [cite: 211]
+            showAlert('Por favor, preencha as datas inicial e final.', 'warning');
             return;
         }
 
         const params = new URLSearchParams({ data_inicio, data_fim, formato });
 
-        uiService.showLoading(); // [cite: 210]
+        uiService.showLoading();
         try {
-            const token = localStorage.getItem('token'); // [cite: 37]
+            const token = localStorage.getItem('token');
             const response = await fetch(`/api/almoxarifado/relatorios/entrada-itens/?${params.toString()}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}` // [cite: 37]
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -210,30 +282,29 @@ class ReportsModule {
 
             const blob = await response.blob();
             const contentDisposition = response.headers.get('content-disposition');
-            let filename = `relatorio_quantidade_itens.${formato}`; // Fallback default filename
+            let filename = `relatorio_entrada_itens.${formato}`;
 
             if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i); // Better regex to handle RFC 6266 filename* and filename
+                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i);
                 if (filenameMatch && filenameMatch[1]) {
-                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, '')); // Remove surrounding quotes and decode
+                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, ''));
                 } else {
-                    // Fallback to simpler split if regex fails (older browsers, or specific cases)
                     const simpleSplit = contentDisposition.split('filename=')[1];
                     if (simpleSplit) {
-                        filename = simpleSplit.replace(/^"|"$/g, ''); // Remove surrounding quotes
+                        filename = simpleSplit.replace(/^"|"$/g, '');
                     }
                 }
             }
 
             this._downloadFile(blob, filename);
 
-            showAlert('Relatório de entrada de itens gerado com sucesso!', 'success'); // [cite: 211]
-            this.modalReportEntradaItens.hide(); // [cite: 210]
+            showAlert('Relatório de entrada de itens gerado com sucesso!', 'success');
+            this.modalReportEntradaItens.hide();
         } catch (error) {
             console.error('Erro ao gerar relatório de entrada de itens:', error);
-            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de entrada de itens.', 'danger'); // [cite: 211]
+            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de entrada de itens.', 'danger');
         } finally {
-            uiService.hideLoading(); // [cite: 210]
+            uiService.hideLoading();
         }
     }
 
@@ -249,19 +320,19 @@ class ReportsModule {
         const formato = document.getElementById('formatoRetiradasSetor').value;
 
         if (!setor_id || !data_inicio || !data_fim) {
-            showAlert('Por favor, preencha todos os campos obrigatórios.', 'warning'); // [cite: 211]
+            showAlert('Por favor, preencha todos os campos obrigatórios.', 'warning');
             return;
         }
 
         const params = new URLSearchParams({ setor_id, data_inicio, data_fim, formato });
 
-        uiService.showLoading(); // [cite: 210]
+        uiService.showLoading();
         try {
-            const token = localStorage.getItem('token'); // [cite: 37]
+            const token = localStorage.getItem('token');
             const response = await fetch(`/api/almoxarifado/relatorios/retiradas-setor/?${params.toString()}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}` // [cite: 37]
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -272,30 +343,29 @@ class ReportsModule {
 
             const blob = await response.blob();
             const contentDisposition = response.headers.get('content-disposition');
-            let filename = `relatorio_quantidade_itens.${formato}`; // Fallback default filename
+            let filename = `relatorio_retiradas_setor.${formato}`;
 
             if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i); // Better regex to handle RFC 6266 filename* and filename
+                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i);
                 if (filenameMatch && filenameMatch[1]) {
-                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, '')); // Remove surrounding quotes and decode
+                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, ''));
                 } else {
-                    // Fallback to simpler split if regex fails (older browsers, or specific cases)
                     const simpleSplit = contentDisposition.split('filename=')[1];
                     if (simpleSplit) {
-                        filename = simpleSplit.replace(/^"|"$/g, ''); // Remove surrounding quotes
+                        filename = simpleSplit.replace(/^"|"$/g, '');
                     }
                 }
             }
 
             this._downloadFile(blob, filename);
 
-            showAlert('Relatório de retiradas por setor gerado com sucesso!', 'success'); // [cite: 211]
-            this.modalReportRetiradasSetor.hide(); // [cite: 210]
+            showAlert('Relatório de retiradas por setor gerado com sucesso!', 'success');
+            this.modalReportRetiradasSetor.hide();
         } catch (error) {
             console.error('Erro ao gerar relatório de retiradas por setor:', error);
-            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de retiradas por setor.', 'danger'); // [cite: 211]
+            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de retiradas por setor.', 'danger');
         } finally {
-            uiService.hideLoading(); // [cite: 210]
+            uiService.hideLoading();
         }
     }
 
@@ -311,19 +381,19 @@ class ReportsModule {
         const formato = document.getElementById('formatoRetiradasUsuario').value;
 
         if (!usuario_id || !data_inicio || !data_fim) {
-            showAlert('Por favor, preencha todos os campos obrigatórios.', 'warning'); // [cite: 211]
+            showAlert('Por favor, preencha todos os campos obrigatórios.', 'warning');
             return;
         }
 
         const params = new URLSearchParams({ usuario_id, data_inicio, data_fim, formato });
 
-        uiService.showLoading(); // [cite: 210]
+        uiService.showLoading();
         try {
-            const token = localStorage.getItem('token'); // [cite: 37]
+            const token = localStorage.getItem('token');
             const response = await fetch(`/api/almoxarifado/relatorios/retiradas-usuario/?${params.toString()}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}` // [cite: 37]
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -334,30 +404,29 @@ class ReportsModule {
 
             const blob = await response.blob();
             const contentDisposition = response.headers.get('content-disposition');
-            let filename = `relatorio_quantidade_itens.${formato}`; // Fallback default filename
+            let filename = `relatorio_retiradas_usuario.${formato}`;
 
             if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i); // Better regex to handle RFC 6266 filename* and filename
+                const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i);
                 if (filenameMatch && filenameMatch[1]) {
-                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, '')); // Remove surrounding quotes and decode
+                    filename = decodeURIComponent(filenameMatch[1].replace(/^"|"$/g, ''));
                 } else {
-                    // Fallback to simpler split if regex fails (older browsers, or specific cases)
                     const simpleSplit = contentDisposition.split('filename=')[1];
                     if (simpleSplit) {
-                        filename = simpleSplit.replace(/^"|"$/g, ''); // Remove surrounding quotes
+                        filename = simpleSplit.replace(/^"|"$/g, '');
                     }
                 }
             }
 
             this._downloadFile(blob, filename);
 
-            showAlert('Relatório de retiradas por usuário gerado com sucesso!', 'success'); // [cite: 211]
-            this.modalReportRetiradasUsuario.hide(); // [cite: 210]
+            showAlert('Relatório de retiradas por usuário gerado com sucesso!', 'success');
+            this.modalReportRetiradasUsuario.hide();
         } catch (error) {
             console.error('Erro ao gerar relatório de retiradas por usuário:', error);
-            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de retiradas por usuário.', 'danger'); // [cite: 211]
+            showAlert(error.message || 'Ocorreu um erro ao gerar o relatório de retiradas por usuário.', 'danger');
         } finally {
-            uiService.hideLoading(); // [cite: 210]
+            uiService.hideLoading();
         }
     }
 

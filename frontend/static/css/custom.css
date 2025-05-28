@@ -75,3 +75,23 @@
 .toast-body {
     padding-right: 1.5rem !important; /* Garante espaço para o botão de fechar */
 }
+
+/* Estilos para os itens do dashboard de relatórios */
+.report-item-style {
+    background-color: #f8f9fa; /* Um tom claro para o fundo */
+    border-radius: 0.5rem; /* Bordas arredondadas */
+    margin-bottom: 0.5rem; /* Espaçamento entre os itens */
+    transition: all 0.2s ease-in-out; /* Transição suave para hover */
+    border: 1px solid #e9ecef; /* Uma borda sutil */
+}
+
+.report-item-style:hover {
+    background-color: #e2e6ea; /* Um tom um pouco mais escuro ao passar o mouse */
+    transform: translateY(-2px); /* Efeito de "levantar" */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Sombra sutil */
+    border-color: #dee2e6;
+}
+
+.report-item-style i {
+    margin-left: 1rem; /* Espaçamento entre o texto e o ícone */
+}

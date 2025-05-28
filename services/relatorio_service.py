@@ -65,19 +65,19 @@ class RelatorioService:
     ):
         itens = await ItemService.get_itens_por_periodo(session, data_inicio, data_fim)
         
-        # Formatar DataFrame com acesso via dicionário
+        # Formatar DataFrame acessando os dicionários retornados pelo repositório
         df = pd.DataFrame([{
             "ID_Item": item["item_id"],
             "Nome": item["nome_item_original"],
             "Quantidade": item["quantidade_item"],
             "Data_Entrada": item["data_entrada_item"].strftime('%d/%m/%Y'),
-            "Categoria": item["nome_categoria"]  # Nome da categoria do JOIN
+            "Categoria": item["nome_categoria_original"] # Agora acessa a chave correta do dicionário
         } for item in itens])
         
         # Exportar usando estratégia existente
-        caminho_arquivo = os.path.join(PASTA_RELATORIOS, f"relatorio_entrada_itens.{formato}")
-        export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy()
-        export_strategy.export(df, caminho_arquivo)
+        caminho_arquivo = os.path.join(Settings.PASTA_RELATORIOS, f"relatorio_entrada_itens.{formato}")
+        export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy() 
+        export_strategy.export(df, caminho_arquivo) 
         return caminho_arquivo
 
     @staticmethod

@@ -66,19 +66,18 @@ class ItemRepository:
         return result.all()
     
     @staticmethod
-    async def get_itens_por_periodo(
+    async def get_itens_por_periodo (
         db: AsyncSession,
         data_inicio: datetime,
         data_fim: datetime
     ):
-        # Query com JOIN e seleção explícita de campos
         query = (
             select(
                 Item.item_id,
-                Item.nome_item,
+                Item.nome_item_original,
                 Item.quantidade_item,
                 Item.data_entrada_item,
-                Categoria.nome_categoria.label("nome_categoria")  # Alias para o nome da categoria
+                Categoria.nome_original.label("nome_categoria_original") # Label da categoria
             )
             .join(Categoria, Item.categoria_id == Categoria.categoria_id)
             .where(
@@ -86,10 +85,8 @@ class ItemRepository:
                 Item.data_entrada_item <= data_fim
             )
         )
-        
         result = await db.execute(query)
-        # Retorna uma lista de dicionários com os dados
-        return result.mappings().all()
+        return result.mappings().all() # Retorna dicionários
 
     @staticmethod
     async def delete_item(db: AsyncSession, item_id: int):

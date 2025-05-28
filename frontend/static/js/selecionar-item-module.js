@@ -1,22 +1,27 @@
 // frontend/static/js/selecionar-item-module.js
+
 import { apiService } from './apiService.js';
 import { uiService } from './uiService.js';
 import { showAlert } from './utils.js';
-import estadoGlobal from './estadoGlobal.js';
 
 class SelecionarItemModule {
     constructor() {
         this.modalSelecionarItem = uiService.getModalInstance('modalSelecionarItemRetirada');
+
         this.searchForm = document.getElementById('form-search-item-retirada');
         this.searchItemNameInput = document.getElementById('searchItemName');
         this.btnSearchItem = document.getElementById('btn-search-item');
-        this.btnClearItemSearch = document.getElementById('btn-clear-item-search'); // NOVO: Referência ao botão de limpar
+        this.btnClearItemSearch = document.getElementById('btn-clear-item-search');
+
         this.itensListContainer = document.getElementById('itens-list-container');
         this.itensPaginationContainer = document.getElementById('itens-pagination-container');
 
         this.currentPage = 1;
-        this.pageSize = estadoGlobal.currentHistoricoPageSize; // Pode ser um novo estadoGlobal.itemSearchPageSize
+        this.pageSize = 10; // Default page size
         this.currentSearchTerm = '';
+
+        this.callerEventName = 'itemSelectedForRetirada';
+        this.currentTotalPages = 1; // Novo atributo para armazenar o total de páginas
     }
 
     init() {
@@ -27,36 +32,51 @@ class SelecionarItemModule {
         this.searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.currentSearchTerm = this.searchItemNameInput.value.trim();
-            this.currentPage = 1; // Reseta para a primeira página ao fazer uma nova busca
+            this.currentPage = 1;
             this.loadItems();
         });
 
-        // NOVO: Evento para o botão de limpar busca
         this.btnClearItemSearch.addEventListener('click', () => {
-            this.searchItemNameInput.value = ''; // Limpa o campo de texto
-            this.currentSearchTerm = ''; // Reseta o termo de busca interno
-            this.currentPage = 1; // Reseta para a primeira página
-            this.loadItems(); // Recarrega os itens sem filtro
+            this.searchItemNameInput.value = '';
+            this.currentSearchTerm = '';
+            this.currentPage = 1;
+            this.loadItems();
         });
 
-        // Event delegation para a paginação dentro do modal
         this.itensPaginationContainer.addEventListener('click', (e) => {
-            // Verifica se o clique foi em um link de paginação (data-page)
-            if (e.target.tagName === 'A' && e.target.dataset.page) {
-                e.preventDefault();
-                this.currentPage = parseInt(e.target.dataset.page);
-                this.loadItems();
-            }
-            // Verifica se o clique foi no botão "Anterior" ou "Próximo" da paginação
-            if (e.target.tagName === 'A' && e.target.dataset.action) {
-                const action = e.target.dataset.action;
-                let newPage = this.currentPage;
-                const totalPagesElement = this.itensPaginationContainer.querySelector('.pagination .page-item.active .page-link');
-                const totalPages = parseInt(totalPagesElement ? totalPagesElement.textContent : '1'); // Obter total de páginas da UI
+            e.preventDefault(); // Previne o comportamento padrão do link para todos os cliques de paginação
 
-                if (action.includes('prev')) {
+            // Lógica para links de página individuais (números)
+            // Agora, procurando por data-page, consistente com listar-itens.js e a alteração no uiService.js
+            const clickedPageLink = e.target.closest('a[data-page]');
+            if (clickedPageLink) {
+                const pageValue = clickedPageLink.dataset.page; // Lendo data-page
+                console.log('Valor lido de dataset.page:', pageValue); // Depuração
+                const parsedPage = parseInt(pageValue);
+                console.log('Valor parsed para Int:', parsedPage); // Depuração
+
+                if (isNaN(parsedPage)) {
+                    console.error('ERRO: parseInt retornou NaN para o valor de pageValue:', pageValue);
+                    showAlert('Erro na paginação: o número da página não é válido.', 'danger');
+                    return;
+                }
+
+                this.currentPage = parsedPage;
+                this.loadItems();
+                return;
+            }
+
+            // Lógica para botões "Anterior" ou "Próximo" (mantém data-action="${type}-prev/next")
+            const clickedActionButton = e.target.closest('a[data-action]');
+            if (clickedActionButton) {
+                const action = clickedActionButton.dataset.action;
+                let newPage = this.currentPage;
+
+                const totalPages = this.currentTotalPages;
+
+                if (action.includes('prev')) { // Ainda verificará se action.includes('itemSearch-prev')
                     if (newPage > 1) newPage--;
-                } else if (action.includes('next')) {
+                } else if (action.includes('next')) { // Ainda verificará se action.includes('itemSearch-next')
                     if (newPage < totalPages) newPage++;
                 }
 
@@ -67,16 +87,14 @@ class SelecionarItemModule {
             }
         });
 
-        // Event delegation para o select de tamanho da página
         this.itensPaginationContainer.addEventListener('change', (e) => {
-            if (e.target.id === 'itemSearchPageSize') { 
+            if (e.target.id === 'itemSearchPageSize') {
                 this.pageSize = parseInt(e.target.value);
                 this.currentPage = 1; // Reseta para a primeira página
                 this.loadItems();
             }
         });
 
-        // Event delegation para os botões "Selecionar" da tabela de itens
         this.itensListContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('btn-selecionar-item')) {
                 const itemId = parseInt(e.target.dataset.id);
@@ -84,57 +102,62 @@ class SelecionarItemModule {
             }
         });
 
-        // Opcional: Limpar o campo de busca e o estado ao fechar o modal
         document.getElementById('modalSelecionarItemRetirada').addEventListener('hidden.bs.modal', () => {
             this.searchItemNameInput.value = '';
             this.currentSearchTerm = '';
             this.currentPage = 1;
             this.itensListContainer.innerHTML = '';
             this.itensPaginationContainer.innerHTML = '';
+            this.callerEventName = 'itemSelectedForRetirada'; // Reset to default
+            this.currentTotalPages = 1; // Reset total pages on modal hide
         });
     }
 
-    async openModal() {
+    async openModal(eventName = 'itemSelectedForRetirada', pageSize = this.pageSize) {
+        this.callerEventName = eventName;
+        this.pageSize = pageSize;
+
         this.currentPage = 1;
         this.currentSearchTerm = '';
-        this.searchItemNameInput.value = ''; // Limpa o campo de busca
-        await this.loadItems(); // Carrega os itens na abertura do modal
+        this.searchItemNameInput.value = '';
+
+        await this.loadItems();
         this.modalSelecionarItem.show();
     }
 
     async loadItems() {
         uiService.showLoading();
         try {
-            // Usar o endpoint de busca de itens paginados
             const data = await apiService.searchItems(this.currentSearchTerm, null, this.currentPage, this.pageSize);
 
-            const tableHeaders = ['ID', 'Nome', 'Ações'];
-            
-            // Renderiza a tabela dentro da div com scroll
+            this.currentTotalPages = data.total_pages;
+
+            const tableHeaders = ['Nome', 'Ações'];
+
             this.itensListContainer.innerHTML = uiService.renderTable(tableHeaders, data.items, {
                 noRecordsMessage: "Nenhum item encontrado.",
                 rowMapper: (item) => [
-                    item.item_id,
                     item.nome_item_original
                 ],
                 actionsHtml: (item) => `
-                    <button class="btn btn-sm btn-primary btn-selecionar-item" data-id="${item.item_id}">Selecionar</button>
+                    <button class="btn btn-sm btn-primary btn-selecionar-item" data-id="${item.item_id}">
+                        Selecionar
+                    </button>
                 `
             });
 
-            // Renderiza a paginação fora da div com scroll
             this.itensPaginationContainer.innerHTML = uiService.renderPagination(
                 data.page,
                 data.total_pages,
-                'itemSearch', // Tipo para identificação da paginação
-                'itemSearchPageSize', // ID para o select de tamanho da página
+                'itemSearch', // Este 'type' ainda será usado para data-action="itemSearch-prev/next"
+                'itemSearchPageSize',
                 this.pageSize
             );
 
         } catch (error) {
             console.error("Erro ao carregar itens para seleção:", error);
             showAlert(error.message || 'Erro ao carregar itens disponíveis.', 'danger');
-            this.itensListContainer.innerHTML = `<p class="text-danger">Não foi possível carregar os itens.</p>`;
+            this.itensListContainer.innerHTML = '<p class="text-danger">Não foi possível carregar os itens.</p>';
             this.itensPaginationContainer.innerHTML = '';
         } finally {
             uiService.hideLoading();
@@ -145,8 +168,8 @@ class SelecionarItemModule {
         uiService.showLoading();
         try {
             const item = await apiService.getItemById(itemId);
-            
-            const event = new CustomEvent('itemSelectedForRetirada', {
+
+            const event = new CustomEvent(this.callerEventName, {
                 detail: { item: item }
             });
             document.dispatchEvent(event);

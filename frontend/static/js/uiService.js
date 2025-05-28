@@ -1,29 +1,31 @@
 // frontend/static/js/uiService.js
-import { formatDate, formatDateTime, getStatusText, showAlert } from './utils.js';
+
+import { formatDate, formatDateTime, getStatusText, showAlert } from './utils.js'; 
 import estadoGlobal from './estadoGlobal.js'; 
 
 class UiService {
     constructor() {
-        this.mainContent = document.getElementById('main-content');
-        this.loadingSpinner = document.getElementById('loading-spinner');
+        this.mainContent = document.getElementById('main-content'); 
+        this.loadingSpinner = document.getElementById('loading-spinner'); 
     }
 
     renderPage(title, contentHtml) {
         if (this.mainContent) {
-            this.mainContent.innerHTML = `<h3 class="mb-3">${title}</h3>${contentHtml}`;
+            this.mainContent.innerHTML = `<h3 class="mb-3">${title}</h3>${contentHtml}`; 
         } else {
-            console.error("Elemento 'main-content' não encontrado.");
+            console.error("Elemento 'main-content não encontrado."); 
         }
     }
 
     renderTable(headers, rows, options = {}) {
-        const { tableId = '', noRecordsMessage = 'Nenhum registro encontrado.', rowMapper, actionsHtml = (item) => '' } = options;
+        const { tableId = '', noRecordsMessage = 'Nenhum registro encontrado.', rowMapper, actionsHtml = () => '' } = options; // Default actionsHtml to an empty function 
+
         const tableContent = rows.length > 0 ? rows.map(item => `
             <tr>
                 ${rowMapper(item).map(cell => `<td>${cell}</td>`).join('')}
                 <td>${actionsHtml(item)}</td>
             </tr>
-        `).join('') : `<tr><td colspan="${headers.length + 1}" class="text-center">${noRecordsMessage}</td></tr>`;
+        `).join('') : `<tr><td colspan="${headers.length + 1}" class="text-center">${noRecordsMessage}</td></tr>`; 
 
         return `
             <div class="table-responsive">
@@ -37,58 +39,56 @@ class UiService {
                         ${tableContent}
                     </tbody>
                 </table>
-            </div>
-        `;
+            </div>`; 
     }
 
     renderPagination(currentPage, totalPages, type, pageSizeSelectId, currentPageSize) {
         let pageLinks = '';
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, currentPage + 2);
 
-        if (totalPages <= 5) {
-            startPage = 1;
-            endPage = totalPages;
+        let startPage = Math.max(1, currentPage - 2); 
+        let endPage = Math.min(totalPages, currentPage + 2); 
+
+        if (totalPages <= 5) { // 
+            startPage = 1; 
+            endPage = totalPages; 
         } else {
-            if (currentPage <= 3) {
-                startPage = 1;
-                endPage = 5;
-            } else if (currentPage + 2 >= totalPages) {
-                startPage = totalPages - 4;
-                endPage = totalPages;
+            if (currentPage <= 3) { 
+                startPage = 1; 
+                endPage = 5; 
+            } else if (currentPage + 2 > totalPages) { 
+                startPage = totalPages - 4; 
+                endPage = totalPages; 
             }
         }
 
         if (startPage > 1) {
-            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page-${type}="1">1</a></li>`;
-            if (startPage > 2) {
-                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`; // Alterado para data-page
+            if (startPage > 2) { 
+                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`; 
             }
         }
 
-        for (let i = startPage; i <= endPage; i++) {
+        for (let i = startPage; i <= endPage; i++) { 
             pageLinks += `
                 <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page-${type}="${i}">${i}</a>
-                </li>
-            `;
+                    <a class="page-link" href="#" data-page="${i}">${i}</a> </li>`;
         }
 
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        if (endPage < totalPages) { 
+            if (endPage < totalPages - 1) { 
+                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`; 
             }
-            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page-${type}="${totalPages}">${totalPages}</a></li>`;
+            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`; // ALTERADO: data-page="${totalPages}"
         }
 
         const pageSizeSelectOptions = estadoGlobal.PAGE_SIZE_OPTIONS.map(size =>
             `<option value="${size}" ${size === currentPageSize ? 'selected' : ''}>${size}</option>`
-        ).join('');
+        ).join(''); 
 
         return `
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center">
-                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}"> 
                         <a class="page-link" href="#" data-action="${type}-prev">Anterior</a>
                     </li>
                     ${pageLinks}
@@ -98,11 +98,11 @@ class UiService {
                 </ul>
             </nav>
             <div class="d-flex justify-content-center my-2">
-                <label class="me-2 align-self-center">Itens por página:</label>
+                <label class="me-2 align-self-center">Itens por página: </label>
                 <select class="form-select w-auto" id="${pageSizeSelectId}" data-action="${type}-pagesize">
                     ${pageSizeSelectOptions}
                 </select>
-            </div>`;
+            </div>`; 
     }
 
     renderPageSizeSelect(id, currentPageSize) {

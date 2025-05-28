@@ -1,0 +1,16 @@
+ID_Retirada;Data_Solicitacao;Item;Quantidade_Retirada;Usuario;Status;Autorizada_Por;Setor_ID
+39;27/05/2025;Mouse USB;1;João Victor Almoxarifado;CONCLUIDA;João Victor Almoxarifado;15
+30;14/05/2025;Mouse USB;10;João Victor Almoxarifado;CONCLUIDA;João Victor Almoxarifado;15
+27;14/05/2025;Caneta Azul;15;João Victor Almoxarifado;CONCLUIDA;João Victor Almoxarifado;15
+33;15/05/2025;Caneta Vermelha;10;João Victor Almoxarifado;CONCLUIDA;João Victor Almoxarifado;15
+28;14/05/2025;Caneta Vermelha;15;João Victor Almoxarifado;CONCLUIDA;João Victor Almoxarifado;15
+44;28/05/2025;Cabo VGA;2;João Victor Almoxarifado;PENDENTE;N/A;15
+29;14/05/2025;Caneta Vermelha;10;João Victor Almoxarifado;NEGADA;João Victor Almoxarifado;15
+31;14/05/2025;Mouse USB;10;João Victor Almoxarifado;NEGADA;João Victor Almoxarifado;15
+36;19/05/2025;Caneta Vermelha;10;João Victor Almoxarifado;AUTORIZADA;João Victor Almoxarifado;15
+36;19/05/2025;Mouse USB;10;João Victor Almoxarifado;AUTORIZADA;João Victor Almoxarifado;15
+34;19/05/2025;Caneta Vermelha;10;João Victor Almoxarifado;PENDENTE;N/A;15
+34;19/05/2025;Mouse USB;10;João Victor Almoxarifado;PENDENTE;N/A;15
+35;19/05/2025;Caneta Vermelha;10;João Victor Almoxarifado;NEGADA;João Victor Almoxarifado;15
+35;19/05/2025;Mouse USB;10;João Victor Almoxarifado;NEGADA;João Victor Almoxarifado;15
+32;15/05/2025;Teclado USB;10;João Victor Almoxarifado;CONCLUIDA;João Victor Almoxarifado;15
