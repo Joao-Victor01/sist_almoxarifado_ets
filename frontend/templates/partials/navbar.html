@@ -1,7 +1,8 @@
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
     <div class="container-fluid">
         <button class="btn btn-outline-light me-3" id="home-button"><i class="bi bi-house-fill"></i></button>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
+            aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -11,15 +12,25 @@
             </ul>
 
             <div class="d-flex align-items-center">
-                <a class="nav-link position-relative me-3" href="#" id="alert-notification-bell" role="button">
-                    <i class="bi bi-bell-fill fs-5"></i>
-                    <span id="notification-dot" class="notification-dot position-absolute">
-                        <span class="visually-hidden">Novos alertas</span>
-                    </span>
-                </a>
+                <div class="dropdown">
+                    <a class="nav-link position-relative me-3" href="#" id="alert-notification-bell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell-fill fs-5"></i>
+                        <span id="notification-dot" class="notification-dot position-absolute">
+                            <span class="visually-hidden">Novas notificações</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="alert-notification-bell">
+                        <li><span class="dropdown-item text-muted" id="no-notifications-menu-item" style="display: none;">Sem notificações</span></li>
+                        
+                        <li><a class="dropdown-item" href="#" id="new-withdrawal-requests-menu-item" style="display: none;">Nova solicitação de retirada</a></li>
+                        <li><a class="dropdown-item" href="#" id="new-alerts-menu-item" style="display: none;">Novo alerta de item</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                    </ul>
+                </div>
 
                 <div class="dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown"
+                        aria-expanded="false">
                         <i class="bi bi-person-circle"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">

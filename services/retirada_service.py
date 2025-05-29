@@ -9,6 +9,7 @@ from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus, RetiradaPaginated, RetiradaFilterParams
 from services.alerta_service import AlertaService
+from utils.websocket_endpoints import manager # Importar o manager
 
 class RetiradaService:
 
@@ -19,8 +20,10 @@ class RetiradaService:
         total = await RetiradaRepository.count_retiradas(db)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
+
         sqlalchemy_items = await RetiradaRepository.get_retiradas_paginated(db, offset, page_size)
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
+
         return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
@@ -33,10 +36,12 @@ class RetiradaService:
         total = await RetiradaRepository.count_retiradas_filter(db, params)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
+
         sqlalchemy_items = await RetiradaRepository.filter_retiradas_paginated(
             db, params, offset, page_size
         )
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
+
         return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
@@ -70,6 +75,14 @@ class RetiradaService:
             retirada_completa = await RetiradaRepository.buscar_retirada_por_id(
                 db, nova_retirada.retirada_id
             )
+
+            # NOVO: Transmitir o evento de nova solicitação de retirada via WebSocket
+            await manager.broadcast({
+                "type": "new_withdrawal_request",
+                "retirada_id": retirada_completa.retirada_id,
+                "message": f"Nova solicitação de retirada do setor {retirada_completa.setor_id} - ID: {retirada_completa.retirada_id}"
+            })
+
             return retirada_completa
 
         except Exception as e:
@@ -82,10 +95,11 @@ class RetiradaService:
     @staticmethod
     async def atualizar_status(db: AsyncSession, retirada_id: int, status_data: RetiradaUpdateStatus, admin_id: int):
         try:
-            if status_data.status not in {s.value for s in StatusEnum}:
+            if status_data.status not in (s.value for s in StatusEnum):
                 raise HTTPException(400, "Status inválido.")
 
             retirada = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
+
             if not retirada:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, "Retirada não encontrada")
 
@@ -127,10 +141,11 @@ class RetiradaService:
         total = await RetiradaRepository.count_retiradas_pendentes(db)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
+
         sqlalchemy_items = await RetiradaRepository.get_retiradas_pendentes_paginated(db, offset, page_size)
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
-        return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
+        return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
     async def get_all_retiradas(db: AsyncSession):
