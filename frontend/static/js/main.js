@@ -6,9 +6,10 @@ import { selecionarItemModule } from './selecionar-item-module.js';
 import { reportsModule } from './reportsModule.js';
 import { alertasModule } from './alertasModule.js'; 
 import { apiService } from './apiService.js'; 
+import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert } from './utils.js';
 
-// Importar as funções de utilidade para o sino
-import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert } from './utils.js'; 
+const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3'; 
+
 
 // Função auxiliar para re-inicializar dropdowns do Bootstrap
 export function reinitializeBootstrapDropdowns() {
@@ -185,17 +186,26 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("WebSocket para alertas conectado:", event);
         };
 
-        ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            console.log("Mensagem WebSocket recebida:", message);
-            if (message.type === "new_alert") {
-                // Um novo alerta foi gerado no backend, atualiza a UI
-                setNewAlertsFlag(true); // Define o flag de novos alertas
-                updateNotificationBellUI(); // Atualiza a UI do sino imediatamente
-                showAlert("Novo alerta: " + message.message, "info", 5000); // Exibe uma notificação toast
- 
+    ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        console.log("Mensagem WebSocket recebida:", message);
+        if (message.type === "new_alert") {
+            // Um novo alerta foi gerado no backend, atualize a UI
+            setNewAlertsFlag(true);
+            updateNotificationBellUI();
+            showAlert("Novo alerta: " + message.message, "info", 5000); // Exibe uma notificação toast
+
+            // Tocar o som de notificação
+            try {
+                const audio = new Audio(NOTIFICATION_SOUND_PATH);
+                // É importante usar .play().catch() para lidar com possíveis erros
+                // de reprodução automática de áudio em alguns navegadores.
+                audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
+            } catch (e) {
+                console.error("Não foi possível criar objeto de áudio para notificação:", e);
             }
-        };
+        }
+    };
 
         ws.onclose = (event) => {
             console.warn("WebSocket para alertas desconectado:", event.code, event.reason);

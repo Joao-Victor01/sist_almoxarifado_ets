@@ -110,30 +110,37 @@
 
 /* Estilos para o sino de notificação */
 .notification-dot {
-    width: 10px; /* Tamanho da bolinha */
-    height: 10px; /* Tamanho da bolinha */
+    width: 12px; 
+    height: 12px; 
     border-radius: 50%;
     background-color: red;
-    display: inline-block; /* Garante que a bolinha apareça */
+    display: block; 
     position: absolute;
-    top: -10px;   /* Ajustado para sobrepor uma pequena parte do sino */
-    right: -10px; /* Ajustado para sobrepor uma pequena parte do sino */
-    animation: pulse 1.5s infinite; /* Animação sutil */
-}
 
+    /* Posicionamento base, será modificado pela animação */    
+    top: 6px;
+    right: 12px;
+
+    z-index: 1070;
+    animation: pulse 1.5s infinite; /* animação */
+}
 
 /* Animação de pulso */
 @keyframes pulse {
     0% {
-        transform: scale(1);
         opacity: 1;
     }
     50% {
-        transform: scale(1.2);
-        opacity: 0.8;
+        opacity: 0.6;
     }
     100% {
-        transform: scale(1);
         opacity: 1;
     }
 }
+
+.nav-link.position-relative { 
+    position: relative;
+    padding-right: 15px; /*para dar espaço à bolinha no lado direito */
+    padding-top: 5px; /* para dar espaço à bolinha no lado superior */
+}
+
