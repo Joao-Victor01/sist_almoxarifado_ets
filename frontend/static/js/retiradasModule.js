@@ -1,4 +1,5 @@
 // frontend/static/js/retiradasModule.js
+
 import { apiService } from './apiService.js';
 import { dataService } from './dataService.js';
 import { uiService } from './uiService.js';
@@ -16,16 +17,23 @@ class RetiradasModule {
         this.concluirRetiradaDisplayId = document.getElementById('concluirRetiradaDisplayId');
         this.concluirDetalheStatusInput = document.getElementById('concluirDetalheStatus');
         this.btnConfirmarConcluirRetirada = document.getElementById('btn-confirmar-concluir-retirada');
+
+        // Bindings para eventos que são removidos e adicionados novamente
+        this._boundHandleHistoricoPaginationClick = this._handleHistoricoPaginationClick.bind(this);
+        this._boundHandleHistoricoPageSizeChange = this._handleHistoricoPageSizeChange.bind(this);
+        this._boundHandleHistoricoFilterSubmit = this._handleHistoricoFilterSubmit.bind(this);
+        this._boundHandleHistoricoClearFilters = this._handleHistoricoClearFilters.bind(this);
     }
 
     async renderHistoricoRetiradas(page = 1, filters = estadoGlobal.currentHistoricoFilters, pageSize = estadoGlobal.currentHistoricoPageSize) {
+        uiService.showLoading();
         try {
-
             const data = await dataService.getProcessedRetiradas(apiService.fetchAllRetiradas.bind(apiService), page, pageSize, filters);
             estadoGlobal.setHistoricoPagination(data.current_page, data.total_pages, pageSize, filters);
             estadoGlobal.setAllRetiradas(data.items); // Isso atualiza as retiradas para o histórico
 
             const filterFormHtml = this._getHistoricoFilterFormHtml(filters);
+
             const tableHeaders = ['ID', 'Usuário', 'Data', 'Status', 'Ações'];
 
             const tableHtml = uiService.renderTable(tableHeaders, estadoGlobal.allRetiradas, {
@@ -38,13 +46,15 @@ class RetiradasModule {
                 ],
                 actionsHtml: (r) => {
                     let actions = `
-                        <button class="btn btn-sm btn-primary btn-detalhes-retirada" data-id="${r.retirada_id}">Ver detalhes</button>
+                        <button class="btn btn-sm btn-primary btn-detalhes-retirada" data-id="${r.retirada_id}">
+                            <i class="bi bi-eye"></i> Detalhes
+                        </button>
                     `;
                     // Adicionar botão de "Concluir" SOMENTE se o status for AUTORIZADA
                     if (r.status === estadoGlobal.statusMapUpdate.AUTORIZADA) {
                         actions += `
                             <button class="btn btn-sm btn-success btn-concluir-retirada-trigger ms-2" data-id="${r.retirada_id}">
-                                Concluir Retirada
+                                <i class="bi bi-check-circle"></i> Concluir Retirada
                             </button>
                         `;
                     }
@@ -72,15 +82,18 @@ class RetiradasModule {
             this._bindHistoricoEvents();
             this._bindCommonRetiradaActions(); // Mantenha esta chamada
             this._bindConcluirRetiradaEvents(); // NOVO: Bind para o modal de conclusão
+
         } catch (error) {
             console.error("Erro ao renderizar histórico de retiradas:", error);
             showAlert(error.message || 'Ocorreu um erro ao carregar o histórico de retiradas.', 'danger');
+        } finally {
+            uiService.hideLoading();
         }
     }
 
     async renderPendentesRetiradas(page = 1, pageSize = estadoGlobal.currentPendentesPageSize) {
+        uiService.showLoading();
         try {
-
             const data = await dataService.getProcessedRetiradas(apiService.fetchRetiradasPendentes.bind(apiService), page, pageSize);
             estadoGlobal.setPendentesPagination(data.current_page, data.total_pages, pageSize);
             estadoGlobal.setPendentesRetiradas(data.items); // Isso atualiza as retiradas pendentes
@@ -97,10 +110,10 @@ class RetiradasModule {
                 ],
                 actionsHtml: (r) => `
                     <button class="btn btn-sm btn-success btn-autorizar-retirada-trigger" data-id="${r.retirada_id}">
-                        Autorizar/Negar
+                        <i class="bi bi-check-circle"></i> Autorizar/Negar
                     </button>
                     <button class="btn btn-sm btn-info btn-detalhes-retirada" data-id="${r.retirada_id}">
-                        Ver detalhes
+                        <i class="bi bi-eye"></i> Ver detalhes
                     </button>
                 `
             });
@@ -123,6 +136,8 @@ class RetiradasModule {
         } catch (error) {
             console.error("Erro ao renderizar retiradas pendentes:", error);
             showAlert(error.message || 'Ocorreu um erro ao carregar as retiradas pendentes.', 'danger');
+        } finally {
+            uiService.hideLoading();
         }
     }
 
@@ -131,7 +146,7 @@ class RetiradasModule {
         // Delegate event for "Concluir Retirada" buttons
         document.querySelectorAll('.btn-concluir-retirada-trigger').forEach(btn => {
             btn.onclick = () => {
-                const id = +btn.dataset.id;
+                const id = parseInt(btn.dataset.id);
                 // Encontra a retirada na lista de todas as retiradas
                 const retirada = estadoGlobal.allRetiradas.find(r => r.retirada_id === id);
                 if (retirada) {
@@ -144,11 +159,13 @@ class RetiradasModule {
         });
 
         // Evento para o botão de confirmação dentro do modal de conclusão
-        this.btnConfirmarConcluirRetirada.onclick = () => {
-            const retiradaId = +this.concluirRetiradaIdInput.value;
-            const detalhe = this.concluirDetalheStatusInput.value.trim();
-            this._handleConcluirRetirada(retiradaId, detalhe);
-        };
+        if (this.btnConfirmarConcluirRetirada) {
+            this.btnConfirmarConcluirRetirada.onclick = () => {
+                const retiradaId = parseInt(this.concluirRetiradaIdInput.value);
+                const detalhe = this.concluirDetalheStatusInput.value.trim();
+                this._handleConcluirRetirada(retiradaId, detalhe);
+            };
+        }
     }
 
     _getHistoricoFilterFormHtml(currentFilters) {
@@ -159,15 +176,15 @@ class RetiradasModule {
                         <label for="filterStatus" class="form-label">Status</label>
                         <select class="form-select" id="filterStatus">
                             <option value="">Todos</option>
-                            <option value="PENDENTE" ${currentFilters.status === estadoGlobal.statusMapUpdate.PENDENTE ? 'selected' : ''}>Pendente</option>
-                            <option value="AUTORIZADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.AUTORIZADA ? 'selected' : ''}>Autorizada</option>
-                            <option value="CONCLUIDA" ${currentFilters.status === estadoGlobal.statusMapUpdate.CONCLUIDA ? 'selected' : ''}>Concluída</option>
-                            <option value="NEGADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.NEGADA ? 'selected' : ''}>Negada</option>
+                            <option value="PENDENTE" ${currentFilters.status === estadoGlobal.statusMapUpdate.PENDENTE ? 'selected' : ''}>PENDENTE</option>
+                            <option value="AUTORIZADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.AUTORIZADA ? 'selected' : ''}>AUTORIZADA</option>
+                            <option value="CONCLUIDA" ${currentFilters.status === estadoGlobal.statusMapUpdate.CONCLUIDA ? 'selected' : ''}>CONCLUÍDA</option>
+                            <option value="NEGADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.NEGADA ? 'selected' : ''}>NEGADA</option>
                         </select>
                     </div>
                     <div class="flex-grow-1">
                         <label for="filterSolicitante" class="form-label">Solicitante</label>
-                        <input type="text" class="form-control" id="filterSolicitante" value="${currentFilters.solicitante || ''}" placeholder="Nome do Solicitante">
+                        <input type="text" class="form-control" id="filterSolicitante" value="${currentFilters.solicitante || ''}">
                     </div>
                     <div class="flex-grow-1">
                         <label for="filterStartDate" class="form-label">Data Inicial</label>
@@ -187,132 +204,206 @@ class RetiradasModule {
     }
 
     _bindHistoricoEvents() {
-        document.getElementById('form-filter-historico')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const selectedStatusString = document.getElementById('filterStatus').value;
-            const statusInt = selectedStatusString ? estadoGlobal.statusMapUpdate[selectedStatusString] : null;
+        // Get the specific pagination nav element and the form
+        const historicoPaginationNav = document.getElementById('historico-pagination-nav');
+        const formFilter = document.getElementById('form-filter-historico');
+        const pageSizeSelect = document.getElementById(this.historicoPageSizeSelectId);
+        const btnClearFilters = document.getElementById('btn-clear-filters');
 
-            const filters = {
-                status: statusInt,
-                solicitante: document.getElementById('filterSolicitante').value,
-                start_date: document.getElementById('filterStartDate').value,
-                end_date: document.getElementById('filterEndDate').value,
-            };
-            this.renderHistoricoRetiradas(1, filters, estadoGlobal.currentHistoricoPageSize);
-        });
+        // Remove previous listeners to avoid duplicates
+        if (historicoPaginationNav) {
+            historicoPaginationNav.removeEventListener('click', this._boundHandleHistoricoPaginationClick);
+        }
+        if (pageSizeSelect) {
+            pageSizeSelect.removeEventListener('change', this._boundHandleHistoricoPageSizeChange);
+        }
+        if (formFilter) {
+            formFilter.removeEventListener('submit', this._boundHandleHistoricoFilterSubmit);
+        }
+        if (btnClearFilters) {
+            btnClearFilters.removeEventListener('click', this._boundHandleHistoricoClearFilters);
+        }
 
-        document.getElementById('btn-clear-filters')?.addEventListener('click', () => {
-            document.getElementById('filterStatus').value = '';
-            document.getElementById('filterSolicitante').value = '';
-            document.getElementById('filterStartDate').value = '';
-            document.getElementById('filterEndDate').value = '';
-            this.renderHistoricoRetiradas(1, {}, estadoGlobal.currentHistoricoPageSize);
-        });
+        // Add new listeners
+        if (historicoPaginationNav) {
+            historicoPaginationNav.addEventListener('click', this._boundHandleHistoricoPaginationClick);
+        }
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', this._boundHandleHistoricoPageSizeChange);
+        }
+        if (formFilter) {
+            formFilter.addEventListener('submit', this._boundHandleHistoricoFilterSubmit);
+        }
+        if (btnClearFilters) {
+            btnClearFilters.addEventListener('click', this._boundHandleHistoricoClearFilters);
+        }
+    }
 
-        // Event delegation for pagination links
-        const mainContent = document.getElementById('main-content');
-        if (mainContent) {
-            mainContent.querySelectorAll('[data-action^="historico-"]').forEach(el => {
-                if (el.tagName === 'A' && el.dataset.action !== 'historico-pagesize') {
-                    el.onclick = (e) => {
-                        e.preventDefault();
-                        const action = e.currentTarget.dataset.action;
-                        let newPage = estadoGlobal.currentHistoricoPage;
-                        let newPageSize = estadoGlobal.currentHistoricoPageSize;
+    async _handleHistoricoFilterSubmit(e) {
+        e.preventDefault();
+        console.log("Filtro de histórico submetido!"); // Debug
+        const selectedStatusString = document.getElementById('filterStatus').value;
+        const statusInt = selectedStatusString ? estadoGlobal.statusMapUpdate[selectedStatusString] : null;
+        const filters = {
+            status: statusInt,
+            solicitante: document.getElementById('filterSolicitante').value.trim(),
+            start_date: document.getElementById('filterStartDate').value,
+            end_date: document.getElementById('filterEndDate').value,
+        };
+        console.log("Filtros aplicados:", filters); // Debug
+        this.renderHistoricoRetiradas(1, filters, estadoGlobal.currentHistoricoPageSize);
+    }
 
-                        if (action === 'historico-prev') {
-                            if (newPage > 1) newPage--;
-                            else return;
-                        }
-                        else if (action === 'historico-next') {
-                            if (newPage < estadoGlobal.totalHistoricoPages) newPage++;
-                            else return;
-                        }
-                        else if (action === 'historico-page') {
-                            newPage = parseInt(e.currentTarget.dataset.page);
-                        }
-                        this.renderHistoricoRetiradas(newPage, estadoGlobal.currentHistoricoFilters, newPageSize);
-                    };
-                }
-            });
+    _handleHistoricoClearFilters() {
+        console.log("Limpar filtros de histórico clicado!"); // Debug
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterSolicitante').value = '';
+        document.getElementById('filterStartDate').value = '';
+        document.getElementById('filterEndDate').value = '';
+        this.renderHistoricoRetiradas(1, {}, estadoGlobal.currentHistoricoPageSize);
+    }
 
-            // Explicitly bind change event for the page size select
-            const pageSizeSelect = document.getElementById(this.historicoPageSizeSelectId);
-            if (pageSizeSelect) {
-                pageSizeSelect.onchange = (e) => {
-                    const newPageSize = parseInt(e.currentTarget.value);
-                    const newPage = 1; // Reset to first page when page size changes
-                    this.renderHistoricoRetiradas(newPage, estadoGlobal.currentHistoricoFilters, newPageSize);
-                };
+    _handleHistoricoPaginationClick(e) {
+        e.preventDefault();
+        // Look for links with data-page starting with 'historico-'
+        const clickedPageLink = e.target.closest('a[data-page^="historico-"]');
+        const clickedActionButton = e.target.closest('a[data-action^="historico-"]');
+
+        if (clickedPageLink) {
+            // Extract the page number from the data-page attribute (e.g., "historico-4" -> "4")
+            const pageValue = clickedPageLink.dataset.page.split('-')[1];
+            const newPage = parseInt(pageValue);
+            if (!isNaN(newPage) && newPage !== estadoGlobal.currentHistoricoPage) {
+                this.renderHistoricoRetiradas(newPage, estadoGlobal.currentHistoricoFilters, estadoGlobal.currentHistoricoPageSize);
             }
+            return;
+        }
+
+        if (clickedActionButton) {
+            const action = clickedActionButton.dataset.action;
+            let newPage = estadoGlobal.currentHistoricoPage;
+
+            if (action === 'historico-prev') {
+                if (newPage > 1) newPage--;
+            } else if (action === 'historico-next') {
+                if (newPage < estadoGlobal.totalHistoricoPages) newPage++;
+            }
+
+            if (newPage !== estadoGlobal.currentHistoricoPage) {
+                this.renderHistoricoRetiradas(newPage, estadoGlobal.currentHistoricoFilters, estadoGlobal.currentHistoricoPageSize);
+            }
+            return;
+        }
+    }
+
+    _handleHistoricoPageSizeChange(e) {
+        if (e.target.id === this.historicoPageSizeSelectId) {
+            const newPageSize = parseInt(e.target.value);
+            this.renderHistoricoRetiradas(1, estadoGlobal.currentHistoricoFilters, newPageSize);
         }
     }
 
     _bindPendentesEvents() {
-        const mainContent = document.getElementById('main-content');
-        if (mainContent) {
-            mainContent.querySelectorAll('[data-action^="pendentes-"]').forEach(el => {
-                if (el.tagName === 'A' && el.dataset.action !== 'pendentes-pagesize') {
-                    el.onclick = (e) => {
-                        e.preventDefault();
-                        const action = e.currentTarget.dataset.action;
-                        let newPage = estadoGlobal.currentPendentesPage;
-                        let newPageSize = estadoGlobal.currentPendentesPageSize;
+        const pendentesPaginationNav = document.getElementById('pendentes-pagination-nav');
+        const pageSizeSelect = document.getElementById(this.pendentesPageSizeSelectId);
 
-                        if (action === 'pendentes-prev') {
-                            if (newPage > 1) newPage--;
-                            else return;
-                        }
-                        else if (action === 'pendentes-next') {
-                            if (newPage < estadoGlobal.totalPendentesPages) newPage++;
-                            else return;
-                        }
-                        else if (action === 'pendentes-page') {
-                            newPage = parseInt(e.currentTarget.dataset.page);
-                        }
-                        this.renderPendentesRetiradas(newPage, newPageSize);
-                    };
-                }
-            });
+        if (!pendentesPaginationNav) return;
 
-            // Explicitly bind change event for the page size select
-            const pageSizeSelect = document.getElementById(this.pendentesPageSizeSelectId);
-            if (pageSizeSelect) {
-                pageSizeSelect.onchange = (e) => {
-                    const newPageSize = parseInt(e.currentTarget.value);
-                    const newPage = 1; // Reset to first page when page size changes
-                    this.renderPendentesRetiradas(newPage, newPageSize);
-                };
-            }
+        // Remove previous listeners to prevent duplicates
+        pendentesPaginationNav.removeEventListener('click', this._boundHandlePendentesPaginationClick); // Assuming you'd have a bound handler for pendentes
+        if (pageSizeSelect) {
+            pageSizeSelect.removeEventListener('change', this._boundHandlePendentesPageSizeChange); // Assuming you'd have a bound handler for pendentes
+        }
+
+        // Add new listeners
+        pendentesPaginationNav.addEventListener('click', this._boundHandlePendentesPaginationClick);
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', this._boundHandlePendentesPageSizeChange);
         }
     }
 
+    // New bound handler for pendentes pagination clicks
+    _boundHandlePendentesPaginationClick = (e) => {
+        e.preventDefault();
+        const clickedPageLink = e.target.closest('a[data-page^="pendentes-"]');
+        const clickedActionButton = e.target.closest('a[data-action^="pendentes-"]');
+
+        if (clickedPageLink) {
+            const pageValue = clickedPageLink.dataset.page.split('-')[1];
+            const newPage = parseInt(pageValue);
+            if (!isNaN(newPage) && newPage !== estadoGlobal.currentPendentesPage) {
+                this.renderPendentesRetiradas(newPage, estadoGlobal.currentPendentesPageSize);
+            }
+            return;
+        }
+
+        if (clickedActionButton) {
+            const action = clickedActionButton.dataset.action;
+            let newPage = estadoGlobal.currentPendentesPage;
+
+            if (action === 'pendentes-prev') {
+                if (newPage > 1) newPage--;
+            } else if (action === 'pendentes-next') {
+                if (newPage < estadoGlobal.totalPendentesPages) newPage++;
+            }
+
+            if (newPage !== estadoGlobal.currentPendentesPage) {
+                this.renderPendentesRetiradas(newPage, estadoGlobal.currentPendentesPageSize);
+            }
+            return;
+        }
+    }
+
+    // New bound handler for pendentes page size changes
+    _boundHandlePendentesPageSizeChange = (e) => {
+        if (e.target.id === this.pendentesPageSizeSelectId) {
+            const newPageSize = parseInt(e.target.value);
+            this.renderPendentesRetiradas(1, newPageSize);
+        }
+    }
+
+
     _bindCommonRetiradaActions() {
+        // Remove previous listeners to avoid duplicates for common actions
         document.querySelectorAll('.btn-detalhes-retirada').forEach(btn => {
-            btn.onclick = () => {
-                const id = +btn.dataset.id;
-                const retirada = [...estadoGlobal.allRetiradas, ...estadoGlobal.pendentesRetiradas].find(x => x.retirada_id === id);
-                if (retirada) {
-                    uiService.fillModalDetalhes(retirada);
-                    uiService.getModalInstance('modalVerDetalhesRetirada').show();
-                } else {
-                    showAlert('Detalhes da retirada não encontrados.', 'warning');
-                }
-            };
+            btn.removeEventListener('click', this._boundHandleDetalhesRetiradaClick);
+        });
+        document.querySelectorAll('.btn-autorizar-retirada-trigger').forEach(btn => {
+            btn.removeEventListener('click', this._boundHandleAutorizarRetiradaClick);
+        });
+
+        // Add new listeners for common actions
+        document.querySelectorAll('.btn-detalhes-retirada').forEach(btn => {
+            btn.addEventListener('click', this._boundHandleDetalhesRetiradaClick);
         });
 
         document.querySelectorAll('.btn-autorizar-retirada-trigger').forEach(btn => {
-            btn.onclick = () => {
-                const id = +btn.dataset.id;
-                const retirada = estadoGlobal.pendentesRetiradas.find(x => x.retirada_id === id);
-                if (retirada) {
-                    uiService.fillModalAutorizar(retirada);
-                    uiService.getModalInstance('modalAutorizarRetirada').show();
-                } else {
-                    showAlert('Retirada pendente não encontrada para autorização.', 'warning');
-                }
-            };
+            btn.addEventListener('click', this._boundHandleAutorizarRetiradaClick);
         });
+    }
+
+    // Bound handler for detalhes retirada button
+    _boundHandleDetalhesRetiradaClick = (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const retirada = [...estadoGlobal.allRetiradas, ...estadoGlobal.pendentesRetiradas].find(r => r.retirada_id === id);
+        if (retirada) {
+            uiService.fillModalDetalhes(retirada);
+            uiService.getModalInstance('modalVerDetalhesRetirada').show();
+        } else {
+            showAlert('Detalhes da retirada não encontrados.', 'warning');
+        }
+    }
+
+    // Bound handler for autorizar retirada button
+    _boundHandleAutorizarRetiradaClick = (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const retirada = estadoGlobal.pendentesRetiradas.find(x => x.retirada_id === id);
+        if (retirada) {
+            uiService.fillModalAutorizar(retirada);
+            uiService.getModalInstance('modalAutorizarRetirada').show();
+        } else {
+            showAlert('Retirada pendente não encontrada para autorização.', 'warning');
+        }
     }
 
     async _handleAuthorizeDeny(action, e) {
@@ -331,7 +422,6 @@ class RetiradasModule {
             await apiService.updateRetiradaStatus(id, statusValue, detalhe);
             showAlert(`Retirada ${action === 'AUTORIZADA' ? 'autorizada' : 'negada'} com sucesso!`, 'success');
             uiService.getModalInstance('modalAutorizarRetirada').hide();
-
             this.renderPendentesRetiradas(estadoGlobal.currentPendentesPage, estadoGlobal.currentPendentesPageSize);
         } catch (error) {
             showAlert(error.message || `Erro ao ${action === 'AUTORIZADA' ? 'autorizar' : 'negar'} retirada.`, 'danger');
@@ -345,10 +435,11 @@ class RetiradasModule {
             await apiService.updateRetiradaStatus(retiradaId, estadoGlobal.statusMapUpdate.CONCLUIDA, detalhe);
             showAlert('Retirada marcada como "Concluída" com sucesso! Estoque decrementado.', 'success');
             this.modalConcluirRetirada.hide(); // Fecha o modal de conclusão
+
             // Recarrega a tela de histórico para refletir a mudança de status
             this.renderHistoricoRetiradas(estadoGlobal.currentHistoricoPage, estadoGlobal.currentHistoricoFilters, estadoGlobal.currentHistoricoPageSize);
         } catch (error) {
-            console.error("Erro ao concluir retirada:", error);
+            console.error("Erro ao concluir retirada", error);
             showAlert(error.message || 'Erro ao concluir a retirada. Verifique o estoque!', 'danger');
         } finally {
             uiService.hideLoading();

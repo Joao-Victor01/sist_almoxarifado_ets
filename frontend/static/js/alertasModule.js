@@ -12,17 +12,19 @@ class AlertasModule {
         this.currentTipoAlerta = null;
         this.currentTotalPages = 1;
 
-        // NOVO: Armazenar as referências das funções bound uma única vez
+        // Armazenar as referências das funções bound uma única vez
         this._boundHandlePaginationClick = this._handlePaginationClick.bind(this);
         this._boundHandlePageSizeChange = this._handlePageSizeChange.bind(this);
         this._boundHandleTableActionClick = this._handleTableActionClick.bind(this);
+        this._boundHandleSearchAlert = this._handleSearchAlert.bind(this);
+        this._boundHandleClearAlertSearch = this._handleClearAlertSearch.bind(this);
     }
 
     init() {
         // Nada de especial aqui, os bindings são feitos após a renderização
     }
 
-    async renderAlertsPage() {
+    async renderAlertsPage(){
         uiService.showLoading();
         try {
             const params = {
@@ -40,8 +42,8 @@ class AlertasModule {
 
             const data = await apiService.get('/alertas/paginated', params);
             this.currentTotalPages = data.total_pages;
-
             const alerts = data.items;
+
             const tableHeaders = ['Tipo', 'Mensagem', 'Item ID', 'Data do Alerta', 'Ações'];
 
             const searchAndFilterHtml = `
@@ -88,7 +90,7 @@ class AlertasModule {
             const paginationHtml = uiService.renderPagination(
                 data.page,
                 data.total_pages,
-                'alerts',
+                'alerts', // Type for alerts pagination
                 'alertsPageSizeSelect',
                 this.pageSize
             );
@@ -106,9 +108,9 @@ class AlertasModule {
             await apiService.markAllAlertsAsViewed();
             setNewAlertsFlag(false);
             updateNotificationBellUI();
-            
+
         } catch (error) {
-            console.error('Erro ao carregar alertas: ', error);
+            console.error('Erro ao carregar alertas:', error);
             uiService.renderPage(
                 'Lista de Alertas',
                 `<div class="alert alert-warning">Erro ao carregar alertas: ${error.message || 'Verifique a conexão.'}</div>`
@@ -119,60 +121,81 @@ class AlertasModule {
     }
 
     _bindPageEvents() {
-        const mainContent = document.getElementById('main-content');
-
-        // Listener para os botões de busca e limpeza (estes são recriados, então o binding direto está ok)
-        document.getElementById('btn-search-alert')?.addEventListener('click', () => {
-            this.currentSearchTerm = document.getElementById('alert-search-term').value.trim();
-            const selectedType = document.getElementById('alert-type-filter').value;
-            this.currentTipoAlerta = selectedType ? parseInt(selectedType) : null;
-            this.currentPage = 1;
-            this.renderAlertsPage();
-        });
-
-        document.getElementById('btn-clear-alert-search')?.addEventListener('click', () => {
-            document.getElementById('alert-search-term').value = '';
-            document.getElementById('alert-type-filter').value = '';
-            this.currentSearchTerm = '';
-            this.currentTipoAlerta = null;
-            this.currentPage = 1;
-            this.renderAlertsPage();
-        });
-
-        // Delegação de eventos para os links de paginação
-        if (mainContent) {
-            // Usa a referência da função bound armazenada
-            mainContent.removeEventListener('click', this._boundHandlePaginationClick);
-            mainContent.addEventListener('click', this._boundHandlePaginationClick);
-
-            // Listener para o select de tamanho de página
-            const pageSizeSelect = document.getElementById('alertsPageSizeSelect');
-            if (pageSizeSelect) {
-                // Usa a referência da função bound armazenada
-                pageSizeSelect.removeEventListener('change', this._boundHandlePageSizeChange);
-                pageSizeSelect.addEventListener('change', this._boundHandlePageSizeChange);
-            }
+        const alertsPaginationNav = document.getElementById('alerts-pagination-nav');
+        const pageSizeSelect = document.getElementById('alertsPageSizeSelect');
+        const btnSearchAlert = document.getElementById('btn-search-alert');
+        const btnClearAlertSearch = document.getElementById('btn-clear-alert-search');
+        
+        // Remove previous listeners to avoid duplicates
+        if (alertsPaginationNav) {
+            alertsPaginationNav.removeEventListener('click', this._boundHandlePaginationClick);
         }
+        if (pageSizeSelect) {
+            pageSizeSelect.removeEventListener('change', this._boundHandlePageSizeChange);
+        }
+        if (btnSearchAlert) {
+            btnSearchAlert.removeEventListener('click', this._boundHandleSearchAlert);
+        }
+        if (btnClearAlertSearch) {
+            btnClearAlertSearch.removeEventListener('click', this._boundHandleClearAlertSearch);
+        }
+
+        // Add new listeners
+        if (alertsPaginationNav) {
+            alertsPaginationNav.addEventListener('click', this._boundHandlePaginationClick);
+        }
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', this._boundHandlePageSizeChange);
+        }
+        if (btnSearchAlert) {
+            btnSearchAlert.addEventListener('click', this._boundHandleSearchAlert);
+        }
+        if (btnClearAlertSearch) {
+            btnClearAlertSearch.addEventListener('click', this._boundHandleClearAlertSearch);
+        }
+    }
+
+    _handleSearchAlert() {
+        this.currentSearchTerm = document.getElementById('alert-search-term').value.trim();
+        const selectedType = document.getElementById('alert-type-filter').value;
+        this.currentTipoAlerta = selectedType ? parseInt(selectedType) : null;
+        this.currentPage = 1;
+        this.renderAlertsPage();
+    }
+
+    _handleClearAlertSearch() {
+        document.getElementById('alert-search-term').value = '';
+        document.getElementById('alert-type-filter').value = '';
+        this.currentSearchTerm = '';
+        this.currentTipoAlerta = null;
+        this.currentPage = 1;
+        this.renderAlertsPage();
     }
 
     _handlePaginationClick(e) {
         e.preventDefault();
 
-        const clickedPageLink = e.target.closest('a[data-page]');
+        // Specific for alerts pagination links (e.g., data-page="alerts-1")
+        const clickedPageLink = e.target.closest('a[data-page^="alerts-"]');
         if (clickedPageLink) {
-            this.currentPage = parseInt(clickedPageLink.dataset.page);
-            this.renderAlertsPage();
+            const pageValue = clickedPageLink.dataset.page.split('-')[1]; // Extract the number part
+            const newPage = parseInt(pageValue);
+            if (!isNaN(newPage) && newPage !== this.currentPage) {
+                this.currentPage = newPage;
+                this.renderAlertsPage();
+            }
             return;
         }
 
-        const clickedActionButton = e.target.closest('a[data-action]');
+        // Specific for alerts action buttons (e.g., data-action="alerts-prev")
+        const clickedActionButton = e.target.closest('a[data-action^="alerts-"]');
         if (clickedActionButton) {
             const action = clickedActionButton.dataset.action;
             let newPage = this.currentPage;
 
-            if (action.includes('prev')) {
+            if (action === 'alerts-prev') {
                 if (newPage > 1) newPage--;
-            } else if (action.includes('next')) {
+            } else if (action === 'alerts-next'){
                 if (newPage < this.currentTotalPages) newPage++;
             }
 
@@ -192,7 +215,6 @@ class AlertasModule {
 
     _bindTableActions() {
         const mainContent = document.getElementById('main-content');
-
         if (mainContent) {
             // Usa a referência da função bound armazenada
             mainContent.removeEventListener('click', this._boundHandleTableActionClick);
@@ -203,8 +225,7 @@ class AlertasModule {
     async _handleTableActionClick(e) {
         const ignoreButton = e.target.closest('.btn-ignorar-alerta');
         if (ignoreButton) {
-            const alertId = ignoreButton.dataset.id;
-            // O `confirm()` é chamado APENAS UMA VEZ aqui.
+            const alertId = parseInt(ignoreButton.dataset.id);
             if (confirm('Tem certeza que deseja ignorar futuros alertas para este item/motivo?')) {
                 await this.ignoreAlert(alertId);
             }
@@ -213,7 +234,7 @@ class AlertasModule {
 
         const viewItemButton = e.target.closest('.btn-ver-item');
         if (viewItemButton) {
-            const itemId = viewItemButton.dataset.itemId;
+            const itemId = parseInt(viewItemButton.dataset.itemId);
             uiService.showLoading();
             try {
                 const itemDetails = await apiService.getItemById(itemId);
@@ -225,7 +246,7 @@ class AlertasModule {
             } finally {
                 uiService.hideLoading();
             }
-            return;
+            return; // Add return to prevent further propagation if a button is clicked
         }
     }
 
@@ -236,7 +257,7 @@ class AlertasModule {
             showAlert('Alerta ignorado com sucesso. Futuros alertas para este item/motivo não serão gerados.', 'success');
             this.renderAlertsPage();
         } catch (error) {
-            console.error('Erro ao ignorar alerta, error');
+            console.error('Erro ao ignorar alerta', error);
             showAlert(error.message || 'Erro ao ignorar o alerta.', 'danger');
         } finally {
             uiService.hideLoading();

@@ -4,7 +4,6 @@ import { formatDate, formatDateTime, getStatusText, showAlert } from './utils.js
 import estadoGlobal from './estadoGlobal.js';
 
 class UiService {
-
     constructor() {
         this.mainContent = document.getElementById('main-content');
         this.loadingSpinner = document.getElementById('loading-spinner');
@@ -18,8 +17,8 @@ class UiService {
         }
     }
 
-    renderTable (headers, rows, options = {}) {
-        const { tableId = '', noRecordsMessage = 'Nenhum registro encontrado.', rowMapper, actionsHtml = () => '' } = options;
+    renderTable(headers, rows, options = {}) {
+        const { tableId, noRecordsMessage = 'Nenhum registro encontrado.', rowMapper, actionsHtml = () => '' } = options;
 
         const tableContent = rows.length > 0 ? rows.map(item => `
             <tr>
@@ -30,7 +29,7 @@ class UiService {
 
         return `
             <div class="table-responsive">
-                <table class="table table-bordered table-striped" ${tableId ? `id="${tableId}"` : ''}>
+                <table class="table table-bordered table-striped ${tableId ? `id="${tableId}"` : ''}">
                     <thead class="table-secondary">
                         <tr>
                             ${headers.map(header => `<th>${header}</th>`).join('')}
@@ -40,12 +39,12 @@ class UiService {
                         ${tableContent}
                     </tbody>
                 </table>
-            </div>`;
+            </div>
+        `;
     }
 
     renderPagination(currentPage, totalPages, type, pageSizeSelectId, currentPageSize) {
         let pageLinks = '';
-
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, currentPage + 2);
 
@@ -63,24 +62,24 @@ class UiService {
         }
 
         if (startPage > 1) {
-            pageLinks += '<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>';
+            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page="${type}-1">1</a></li>`;
             if (startPage > 2) {
-                pageLinks += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
             }
         }
 
-        for (let i = startPage; i <= endPage; i++) { // Corrigido para <= endPage
+        for (let i = startPage; i <= endPage; i++) {
             pageLinks += `
                 <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                    <a class="page-link" href="#" data-page="${type}-${i}">${i}</a>
                 </li>`;
         }
 
         if (endPage < totalPages) {
-            if (endPage < totalPages - 1) { // Corrigido para < totalPages - 1
-                pageLinks += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            if (endPage < totalPages - 1) {
+                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
             }
-            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page="${type}-${totalPages}">${totalPages}</a></li>`;
         }
 
         const pageSizeSelectOptions = estadoGlobal.PAGE_SIZE_OPTIONS.map(size =>
@@ -88,7 +87,7 @@ class UiService {
         ).join('');
 
         return `
-            <nav aria-label="Page navigation">
+            <nav aria-label="Page navigation" id="${type}-pagination-nav">
                 <ul class="pagination justify-content-center">
                     <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
                         <a class="page-link" href="#" data-action="${type}-prev">Anterior</a>
@@ -104,7 +103,8 @@ class UiService {
                 <select class="form-select w-auto" id="${pageSizeSelectId}" data-action="${type}-pagesize">
                     ${pageSizeSelectOptions}
                 </select>
-            </div>`;
+            </div>
+        `;
     }
 
     renderPageSizeSelect(id, currentPageSize) {
@@ -118,7 +118,8 @@ class UiService {
                 <select class="form-select w-auto" id="${id}">
                     ${options}
                 </select>
-            </div>`;
+            </div>
+        `;
     }
 
     renderItemList(containerId, items) {
@@ -127,22 +128,23 @@ class UiService {
             console.error(`Container com ID '${containerId}' não encontrado.`);
             return;
         }
+
         cont.innerHTML = ''; // Limpa o conteúdo existente
         items.forEach(i => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'list-group-item list-group-item-action';
-            btn.textContent = `${i.item.nome_item_original} - Quantidade: ${i.quantidade_retirada}`; // Ajustado para exibir quantidade
-            btn.onclick = () => this.openItemDetail(i.item, i.quantidade_retirada); // Passa a quantidade retirada
+            btn.textContent = `${i.item.nome_item_original} Quantidade: ${i.quantidade_retirada}`; // Ajustado para nome_item_original
+            btn.onclick = () => this.openItemDetail(i.item, i.quantidade_retirada); // Passa a quantidadeRetirada
             cont.appendChild(btn);
         });
     }
 
     // openItemDetail é chamado a partir de renderItemList, que já passa a quantidadeRetirada
-    openItemDetail (item, qtdRetirada) {
-        document.getElementById('itemNome').textContent = item.nome_item_original;
+    openItemDetail(item, qtdRetirada) {
+        document.getElementById('itemNome').textContent = item.nome_item_original; // Ajustado para nome_item_original
         document.getElementById('itemEstoque').textContent = item.quantidade_item;
-        
+
         // Condicionalmente exibe/oculta o campo "Solicitado"
         const itemQtdRetiradaElement = document.getElementById('itemQtdRetirada');
         const itemQtdRetiradaLi = itemQtdRetiradaElement ? itemQtdRetiradaElement.closest('li') : null;
@@ -155,12 +157,11 @@ class UiService {
         }
 
         document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item || 0;
-        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A'; // Adicionado 'N/A'
-
+        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A';
         this.getModalInstance('modalDetalheItem').show();
     }
 
-    fillModalDetalhes (retirada) {
+    fillModalDetalhes(retirada) {
         document.getElementById('detalheRetiradaId').value = retirada.retirada_id;
         document.getElementById('detalheStatus').value = getStatusText(retirada.status);
         document.getElementById('detalheSetor').value = retirada.setor_nome || '-';
@@ -168,8 +169,9 @@ class UiService {
         document.getElementById('detalheSolicitadoPor').value = retirada.solicitado_localmente_por || '-';
         document.getElementById('detalheAutorizadoPor').value = retirada.autorizado_por_nome || '-';
         document.getElementById('detalheData').value = formatDateTime(retirada.data_solicitacao);
-        document.getElementById('detalheJustificativa').value = retirada.justificativa || '';
-        document.getElementById('detalheStatusDesc').value = retirada.detalhe_status || '';
+        document.getElementById('detalheJustificativa').value = retirada.justificativa || '-';
+        document.getElementById('detalheStatusDesc').value = retirada.detalhe_status || '-';
+
         this.renderItemList('detalheItens', retirada.itens);
     }
 
@@ -184,7 +186,7 @@ class UiService {
         document.getElementById('itemEstoque').textContent = item.quantidade_item || 0;
         document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item || 0;
         document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A';
-        
+
         // Oculta o campo "Solicitado" explicitamente quando chamado de alertas
         const itemQtdRetiradaElement = document.getElementById('itemQtdRetirada');
         const itemQtdRetiradaLi = itemQtdRetiradaElement ? itemQtdRetiradaElement.closest('li') : null;
@@ -195,9 +197,10 @@ class UiService {
         document.getElementById('autorizarRetiradaId').value = retirada.retirada_id;
         document.getElementById('autorizarSetor').value = retirada.setor_nome || '-';
         document.getElementById('autorizarUsuario').value = retirada.usuario_nome;
-        document.getElementById('autorizarJustificativa').value = retirada.justificativa || '';
+        document.getElementById('autorizarJustificativa').value = retirada.justificativa || '-';
         document.getElementById('autorizarData').value = formatDateTime(retirada.data_solicitacao);
         document.getElementById('autorizarDetalheStatus').value = '';
+
         this.renderItemList('autorizarItens', retirada.itens);
 
         const btnConfirmarAutorizar = document.getElementById('btn-confirmar-autorizar-retirada');
@@ -211,15 +214,15 @@ class UiService {
         if (btnConfirmarNegar) {
             btnConfirmarNegar.dataset.id = retirada.retirada_id;
         } else {
-            console.error("Elemento 'btn-confirmar-negar-retirada não encontrado em fillModalAutorizar.");
+            console.error("Elemento 'btn-confirmar-negar-retirada' não encontrado em fillModalAutorizar.");
         }
     }
 
     // NOVO: Função para preencher o modal de concluir retirada
-    fillModalConcluir (retirada) {
+    fillModalConcluir(retirada) {
         document.getElementById('concluirRetiradaId').value = retirada.retirada_id;
         document.getElementById('concluirRetiradaDisplayId').textContent = retirada.retirada_id;
-        document.getElementById('concluirDetalheStatus').value = retirada.detalhe_status || ''; // Preenche
+        document.getElementById('concluirDetalheStatus').value = retirada.detalhe_status || ''; // Preenche com detalhe existente ou vazio
     }
 
     getModalInstance(id) {
@@ -228,7 +231,7 @@ class UiService {
             console.error(`Elemento do modal com ID '${id}' não encontrado para getModalInstance. Verifique o HTML.`);
             return null;
         }
-        return bootstrap.Modal.getInstance (modalElement) || new bootstrap.Modal (modalElement);
+        return bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
     }
 
     showLoading() {
@@ -242,7 +245,6 @@ class UiService {
             this.loadingSpinner.style.display = 'none';
         }
     }
-
 }
 
 export const uiService = new UiService();
