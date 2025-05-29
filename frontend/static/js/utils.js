@@ -59,32 +59,26 @@ export function getStatusValue(statusName) {
 const NEW_ALERTS_FLAG_KEY = 'hasNewAlerts';
 
 export function setNewAlertsFlag(hasNewAlerts) {
-    console.log('setNewAlertsFlag: Tentando definir flag para:', hasNewAlerts);
     if (hasNewAlerts) {
         localStorage.setItem(NEW_ALERTS_FLAG_KEY, 'true');
     } else {
         localStorage.removeItem(NEW_ALERTS_FLAG_KEY);
     }
-    console.log('setNewAlertsFlag: Flag no localStorage após operação:', localStorage.getItem(NEW_ALERTS_FLAG_KEY));
     updateNotificationBellUI(); // Atualiza a UI imediatamente
 }
 
 export function getNewAlertsFlag() {
     const flag = localStorage.getItem(NEW_ALERTS_FLAG_KEY) === 'true';
-    console.log('getNewAlertsFlag: Valor da flag no localStorage:', flag);
     return flag;
 }
 
 export function updateNotificationBellUI() {
-    console.log('updateNotificationBellUI: Tentando atualizar a UI do sino...');
     const notificationDot = document.getElementById('notification-dot');
     if (notificationDot) {
         if (getNewAlertsFlag()) {
-            console.log('updateNotificationBellUI: Exibindo bolinha de notificação.');
             notificationDot.style.display = 'block';
             notificationDot.classList.add('animate__animated', 'animate__pulse');
         } else {
-            console.log('updateNotificationBellUI: Ocultando bolinha de notificação.');
             notificationDot.style.display = 'none';
             notificationDot.classList.remove('animate__animated', 'animate__pulse');
         }

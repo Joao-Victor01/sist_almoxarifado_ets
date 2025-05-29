@@ -108,13 +108,10 @@ class ApiService {
             queryParamsForApi.end_date = filters.end_date;
         }
 
-        console.log('Filtros que serão enviados para a API (apiService)', queryParamsForApi);
 
         const hasActiveFilters = Object.keys(queryParamsForApi).length > 0;
         const endpoint = hasActiveFilters ? '/retiradas/search' : '/retiradas/paginated';
 
-        console.log('Endpoint escolhido:', endpoint);
-        console.log('Parâmetros finais para a requisição:', { ...params, ...queryParamsForApi });
 
         const responseData = await this.get(endpoint, { ...params, ...queryParamsForApi });
 
@@ -182,7 +179,6 @@ class ApiService {
     async markAllAlertsAsViewed() {
         try {
             await this.patch('/alertas/mark-viewed');
-            console.log('Todos os alertas marcados como visualizados.');
         } catch (error) {
             console.error('Erro ao marcar alertas como visualizados:', error);
         }

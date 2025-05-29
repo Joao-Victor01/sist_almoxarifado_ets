@@ -1,8 +1,10 @@
-ID_Categoria;Nome_Categoria;Produto;Quantidade;Data_Validade
-24;INFORMATICA;Cabovga;4;
-24;INFORMATICA;Mouseusb;7;
-24;INFORMATICA;Tecladousb;10;
+﻿ID_Categoria;Nome_Categoria;Produto;Quantidade;Data_Validade
+24;INFORMATICA;Tecladousb;1;
+24;INFORMATICA;Cabovga;1;
+24;INFORMATICA;Mouseusb;1;
 24;INFORMATICA;Teste;5;
-20;PAPELARIA;Canetavermelha;74;
+20;PAPELARIA;Canetavermelha;14;
 20;PAPELARIA;Canetapreta;44;10/12/2025
 20;PAPELARIA;Canetaazul;34;
+26;LIMPEZA;Sabaoempo;1;
+26;LIMPEZA;Detergente;1;

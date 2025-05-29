@@ -8,6 +8,7 @@ from models.item import Item
 from repositories.item_repository import ItemRepository
 from repositories.alerta_repository import AlertaRepository
 from schemas.alerta import AlertaBase, PaginatedAlertas, AlertaOut
+from utils.websocket_endpoints import manager # Importar o manager
 from fastapi import HTTPException, status
 import math
 
@@ -28,19 +29,22 @@ class AlertaService:
                 db, TipoAlerta.VALIDADE_PROXIMA.value, item.item_id
             )
             if not alerta_existe:
-                await AlertaRepository.create_alerta (db, AlertaBase (
-                    tipo_alerta=2,
+                # Criar o alerta
+                novo_alerta = await AlertaRepository.create_alerta (db, AlertaBase (
+                    tipo_alerta=TipoAlerta.VALIDADE_PROXIMA.value,
                     mensagem_alerta=f"Item {item.nome_item_original} próximo da validade",
                     item_id=item.item_id,
                     data_alerta=datetime.now()
                 ))
+                # NOVO: Transmitir o evento de novo alerta via WebSocket
+                await manager.broadcast({"type": "new_alert", "alert_id": novo_alerta.alerta_id, "message": novo_alerta.mensagem_alerta})
 
     @staticmethod
     async def get_alertas (db: AsyncSession):
         result = await AlertaRepository.get_alertas (db)
         if not result:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="Não foram encontrados alertas na base de dados")
+                                 detail="Não foram encontrados alertas na base de dados")
         return result
 
     @staticmethod
@@ -55,12 +59,15 @@ class AlertaService:
                 db, TipoAlerta.ESTOQUE_BAIXO.value, item.item_id
             )
             if not alerta_existe:
-                await AlertaRepository.create_alerta (db, AlertaBase (
-                    tipo_alerta=1,
+                # Criar o alerta
+                novo_alerta = await AlertaRepository.create_alerta (db, AlertaBase (
+                    tipo_alerta=TipoAlerta.ESTOQUE_BAIXO.value,
                     mensagem_alerta=f"Estoque de {item.nome_item_original} abaixo do mínimo",
                     item_id=item.item_id,
                     data_alerta=datetime.now()
                 ))
+                # NOVO: Transmitir o evento de novo alerta via WebSocket
+                await manager.broadcast({"type": "new_alert", "alert_id": novo_alerta.alerta_id, "message": novo_alerta.mensagem_alerta})
 
     @staticmethod
     async def get_alerta_by_id(db: AsyncSession, alerta_id: int):
@@ -94,10 +101,6 @@ class AlertaService:
         offset = (page - 1) * size
 
         alertas_db = await AlertaRepository.get_alertas_paginated(db, offset, size, tipo_alerta, search_term)
-
-        # Ao listar alertas paginados, marque-os como visualizados
-        # Isso pode ser feito aqui ou em um endpoint separado para "marcar como lido"
-        # Para o sino, vamos usar um endpoint separado para "marcar todos como visualizados"
 
         items_out = [AlertaOut.model_validate(alerta) for alerta in alertas_db]
 

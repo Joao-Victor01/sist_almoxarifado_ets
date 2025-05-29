@@ -17,21 +17,25 @@ from fastapi.staticfiles import StaticFiles
 from frontend.routes.home import router as frontend_router
 import mimetypes 
 
+# Importar o roteador WebSocket e o manager
+from utils.websocket_endpoints import websocket_router, manager
+
 # Forçar o tipo MIME para arquivos .js. Isso deve ser feito ANTES de StaticFiles ser montado.
 mimetypes.add_type('application/javascript', '.js')
-mimetypes.add_type('application/javascript', '.mjs') # Para módulos ES6 com extensão .mjs, se houver
+mimetypes.add_type('application/javascript', '.mjs') # Para módulos ES6 com extensão .mjs
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Executado antes do app iniciar
     try:
-        scheduler.add_job # Isso parece incompleto, talvez scheduler.add_job(tarefa_diaria, 'interval', minutes=1)
+
+        scheduler.add_job(tarefa_diaria, 'cron', hour=6) #todo dia às 6h
         scheduler.start()
         print("Scheduler iniciado com sucesso via lifespan.")
     except Exception as e:
         print("Erro ao iniciar scheduler via lifespan:", e)
 
-    yield  # Aqui o app "roda"
+    yield   # app roda
 
     # Executado quando o app estiver encerrando
     scheduler.shutdown()
@@ -63,15 +67,14 @@ app.include_router(retirada_router, prefix=settings.API_STR, tags=['Gerenciament
 app.include_router(relatorio_router, prefix=settings.API_STR, tags=['Geração de Relatórios de Itens'])
 app.include_router(alerta_router, prefix=settings.API_STR, tags=['Gerenciamento de Alertas'])
 
+#Incluir o roteador WebSocket
+app.include_router(websocket_router, prefix=settings.API_STR) # Prefixo para o WebSocket
+
 # Montar pasta de arquivos estáticos
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 # Incluindo os endpoints - Front-End
 app.include_router(frontend_router)
-
-# @app.get("/")
-# async def root():
-#     return {"message": "API do Sistema de Almoxarifado rodando!"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8082, reload=True)

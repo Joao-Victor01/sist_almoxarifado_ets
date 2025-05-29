@@ -1,7 +1,6 @@
 //frontend\static\js\login.js
 
 window.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM pronto, anexando handler…');
   const form = document.getElementById('login-form');
   if (!form) return;
 
@@ -13,7 +12,6 @@ window.addEventListener('DOMContentLoaded', () => {
     const body = new URLSearchParams({ username, password });
 
     try {
-      console.log(' enviando fetch…');
       const resp = await fetch('api/almoxarifado/usuarios/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

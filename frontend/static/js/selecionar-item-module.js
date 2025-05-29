@@ -51,9 +51,7 @@ class SelecionarItemModule {
             const clickedPageLink = e.target.closest('a[data-page]');
             if (clickedPageLink) {
                 const pageValue = clickedPageLink.dataset.page; // Lendo data-page
-                console.log('Valor lido de dataset.page:', pageValue); // Depuração
                 const parsedPage = parseInt(pageValue);
-                console.log('Valor parsed para Int:', parsedPage); // Depuração
 
                 if (isNaN(parsedPage)) {
                     console.error('ERRO: parseInt retornou NaN para o valor de pageValue:', pageValue);

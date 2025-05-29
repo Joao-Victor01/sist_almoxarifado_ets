@@ -20,13 +20,6 @@ class RetiradasModule {
 
     async renderHistoricoRetiradas(page = 1, filters = estadoGlobal.currentHistoricoFilters, pageSize = estadoGlobal.currentHistoricoPageSize) {
         try {
-            console.log('DEBUG: Historico - Valores para renderPagination:', {
-                page: estadoGlobal.currentHistoricoPage,
-                totalPages: estadoGlobal.totalHistoricoPages,
-                type: 'historico',
-                pageSizeSelectId: this.historicoPageSizeSelectId,
-                currentPageSizePassed: estadoGlobal.currentHistoricoPageSize
-            });
 
             const data = await dataService.getProcessedRetiradas(apiService.fetchAllRetiradas.bind(apiService), page, pageSize, filters);
             estadoGlobal.setHistoricoPagination(data.current_page, data.total_pages, pageSize, filters);
@@ -87,12 +80,7 @@ class RetiradasModule {
 
     async renderPendentesRetiradas(page = 1, pageSize = estadoGlobal.currentPendentesPageSize) {
         try {
-            console.log('DEBUG: Pendentes - Valores para renderPagination:', {
-                page: estadoGlobal.currentPendentesPage,
-                totalPages: estadoGlobal.totalPendentesPages,
-                type: 'pendentes',
-                currentPageSizePassed: estadoGlobal.currentPendentesPageSize
-            });
+
             const data = await dataService.getProcessedRetiradas(apiService.fetchRetiradasPendentes.bind(apiService), page, pageSize);
             estadoGlobal.setPendentesPagination(data.current_page, data.total_pages, pageSize);
             estadoGlobal.setPendentesRetiradas(data.items); // Isso atualiza as retiradas pendentes

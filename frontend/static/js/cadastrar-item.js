@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const modal   = new bootstrap.Modal(modalEl);
 
   async function preencherCategoriasNoCadastro() {
-    console.log('[Cadastro] Buscando categorias…');
     const token = localStorage.getItem('token');
     const resp  = await fetch('/api/almoxarifado/categorias', {
       headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
@@ -15,11 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const cats = await resp.json();
-    console.log('[Cadastro] Categorias recebidas:', cats);
 
     // Busca o <select> dentro do próprio modal
     const sel = modalEl.querySelector('select[name="categoria_id"]');
-    console.log('[Cadastro] Select escopado:', sel);
     if (!sel) return console.error('[Cadastro] select[name="categoria_id"] não encontrado!');
 
     sel.innerHTML = '<option value="" disabled selected>Selecione...</option>';
