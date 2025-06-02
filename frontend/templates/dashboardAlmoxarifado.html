@@ -1,19 +1,17 @@
-<!-- frontend\templates\dashboardAlmoxarifado.html -->
 {% include 'partials/head.html' %}
 {% include 'partials/topbar.html' %}
 {% include 'partials/navbar.html' %}
 {% include 'partials/quick_access.html' %}
 {% include 'partials/global_overlays.html' %}
 
-<!-- Inclui todos os modais -->
 {% include 'partials/modals/modal_cadastrar_item.html' %}
 {% include 'partials/modals/modal_editar_item.html' %}
 {% include 'partials/modals/modal_cadastrar_categoria.html' %}
 {% include 'partials/modals/modal_editar_categoria.html' %}
 {% include 'partials/modals/modal_ver_detalhes_retirada.html' %}
 {% include 'partials/modals/modal_autorizar_retirada.html' %}
-{% include 'partials/modals/modal_item_detalhes.html' %} 
-{% include 'partials/modals/modal_solicitar_retirada.html' %} 
+{% include 'partials/modals/modal_item_detalhes.html' %}
+{% include 'partials/modals/modal_solicitar_retirada.html' %}
 {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
 {% include 'partials/modals/modal_concluir_retirada.html' %}
 {% include 'partials/modals/modal_reports_dashboard.html' %}
@@ -22,6 +20,31 @@
 {% include 'partials/modals/modal_report_retiradas_setor.html' %}
 {% include 'partials/modals/modal_report_retiradas_usuario.html' %}
 
+<div class="modal fade" id="modalImportarTabelaItens" tabindex="-1" aria-labelledby="modalImportarTabelaItensLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalImportarTabelaItensLabel">Importar Tabela de Itens</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-importar-tabela-itens">
+                    <div class="mb-3">
+                        <label for="arquivoItens" class="form-label">Selecione o arquivo (.xlsx ou .csv)*</label>
+                        <input class="form-control" type="file" id="arquivoItens" name="file" accept=".xlsx,.csv" required>
+                    </div>
+                </form>
+                <div id="import-feedback" class="mt-3" style="display:none;">
+                    <div class="alert" role="alert" id="import-alert"></div>
+                    <ul id="import-errors-list" class="list-group list-group-flush"></ul>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-enviar-tabela-itens">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- Scripts e inicialização -->
 {% include 'partials/scripts.html' %}

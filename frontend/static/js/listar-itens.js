@@ -1,5 +1,3 @@
-// frontend/static/js/listar-itens.js
-
 // Estado de paginação
 let currentPage = 1;
 let pageSize = 10;
@@ -16,23 +14,21 @@ async function carregarCategorias() {
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
     });
 
-    if (resp.status === 401) {
+    if (resp.status == 401) {
         window.location = '/';
         return [];
     }
 
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
     return resp.json();
 }
 
 // 2) API de itens
-async function carregarListaltens(page = currentPage, size = pageSize) {
+async function carregarListItens(page = currentPage, size = pageSize) {
     const token = localStorage.getItem('token');
-    const resp = await fetch(
-        `/api/almoxarifado/itens/paginated?page=${page}&size=${size}`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-        });
+    const resp = await fetch(`/api/almoxarifado/itens/paginated?page=${page}&size=${size}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+    });
 
     if (resp.status === 401) {
         window.location = '/';
@@ -40,7 +36,6 @@ async function carregarListaltens(page = currentPage, size = pageSize) {
     }
 
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
     const data = await resp.json();
 
     // Ordena itens alfabeticamente por nome
@@ -59,8 +54,12 @@ async function buscarItens(nome, categoria, page = currentPage, size = pageSize)
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
     });
 
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (resp.status === 401) {
+        window.location = '/';
+        return { items: [], total_pages: 0 };
+    }
 
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
     // Ordena itens da busca
@@ -74,11 +73,11 @@ function criarSearchBar() {
         <div class="row mb-3" id="search-bar">
             <div class="col-md-4">
                 <input type="text" id="search-nome" class="form-control"
-                    placeholder="Buscar por nome" value="${searchNome}">
+                       placeholder="Buscar por nome" value="${searchNome}">
             </div>
             <div class="col-md-4">
                 <input type="text" id="search-categoria" class="form-control"
-                    placeholder="Buscar por categoria" value="${searchCategoria}">
+                       placeholder="Buscar por categoria" value="${searchCategoria}">
             </div>
             <div class="col-md-4 d-flex">
                 <button id="btn-search" class="btn btn-primary me-2">Buscar</button>
@@ -87,7 +86,7 @@ function criarSearchBar() {
         </div>`;
 }
 
-function criarTabelaltens(itens, categoryMap) {
+function criarTabelaItens(itens, categoryMap) {
     let html = `
         <h3 class="mb-3">Lista de Itens</h3>
         <div class="table-responsive">
@@ -106,6 +105,14 @@ function criarTabelaltens(itens, categoryMap) {
             ? `${item.categoria_id} ${cat.nome_original.toUpperCase()}`
             : item.categoria_id;
 
+        const dataValidade = item.data_validade_item 
+            ? new Date(item.data_validade_item).toLocaleDateString() 
+            : '-';
+            
+        const dataEntrada = item.data_entrada_item 
+            ? new Date(item.data_entrada_item).toLocaleDateString() 
+            : '-';
+
         html += `
             <tr>
                 <td>${item.item_id}</td>
@@ -113,12 +120,8 @@ function criarTabelaltens(itens, categoryMap) {
                 <td>${item.descricao_item || '-'}</td>
                 <td>${item.unidade_medida_item}</td>
                 <td class="text-center">${item.quantidade_item}</td>
-                <td class="text-center">${item.data_validade_item
-                    ? new Date(item.data_validade_item).toLocaleDateString()
-                    : '-'}</td>
-                <td class="text-center">${item.data_entrada_item
-                    ? new Date(item.data_entrada_item).toLocaleDateString()
-                    : '-'}</td>
+                <td class="text-center">${dataValidade}</td>
+                <td class="text-center">${dataEntrada}</td>
                 <td>${item.marca_item || '-'}</td>
                 <td class="text-center">${label}</td>
                 <td class="text-center">
@@ -137,12 +140,11 @@ function criarTabelaltens(itens, categoryMap) {
 }
 
 function criarControlesPaginacao(totalPages) {
-    // Note: The 'type' parameter is now passed from uiService.renderPagination
-    // So, data-page will be like "itens-1", "itens-2", etc.
     let html = `<nav aria-label="Page navigation" id="itens-pagination-nav"><ul class="pagination justify-content-center">`;
+
     html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-        <a class="page-link" href="#" data-action="itens-prev">Anterior</a>
-    </li>`;
+                <a class="page-link" href="#" data-action="itens-prev">Anterior</a>
+             </li>`;
 
     const start = Math.max(1, currentPage - 2);
     const end = Math.min(totalPages, currentPage + 2);
@@ -155,45 +157,49 @@ function criarControlesPaginacao(totalPages) {
     }
 
     html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-        <a class="page-link" href="#" data-action="itens-next">Próximo</a>
-    </li>`;
+                <a class="page-link" href="#" data-action="itens-next">Próximo</a>
+             </li>`;
+
     html += `</ul></nav>
-        <div class="d-flex justify-content-center my-2">
-            <label class="me-2">Itens por página: </label>
-            <select id="page-size-select" class="form-select w-auto">
-                ${pageSizeOptions.map(opt => `<option value="${opt}" ${opt === pageSize ? 'selected' : ''}>${opt}</option>`).join('')}
-            </select>
-        </div>`;
+
+    <div class="d-flex justify-content-center my-2">
+        <label class="me-2">Itens por página: </label>
+        <select id="page-size-select"
+                class="form-select w-auto">
+            ${pageSizeOptions.map(opt => `<option value="${opt}" ${opt === pageSize ? 'selected' : ''}>${opt}</option>`).join('')}
+        </select>
+    </div>`;
+
     return html;
 }
 
 //4) Carrega e renderiza tudo
-async function renderizarListaltens() {
+async function renderizarListItens() {
     try {
         // se tiver filtro, chama buscarItens, senão lista geral
         const data = (searchNome || searchCategoria)
             ? await buscarItens(searchNome, searchCategoria, currentPage, pageSize)
-            : await carregarListaltens(currentPage, pageSize);
+            : await carregarListItens(currentPage, pageSize);
 
         const categorias = await carregarCategorias();
         const categoryMap = {};
         categorias.forEach(c => categoryMap[c.categoria_id] = c);
 
         const main = document.getElementById('main-content');
-        if (main) { // Ensure main content element exists
+        if (main) {
             main.innerHTML = `
                 ${criarSearchBar()}
-                ${criarTabelaltens(data.items, categoryMap)}
+                ${criarTabelaItens(data.items, categoryMap)}
                 ${criarControlesPaginacao(data.total_pages)}
             `;
 
             bindSearch();
             bindPagination(data.total_pages);
             bindRowActions(categorias);
+
         } else {
             console.error("Elemento 'main-content' não encontrado em listar-itens.js");
         }
-
     } catch (err) {
         console.error(err);
         const main = document.getElementById('main-content');
@@ -216,7 +222,7 @@ function bindSearch() {
         currentPage = 1;
 
         // re-renderiza via mesma função
-        renderizarListaltens();
+        renderizarListItens();
     });
 
     document.getElementById('btn-clear-search')?.addEventListener('click', e => {
@@ -226,9 +232,9 @@ function bindSearch() {
         searchNome = '';
         searchCategoria = '';
         currentPage = 1;
-        pageSize = 10; // Reset page size as well
+        pageSize = 10;
 
-        renderizarListaltens();
+        renderizarListItens();
     });
 }
 
@@ -242,54 +248,57 @@ function bindPagination(totalPages) {
         return;
     }
 
-    // Remove previous listeners to prevent duplicates
-    itensPaginationNav.removeEventListener('click', handlePaginationClick);
-    if (pageSizeSelect) {
-        pageSizeSelect.removeEventListener('change', handlePageSizeChange);
-    }
-
-    // Add new listeners (using delegation for page links)
-    itensPaginationNav.addEventListener('click', handlePaginationClick);
-    if (pageSizeSelect) {
-        pageSizeSelect.addEventListener('change', handlePageSizeChange);
-    }
-
-    function handlePaginationClick(e) {
+    // Nova abordagem para evitar duplicação de eventos
+    const handlePaginationClick = (e) => {
         e.preventDefault();
-        const clickedPageLink = e.target.closest('a[data-page^="itens-"]'); // Specific for itens pagination
-        const clickedActionButton = e.target.closest('a[data-action^="itens-"]'); // Specific for itens actions
+
+        const clickedPageLink = e.target.closest('a[data-page^="itens-"]');
+        const clickedActionButton = e.target.closest('a[data-action^="itens-"]');
 
         if (clickedPageLink) {
-            const pageValue = clickedPageLink.dataset.page.split('-')[1]; // Extract page number (e.g., "itens-4" -> "4")
+            const pageValue = clickedPageLink.dataset.page.split('-')[1];
             const newPage = parseInt(pageValue);
             if (!isNaN(newPage) && newPage !== currentPage) {
                 currentPage = newPage;
-                renderizarListaltens();
+                renderizarListItens();
             }
             return;
         }
 
         if (clickedActionButton) {
             const action = clickedActionButton.dataset.action;
+            let newPage = currentPage;
+
             if (action === 'itens-prev') {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderizarListaltens();
-                }
+                if (newPage > 1) newPage--;
             } else if (action === 'itens-next') {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderizarListaltens();
-                }
+                if (newPage < totalPages) newPage++;
+            }
+
+            if (newPage !== currentPage) {
+                currentPage = newPage;
+                renderizarListItens();
             }
             return;
         }
-    }
+    };
 
-    function handlePageSizeChange(e) {
+    const handlePageSizeChange = (e) => {
         pageSize = parseInt(e.target.value);
         currentPage = 1;
-        renderizarListaltens();
+        renderizarListItens();
+    };
+
+    // Remover listeners antigos se existirem
+    itensPaginationNav.removeEventListener('click', handlePaginationClick);
+    if (pageSizeSelect) {
+        pageSizeSelect.removeEventListener('change', handlePageSizeChange);
+    }
+
+    // Adicionar novos listeners
+    itensPaginationNav.addEventListener('click', handlePaginationClick);
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', handlePageSizeChange);
     }
 }
 
@@ -310,19 +319,18 @@ function bindRowActions(categorias) {
 
                 if (!resp.ok) {
                     const error = await resp.json();
-                    // Extrai IDs de retiradas da mensagem de erro (se existirem)
-                    const matches = error.detail?.match(/retirada_item\.DETAIL: Chave \(item_id\)=\(\d+\) ainda ér/);
+                    const matches = error.detail?.match(/retirada_item.DETAIL: Chave \(item_id\)=\(\d+\)/);
                     if (matches && matches[1]) {
-                        throw new Error(`Item vinculado à retirada ID: ${matches[1]}. Não pode ser excluído!`);
+                        throw new Error(`Item vinculado à retirada ID: ${matches[1]}). Não pode ser excluído.`);
                     }
                     throw new Error(error.detail || 'Erro ao excluir item');
                 }
-                renderizarListaltens();
+                renderizarListItens();
+
             } catch (err) {
                 console.error(err);
-                // Mensagem personalizada para erros de chave estrangeira
                 if (err.message.includes('retirada_item')) {
-                    alert('Item vinculado a uma ou mais retiradas.\n\nPrimeiro exclua as retiradas relacionadas no sistema antes de remover este item.');
+                    alert('Item vinculado a uma ou mais retiradas.\n\nPrimeiro exclua as retiradas relacionadas.');
                 } else {
                     alert(err.message);
                 }
@@ -351,7 +359,7 @@ function bindRowActions(categorias) {
             categorias.forEach(c => {
                 const o = document.createElement('option');
                 o.value = c.categoria_id;
-                o.textContent = `${c.categoria_id} ${c.nome_categoria.toUpperCase()}`;
+                o.textContent = `${c.categoria_id} ${c.nome_original.toUpperCase()}`;
                 sel.append(o);
             });
             sel.value = item.categoria_id;
@@ -391,7 +399,7 @@ document.getElementById('btn-salvar-editar-item')?.addEventListener('click', asy
     }
 
     const data = {
-        nome_item: form.nome_item.value.trim(), // Adjusted to correct field
+        nome_item: form.nome_item.value.trim(),
         unidade_medida_item: form.unidade_medida_item.value.trim(),
         descricao_item: form.descricao_item.value.trim(),
         quantidade_item: Number(form.quantidade_item.value),
@@ -425,7 +433,8 @@ document.getElementById('btn-salvar-editar-item')?.addEventListener('click', asy
         }
 
         bootstrap.Modal.getInstance(document.getElementById('modalEditarItem')).hide();
-        renderizarListaltens();
+        renderizarListItens();
+
     } catch (err) {
         console.error(err);
         alert('Erro ao salvar: ' + err.message);
@@ -439,9 +448,9 @@ if (linkListar) {
         e.preventDefault();
         currentPage = 1;
         pageSize = 10;
-        renderizarListaltens();
+        renderizarListItens();
     });
 }
 
-// Export the function to be accessible globally
-window.renderizarListaltens = renderizarListaltens;
+// EXPOR A FUNÇÃO GLOBALMENTE
+window.renderizarListItens = renderizarListItens;

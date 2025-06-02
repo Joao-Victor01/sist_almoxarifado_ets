@@ -72,7 +72,8 @@ class UiService {
             pageLinks += `
                 <li class="page-item ${i === currentPage ? 'active' : ''}">
                     <a class="page-link" href="#" data-page="${type}-${i}">${i}</a>
-                </li>`;
+                </li>
+            `;
         }
 
         if (endPage < totalPages) {
@@ -128,36 +129,32 @@ class UiService {
             console.error(`Container com ID '${containerId}' não encontrado.`);
             return;
         }
-
         cont.innerHTML = ''; // Limpa o conteúdo existente
         items.forEach(i => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'list-group-item list-group-item-action';
-            btn.textContent = `${i.item.nome_item_original} Quantidade: ${i.quantidade_retirada}`; // Ajustado para nome_item_original
-            btn.onclick = () => this.openItemDetail(i.item, i.quantidade_retirada); // Passa a quantidadeRetirada
+            btn.textContent = `${i.item.nome_item_original} Quantidade: ${i.quantidade_retirada}`; // Ajustado
+            btn.onclick = () => this.openItemDetail(i.item, i.quantidade_retirada); // Passa a quantidade
             cont.appendChild(btn);
         });
     }
 
     // openItemDetail é chamado a partir de renderItemList, que já passa a quantidadeRetirada
     openItemDetail(item, qtdRetirada) {
-        document.getElementById('itemNome').textContent = item.nome_item_original; // Ajustado para nome_item_original
+        document.getElementById('itemNome').textContent = item.nome_item_original; // Ajustado para nome
         document.getElementById('itemEstoque').textContent = item.quantidade_item;
-
         // Condicionalmente exibe/oculta o campo "Solicitado"
         const itemQtdRetiradaElement = document.getElementById('itemQtdRetirada');
         const itemQtdRetiradaLi = itemQtdRetiradaElement ? itemQtdRetiradaElement.closest('li') : null;
-
         if (qtdRetirada !== undefined && qtdRetirada !== null) {
             itemQtdRetiradaElement.textContent = qtdRetirada;
-            if (itemQtdRetiradaLi) itemQtdRetiradaLi.style.display = ''; // Mostra o li
+            if (itemQtdRetiradaLi) itemQtdRetiradaLi.style.display = 'block'; // Mostra o li
         } else {
             if (itemQtdRetiradaLi) itemQtdRetiradaLi.style.display = 'none'; // Oculta o li
         }
-
         document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item || 0;
-        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A';
+        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : '-';
         this.getModalInstance('modalDetalheItem').show();
     }
 
@@ -171,7 +168,6 @@ class UiService {
         document.getElementById('detalheData').value = formatDateTime(retirada.data_solicitacao);
         document.getElementById('detalheJustificativa').value = retirada.justificativa || '-';
         document.getElementById('detalheStatusDesc').value = retirada.detalhe_status || '-';
-
         this.renderItemList('detalheItens', retirada.itens);
     }
 
@@ -181,11 +177,10 @@ class UiService {
             console.error("Item inválido para preencher detalhes do modal.");
             return;
         }
-
         document.getElementById('itemNome').textContent = item.nome_item_original || 'N/A';
         document.getElementById('itemEstoque').textContent = item.quantidade_item || 0;
         document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item || 0;
-        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A';
+        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : '-';
 
         // Oculta o campo "Solicitado" explicitamente quando chamado de alertas
         const itemQtdRetiradaElement = document.getElementById('itemQtdRetirada');
@@ -196,10 +191,10 @@ class UiService {
     fillModalAutorizar(retirada) {
         document.getElementById('autorizarRetiradaId').value = retirada.retirada_id;
         document.getElementById('autorizarSetor').value = retirada.setor_nome || '-';
-        document.getElementById('autorizarUsuario').value = retirada.usuario_nome;
+        document.getElementById('autorizarUsuario').value = retirada.usuario_nome || '-';
         document.getElementById('autorizarJustificativa').value = retirada.justificativa || '-';
         document.getElementById('autorizarData').value = formatDateTime(retirada.data_solicitacao);
-        document.getElementById('autorizarDetalheStatus').value = '';
+        document.getElementById('autorizarDetalheStatus').value = ''; // Limpa o campo de detalhe
 
         this.renderItemList('autorizarItens', retirada.itens);
 

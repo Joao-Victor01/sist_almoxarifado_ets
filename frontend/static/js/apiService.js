@@ -1,8 +1,7 @@
 // frontend/static/js/apiService.js
 
 class ApiService {
-
-    constructor (baseUrl = '/api/almoxarifado') {
+    constructor(baseUrl = '/api/almoxarifado') {
         this.baseUrl = baseUrl;
         this.token = localStorage.getItem('token');
         if (!this.token) {
@@ -11,41 +10,57 @@ class ApiService {
     }
 
     _getHeaders() {
+        // This method will now ONLY return the Authorization header.
+        // Content-Type will be handled conditionally in _fetch.
         return {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.token}`
         };
     }
 
-    async _fetch(endpoint, options = { }){
+    async _fetch(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
+        const requestHeaders = {
+            ...this._getHeaders(), // Start with Authorization header
+            ...options.headers // Merge any custom headers provided in options
+        };
+
+        // IMPORTANT: If the body is FormData, DO NOT set Content-Type.
+        // The browser will automatically set 'Content-Type: multipart/form-data'
+        // with the correct boundary. Manually setting it will break the upload.
+        if (options.body instanceof FormData) {
+            delete requestHeaders['Content-Type']; // Ensure Content-Type is not set for FormData
+        } else if (!requestHeaders['Content-Type']) {
+            // If Content-Type is not explicitly set and it's not FormData, default to application/json
+            requestHeaders['Content-Type'] = 'application/json';
+        }
+
         try {
             const response = await fetch(url, {
                 ...options,
-                headers: {
-                    ...this._getHeaders(),
-                    ...options.headers
-                }
+                headers: requestHeaders // Use the prepared headers
             });
 
             if (!response.ok) {
+                if (response.status === 204) {
+                    return {};
+                }
                 const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido na resposta da API.' }));
                 throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
             }
-            // Se a resposta for 204 No Content, response.json() falhará.
-            // Verifique o status antes de tentar parsear como JSON.
+
             if (response.status === 204) {
-                return {}; // Retorna um objeto vazio para 204 No Content
+                return {};
             }
+
             return response.json();
         } catch (error) {
-            console.error(`Falha na requisição para ${url}`, error);
+            console.error(`Falha na requisição para ${url}:`, error);
             throw error;
         }
     }
 
-    async get (endpoint, params = {}) {
-        const queryString = new URLSearchParams (params).toString();
+    async get(endpoint, params = {}) {
+        const queryString = new URLSearchParams(params).toString();
         const urlWithParams = `${endpoint}${queryString ? `?${queryString}` : ''}`;
         return await this._fetch(urlWithParams, { method: 'GET' });
     }
@@ -91,7 +106,7 @@ class ApiService {
         }
     }
 
-    async fetchAllRetiradas (page, pageSize, filters) {
+    async fetchAllRetiradas(page, pageSize, filters) {
         const params = { page, page_size: pageSize };
         const queryParamsForApi = {};
 
@@ -108,11 +123,8 @@ class ApiService {
             queryParamsForApi.end_date = filters.end_date;
         }
 
-
         const hasActiveFilters = Object.keys(queryParamsForApi).length > 0;
         const endpoint = hasActiveFilters ? '/retiradas/search' : '/retiradas/paginated';
-
-
         const responseData = await this.get(endpoint, { ...params, ...queryParamsForApi });
 
         return {
@@ -123,7 +135,7 @@ class ApiService {
         };
     }
 
-    async fetchRetiradasPendentes (page, pageSize) {
+    async fetchRetiradasPendentes(page, pageSize) {
         const responseData = await this.get(`/retiradas/pendentes/paginated`, { page, page_size: pageSize });
         return {
             current_page: responseData.page,
@@ -145,7 +157,7 @@ class ApiService {
         return this.get('/setores');
     }
 
-    async solicitarRetirada (data) {
+    async solicitarRetirada(data) {
         return this.post('/retiradas/', data);
     }
 
@@ -175,13 +187,26 @@ class ApiService {
         }
     }
 
-    //  Marcar todos os alertas como visualizados
+    // Marcar todos os alertas como visualizados
     async markAllAlertsAsViewed() {
         try {
             await this.patch('/alertas/mark-viewed');
         } catch (error) {
             console.error('Erro ao marcar alertas como visualizados:', error);
         }
+    }
+
+    // NOVO: Método para upload de arquivo em massa
+    async uploadBulkItems(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return this._fetch('/itens/upload-bulk/', {
+            method: 'POST',
+            body: formData,
+            // Headers for FormData are handled automatically by _fetch
+            // No need to explicitly set Content-Type here.
+        });
     }
 }
 
