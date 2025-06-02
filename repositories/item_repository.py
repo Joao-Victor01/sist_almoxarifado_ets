@@ -1,185 +1,136 @@
-from sqlalchemy import func
+# repositories/item_repository.py
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from models.item import Item
 from models.categoria import Categoria
-from schemas.item import ItemCreate, ItemUpdate
-from fastapi import HTTPException, status
-from datetime import datetime
+
 
 class ItemRepository:
-
     @staticmethod
-    async def create_item(db: AsyncSession, item_data: dict):
-        novo_item = Item(**item_data)  # recebe um dicionário
-        db.add(novo_item)
+    async def create(db: AsyncSession, item: Item) -> Item:
+        db.add(item)
         await db.commit()
-        await db.refresh(novo_item)
+        await db.refresh(item)
+        return item
 
-        return novo_item
-    
-    
     @staticmethod
-    async def get_itens(db: AsyncSession):
+    async def get_all(db: AsyncSession) -> list[Item]:
         result = await db.execute(select(Item))
         return result.scalars().all()
 
     @staticmethod
-    async def get_item_by_id(db: AsyncSession, item_id: int):
+    async def get_by_id(db: AsyncSession, item_id: int) -> Item | None:
         result = await db.execute(select(Item).where(Item.item_id == item_id))
         return result.scalars().first()
-        
 
     @staticmethod
-    async def get_item_by_name(db: AsyncSession, item_name: str):
-        result = await db.execute(select(Item).where(Item.nome_item == item_name))
-        return result.scalars().first()
+    async def delete(db: AsyncSession, item: Item) -> None:
+        await db.delete(item)
+        await db.commit()
 
     @staticmethod
-    async def get_item_by_categoria_id(db: AsyncSession, categoria_id: int):
-        result = await db.execute(select(Item).where(Item.categoria_id == categoria_id))
+    async def count(db: AsyncSession) -> int:
+        result = await db.execute(select(func.count()).select_from(Item))
+        return result.scalar_one()
+
+    @staticmethod
+    async def get_paginated(db: AsyncSession, offset: int, limit: int) -> list[Item]:
+        result = await db.execute(select(Item).offset(offset).limit(limit))
         return result.scalars().all()
-    
 
     @staticmethod
-    async def get_itens_filtrados(
+    async def find_filtered(
         db: AsyncSession,
-        categoria_ids: list[int] = None,
-        nome_produto_normalizado: str = None
-    ):
-        """
-        Busca itens com JOIN na tabela Categoria e aplica filtros.
-        Retorna tuplas (Item, nome_categoria).
-        """
-        query = (
-            select(Item, Categoria.nome_categoria)
-            .join(Categoria, Item.categoria_id == Categoria.categoria_id)
+        categoria_ids: list[int] | None = None,
+        nome_produto_normalizado: str | None = None,
+    ) -> list[tuple[Item, str]]:
+        query = select(Item, Categoria.nome_categoria).join(
+            Categoria, Item.categoria_id == Categoria.categoria_id
         )
 
         if categoria_ids:
             query = query.where(Item.categoria_id.in_(categoria_ids))
-        
+
         if nome_produto_normalizado:
-            query = query.where(Item.nome_item.ilike(f"%{nome_produto_normalizado}%"))
+            query = query.where(
+                Item.nome_item.ilike(f"%{nome_produto_normalizado}%")
+            )
 
         result = await db.execute(query)
         return result.all()
-    
+
     @staticmethod
-    async def get_itens_por_periodo (
+    async def count_filtered(
         db: AsyncSession,
-        data_inicio: datetime,
-        data_fim: datetime
-    ):
+        categoria_ids: list[int] | None = None,
+        nome_produto_normalizado: str | None = None,
+    ) -> int:
+        query = select(func.count()).select_from(Item)
+        if categoria_ids:
+            query = query.where(Item.categoria_id.in_(categoria_ids))
+        if nome_produto_normalizado:
+            query = query.where(
+                Item.nome_item.ilike(f"%{nome_produto_normalizado}%")
+            )
+        result = await db.execute(query)
+        return result.scalar_one()
+
+    @staticmethod
+    async def get_filtered_paginated(
+        db: AsyncSession,
+        categoria_ids: list[int] | None = None,
+        nome_produto_normalizado: str | None = None,
+        offset: int = 0,
+        limit: int = 10,
+    ) -> list[Item]:
+        query = select(Item)
+        if categoria_ids:
+            query = query.where(Item.categoria_id.in_(categoria_ids))
+        if nome_produto_normalizado:
+            query = query.where(
+                Item.nome_item.ilike(f"%{nome_produto_normalizado}%")
+            )
+        query = query.offset(offset).limit(limit)
+        result = await db.execute(query)
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_items_by_category(db: AsyncSession, categoria_id: int) -> list[Item]:
+        result = await db.execute(select(Item).where(Item.categoria_id == categoria_id))
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_items_period(
+        db: AsyncSession, data_inicio, data_fim
+    ) -> list[dict]:
         query = (
             select(
                 Item.item_id,
                 Item.nome_item_original,
                 Item.quantidade_item,
                 Item.data_entrada_item,
-                Categoria.nome_original.label("nome_categoria_original") # Label da categoria
+                Categoria.nome_original.label("nome_categoria_original"),
             )
             .join(Categoria, Item.categoria_id == Categoria.categoria_id)
             .where(
                 Item.data_entrada_item >= data_inicio,
-                Item.data_entrada_item <= data_fim
+                Item.data_entrada_item <= data_fim,
             )
         )
         result = await db.execute(query)
-        return result.mappings().all() # Retorna dicionários
+        return result.mappings().all()
 
     @staticmethod
-    async def delete_item(db: AsyncSession, item_id: int):
-       item = await ItemRepository.__first_or_404(db, Item.item_id == item_id)
-       await db.delete(item)
-       await db.commit()
-       return {"message": "Item deletado com sucesso"}
-    
-    
-    @staticmethod
-    async def update_item(db: AsyncSession, item_id: int, item_data: dict, usuario_id: int):
-        item = await ItemRepository.__first_or_404(db, Item.item_id == item_id)
-        
-        for key, value in item_data.items():  
-            setattr(item, key, value)
-
-        item.auditoria_usuario_id = usuario_id
-        await db.commit()
-        await db.refresh(item)
-        return item
-    
-    @staticmethod
-    async def count_items(db: AsyncSession) -> int:
-        result = await db.execute(select(func.count()).select_from(Item))
-        return result.scalar_one()
-
-    @staticmethod
-    async def get_items_paginated(
-        db: AsyncSession,
-        offset: int,
-        limit: int
-    ) -> list[Item]:
-        result = await db.execute(
-            select(Item)
-            .offset(offset)
-            .limit(limit)
-        )
-        return result.scalars().all()
-            
-    @staticmethod
-    async def count_filtered_items(
-        db: AsyncSession,
-        categoria_ids: list[int] | None,
-        nome_produto_normalizado: str | None
-    ) -> int:
-        query = select(func.count()).select_from(Item)
-        if categoria_ids:
-            query = query.where(Item.categoria_id.in_(categoria_ids))
-        if nome_produto_normalizado:
-            query = query.where(Item.nome_item.ilike(f"%{nome_produto_normalizado}%"))
-        result = await db.execute(query)
-        return result.scalar_one()
-
-    @staticmethod
-    async def get_filtered_items_paginated(
-        db: AsyncSession,
-        categoria_ids: list[int] | None,
-        nome_produto_normalizado: str | None,
-        offset: int, limit: int
-    ) -> list[Item]:
-        query = select(Item)
-        if categoria_ids:
-            query = query.where(Item.categoria_id.in_(categoria_ids))
-        if nome_produto_normalizado:
-            query = query.where(Item.nome_item.ilike(f"%{nome_produto_normalizado}%"))
-        query = query.offset(offset).limit(limit)
-        result = await db.execute(query)
-        return result.scalars().all()
-
-    
-    #__________________________FUNÇÕES AUXILIARES ABAIXO_______________________________________
-
-    @staticmethod
-    async def __first_or_404(db: AsyncSession, *filters, message="Item não encontrado"):
-        result = await db.execute(select(Item).where(*filters))
-        item = result.scalars().first()
-        if not item:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-        return item
-    
-
-    @staticmethod
-    async def find_items_expiring_before(db: AsyncSession, date) -> list[Item]:
+    async def get_items_expiring_before(db: AsyncSession, date) -> list[Item]:
         result = await db.execute(
             select(Item).where(Item.data_validade_item <= date)
         )
         return result.scalars().all()
 
     @staticmethod
-    async def find_items_low_stock(db: AsyncSession) -> list[Item]:
+    async def find_low_stock(db: AsyncSession) -> list[Item]:
         result = await db.execute(
-            select(Item).where(
-                Item.quantidade_item <= Item.quantidade_minima_item
-            )
+            select(Item).where(Item.quantidade_item <= Item.quantidade_minima_item)
         )
         return result.scalars().all()

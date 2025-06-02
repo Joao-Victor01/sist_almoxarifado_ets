@@ -1,8 +1,14 @@
 ﻿ID_Item;Nome;Quantidade;Data_Entrada;Categoria
-75;Cabo VGA;4;27/05/2025;Informática
-67;Mouse USB;7;14/05/2025;Informática
-68;Teclado USB;10;14/05/2025;Informática
+78;Sabão em barra;2;29/05/2025;Limpeza
+79;Cabo USB;1;29/05/2025;Informática
+81;Lápis;5;29/05/2025;Papelaria
+80;Apagador;1;29/05/2025;Materiais Sala de Aula
 74;TESTE;5;15/05/2025;Informática
-66;Caneta Vermelha;74;14/05/2025;Papelaria
-63;Caneta Preta;44;14/05/2025;Papelaria
-65;Caneta Azul;34;14/05/2025;Papelaria
+77;Detergente;1;28/05/2025;Limpeza
+67;Mouse USB;1;28/05/2025;Informática
+75;Cabo VGA;1;27/05/2025;Informática
+63;Caneta Preta;4;14/05/2025;Papelaria
+65;Caneta Azul;4;14/05/2025;Papelaria
+76;Sabão em Pó;2;28/05/2025;Limpeza
+68;Teclado USB;0;14/05/2025;Informática
+66;Caneta Vermelha;100;14/05/2025;Papelaria

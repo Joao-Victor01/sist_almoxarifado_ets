@@ -1,7 +1,10 @@
 ﻿ID_Categoria;Nome_Categoria;Produto;Quantidade;Data_Validade
 26;LIMPEZA;Sabaoembarra;2;
 24;INFORMATICA;Cabousb;1;
+20;PAPELARIA;Lapis;5;
+22;MATERIAISSALADEAULA;Apagador;1;
 24;INFORMATICA;Teste;5;
+27;FERRAMENTAS;Chavedefenda;1;
 26;LIMPEZA;Detergente;1;
 24;INFORMATICA;Mouseusb;1;
 24;INFORMATICA;Cabovga;1;
