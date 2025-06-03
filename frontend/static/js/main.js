@@ -114,33 +114,64 @@ document.addEventListener('DOMContentLoaded', () => {
             // Os itens do dropdown terão seus próprios listeners
         }
 
-        // NOVO: Listeners para os itens do dropdown de notificação
-        document.getElementById('new-alerts-menu-item')?.addEventListener('click', e => {
-            e.preventDefault();
-            setNewAlertsFlag(false); // Limpa o flag de alertas
-            updateNotificationBellUI(); // Atualiza a UI do sino
-            alertasModule.renderAlertsPage(); // Redireciona para a página de alertas
-            bootstrap.Dropdown.getInstance(document.getElementById('alert-notification-bell'))?.hide();
-        });
+        // Determina o comportamento do sino com base na URL do dashboard
+        const currentPath = window.location.pathname;
+        const isServidorDashboard = currentPath.includes('/dashboardServidor');
 
-        document.getElementById('new-withdrawal-requests-menu-item')?.addEventListener('click', e => {
-            e.preventDefault();
-            setNewWithdrawalRequestsFlag(false); // Limpa o flag de solicitações de retirada
-            updateNotificationBellUI(); // Atualiza a UI do sino
-            retiradasModule.renderPendentesRetiradas(); // Redireciona para a página de retiradas pendentes
-            bootstrap.Dropdown.getInstance(document.getElementById('alert-notification-bell'))?.hide();
-        });
+        const newAlertsMenuItem = document.getElementById('new-alerts-menu-item');
+        const newWithdrawalRequestsMenuItem = document.getElementById('new-withdrawal-requests-menu-item');
+        const openAllNotificationsLink = document.getElementById('open-all-notifications-link');
 
-        // NOVO: Listener para o link "Ver todas as notificações"
-        document.getElementById('open-all-notifications-link')?.addEventListener('click', e => {
-            e.preventDefault();
-            // Limpa ambos os flags ao clicar em "Ver todas"
-            setNewAlertsFlag(false);
-            setNewWithdrawalRequestsFlag(false);
-            updateNotificationBellUI();
-            alertasModule.renderAlertsPage(); // Por padrão, leva para a página de alertas
+        // Função para fechar o dropdown do sino
+        const hideNotificationDropdown = () => {
             bootstrap.Dropdown.getInstance(document.getElementById('alert-notification-bell'))?.hide();
-        });
+        };
+
+        // Comportamento para "Novos Alertas"
+        if (newAlertsMenuItem) {
+            newAlertsMenuItem.addEventListener('click', e => {
+                e.preventDefault();
+                setNewAlertsFlag(false);
+                updateNotificationBellUI();
+                if (isServidorDashboard) {
+                    historicoServidorModule.renderMinhasRetiradas(); // Para servidor
+                } else {
+                    alertasModule.renderAlertsPage(); // Para almoxarifado/direção
+                }
+                hideNotificationDropdown();
+            });
+        }
+
+        // Comportamento para "Novas Solicitações de Retirada"
+        if (newWithdrawalRequestsMenuItem) {
+            newWithdrawalRequestsMenuItem.addEventListener('click', e => {
+                e.preventDefault();
+                setNewWithdrawalRequestsFlag(false);
+                updateNotificationBellUI();
+                if (isServidorDashboard) {
+                    historicoServidorModule.renderMinhasRetiradas(); // Para servidor
+                } else {
+                    retiradasModule.renderPendentesRetiradas(); // Para almoxarifado/direção
+                }
+                hideNotificationDropdown();
+            });
+        }
+
+        // Comportamento para "Ver todas as notificações"
+        if (openAllNotificationsLink) {
+            openAllNotificationsLink.addEventListener('click', e => {
+                e.preventDefault();
+                setNewAlertsFlag(false);
+                setNewWithdrawalRequestsFlag(false);
+                updateNotificationBellUI();
+                if (isServidorDashboard) {
+                    historicoServidorModule.renderMinhasRetiradas(); // Para servidor
+                } else {
+                    alertasModule.renderAlertsPage(); // Por padrão, leva para a página de alertas para almoxarifado/direção
+                }
+                hideNotificationDropdown();
+            });
+        }
 
         // NOVO: Adiciona listener para o link "Importar Tabela"
         document.getElementById('btn-open-importar-tabela')?.addEventListener('click', e => {

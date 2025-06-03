@@ -4,6 +4,7 @@ import { formatDate, formatDateTime, getStatusText, showAlert } from './utils.js
 import estadoGlobal from './estadoGlobal.js';
 
 class UiService {
+
     constructor() {
         this.mainContent = document.getElementById('main-content');
         this.loadingSpinner = document.getElementById('loading-spinner');
@@ -20,7 +21,8 @@ class UiService {
     renderTable(headers, rows, options = {}) {
         const { tableId, noRecordsMessage = 'Nenhum registro encontrado.', rowMapper, actionsHtml = () => '' } = options;
 
-        const tableContent = rows.length > 0 ? rows.map(item => `
+        const tableContent =
+            rows.length > 0 ? rows.map(item => `
             <tr>
                 ${rowMapper(item).map(cell => `<td>${cell}</td>`).join('')}
                 <td>${actionsHtml(item)}</td>
@@ -28,23 +30,24 @@ class UiService {
         `).join('') : `<tr><td colspan="${headers.length + 1}" class="text-center">${noRecordsMessage}</td></tr>`;
 
         return `
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped ${tableId ? `id="${tableId}"` : ''}">
-                    <thead class="table-secondary">
-                        <tr>
-                            ${headers.map(header => `<th>${header}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableContent}
-                    </tbody>
-                </table>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped ${tableId ? `id="${tableId}"` : ''}">
+                <thead class="table-secondary">
+                    <tr>
+                        ${headers.map(header => `<th>${header}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableContent}
+                </tbody>
+            </table>
+        </div>
         `;
     }
 
     renderPagination(currentPage, totalPages, type, pageSizeSelectId, currentPageSize) {
         let pageLinks = '';
+
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, currentPage + 2);
 
@@ -62,7 +65,9 @@ class UiService {
         }
 
         if (startPage > 1) {
-            pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page="${type}-1">1</a></li>`;
+            pageLinks += `<li class="page-item">
+                            <a class="page-link" href="#" data-page="${type}-1">1</a>
+                          </li>`;
             if (startPage > 2) {
                 pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
             }
@@ -70,15 +75,14 @@ class UiService {
 
         for (let i = startPage; i <= endPage; i++) {
             pageLinks += `
-                <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${type}-${i}">${i}</a>
-                </li>
-            `;
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${type}-${i}">${i}</a>
+            </li>`;
         }
 
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
-                pageLinks += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                pageLinks += '<li class="page-item disabled"><span class="page-link">...</span></li>';
             }
             pageLinks += `<li class="page-item"><a class="page-link" href="#" data-page="${type}-${totalPages}">${totalPages}</a></li>`;
         }
@@ -88,23 +92,23 @@ class UiService {
         ).join('');
 
         return `
-            <nav aria-label="Page navigation" id="${type}-pagination-nav">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                        <a class="page-link" href="#" data-action="${type}-prev">Anterior</a>
-                    </li>
-                    ${pageLinks}
-                    <li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
-                        <a class="page-link" href="#" data-action="${type}-next">Próximo</a>
-                    </li>
-                </ul>
-            </nav>
-            <div class="d-flex justify-content-center my-2">
-                <label class="me-2 align-self-center">Itens por página: </label>
-                <select class="form-select w-auto" id="${pageSizeSelectId}" data-action="${type}-pagesize">
-                    ${pageSizeSelectOptions}
-                </select>
-            </div>
+        <nav aria-label="Page navigation" id="${type}-pagination-nav">
+            <ul class="pagination justify-content-center">
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-action="${type}-prev">Anterior</a>
+                </li>
+                ${pageLinks}
+                <li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-action="${type}-next">Próximo</a>
+                </li>
+            </ul>
+        </nav>
+        <div class="d-flex justify-content-center my-2">
+            <label class="me-2 align-self-center">Itens por página: </label>
+            <select class="form-select w-auto" id="${pageSizeSelectId}" data-action="${type}-pagesize">
+                ${pageSizeSelectOptions}
+            </select>
+        </div>
         `;
     }
 
@@ -114,19 +118,20 @@ class UiService {
         ).join('');
 
         return `
-            <div class="d-flex justify-content-center my-2">
-                <label class="me-2 align-self-center">Itens por página: </label>
-                <select class="form-select w-auto" id="${id}">
-                    ${options}
-                </select>
-            </div>
+        <div class="d-flex justify-content-center my-2">
+            <label class="me-2 align-self-center">Itens por página: </label>
+            <select class="form-select w-auto" id="${id}">
+                ${options}
+            </select>
+        </div>
         `;
     }
 
-    renderItemList(containerId, items) {
+    // MODIFICADO: Adicionado parâmetro 'isRestrictedView' para controlar a exibição de estoque/estoque mínimo
+    renderItemList(containerId, items, isRestrictedView = false) {
         const cont = document.getElementById(containerId);
         if (!cont) {
-            console.error(`Container com ID '${containerId}' não encontrado.`);
+            console.error(`Container com ID ${containerId} não encontrado.`);
             return;
         }
         cont.innerHTML = ''; // Limpa o conteúdo existente
@@ -134,16 +139,39 @@ class UiService {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'list-group-item list-group-item-action';
-            btn.textContent = `${i.item.nome_item_original} Quantidade: ${i.quantidade_retirada}`; // Ajustado
-            btn.onclick = () => this.openItemDetail(i.item, i.quantidade_retirada); // Passa a quantidade
+            btn.textContent = `${i.item.nome_item_original} Quantidade: ${i.quantidade_retirada}`; // Ajustado para nome
+            // MODIFICADO: Passa 'isRestrictedView' para openItemDetail
+            btn.onclick = () => this.openItemDetail(i.item, i.quantidade_retirada, isRestrictedView);
             cont.appendChild(btn);
         });
     }
 
-    // openItemDetail é chamado a partir de renderItemList, que já passa a quantidadeRetirada
-    openItemDetail(item, qtdRetirada) {
+    // MODIFICADO: Adicionado parâmetro 'isRestrictedView'
+    openItemDetail(item, qtdRetirada, isRestrictedView = false) {
         document.getElementById('itemNome').textContent = item.nome_item_original; // Ajustado para nome
-        document.getElementById('itemEstoque').textContent = item.quantidade_item;
+
+        // Referências diretas aos LIs que contêm as informações de estoque
+        const liItemEstoque = document.getElementById('liItemEstoque');
+        const liItemEstoqueMin = document.getElementById('liItemEstoqueMin');
+        const itemEstoqueElement = document.getElementById('itemEstoque');
+        const itemEstoqueMinElement = document.getElementById('itemEstoqueMin');
+
+        // Oculta "Em Estoque" e "Estoque Mínimo" se for uma visualização restrita (servidor)
+        if (isRestrictedView) {
+            if (liItemEstoque) liItemEstoque.style.display = 'none';
+            if (liItemEstoqueMin) liItemEstoqueMin.style.display = 'none';
+        } else {
+            // Exibe e preenche os valores se não for uma visualização restrita
+            if (liItemEstoque) {
+                liItemEstoque.style.display = 'block';
+                if (itemEstoqueElement) itemEstoqueElement.textContent = item.quantidade_item;
+            }
+            if (liItemEstoqueMin) {
+                liItemEstoqueMin.style.display = 'block';
+                if (itemEstoqueMinElement) itemEstoqueMinElement.textContent = item.quantidade_minima_item || 0;
+            }
+        }
+
         // Condicionalmente exibe/oculta o campo "Solicitado"
         const itemQtdRetiradaElement = document.getElementById('itemQtdRetirada');
         const itemQtdRetiradaLi = itemQtdRetiradaElement ? itemQtdRetiradaElement.closest('li') : null;
@@ -153,12 +181,14 @@ class UiService {
         } else {
             if (itemQtdRetiradaLi) itemQtdRetiradaLi.style.display = 'none'; // Oculta o li
         }
-        document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item || 0;
-        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : '-';
+        
+        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A';
+
         this.getModalInstance('modalDetalheItem').show();
     }
 
-    fillModalDetalhes(retirada) {
+    // MODIFICADO: Adicionado parâmetro isServerView para controlar a exibição do estoque
+    fillModalDetalhes(retirada, isServerView = false) {
         document.getElementById('detalheRetiradaId').value = retirada.retirada_id;
         document.getElementById('detalheStatus').value = getStatusText(retirada.status);
         document.getElementById('detalheSetor').value = retirada.setor_nome || '-';
@@ -168,7 +198,15 @@ class UiService {
         document.getElementById('detalheData').value = formatDateTime(retirada.data_solicitacao);
         document.getElementById('detalheJustificativa').value = retirada.justificativa || '-';
         document.getElementById('detalheStatusDesc').value = retirada.detalhe_status || '-';
-        this.renderItemList('detalheItens', retirada.itens);
+
+        // Oculta o campo de estoque se for a visualização do servidor
+        const itemEstoqueLi = document.getElementById('itemEstoque')?.closest('li'); // Busca no modal de detalhes do item
+        if (itemEstoqueLi) {
+            itemEstoqueLi.style.display = isServerView ? 'none' : 'block';
+        }
+
+        // MODIFICADO: Passa 'isServerView' para renderItemList
+        this.renderItemList('detalheItens', retirada.itens, isServerView);
     }
 
     // fillModalDetalhesItem é chamado a partir de alertasModule, que não passa quantidadeRetirada
@@ -177,10 +215,16 @@ class UiService {
             console.error("Item inválido para preencher detalhes do modal.");
             return;
         }
+
         document.getElementById('itemNome').textContent = item.nome_item_original || 'N/A';
+        // Aqui, como este modal pode ser acessado por diferentes perfis (ex: almoxarifado via alertas),
+        // e não temos o contexto do perfil do usuário diretamente aqui,
+        // manteremos a exibição de estoque e estoque mínimo.
+        // Se a intenção for *nunca* mostrar estoque para o servidor em *qualquer* modal de item,
+        // seria necessário passar o papel do usuário para esta função ou ter uma verificação global.
         document.getElementById('itemEstoque').textContent = item.quantidade_item || 0;
         document.getElementById('itemEstoqueMin').textContent = item.quantidade_minima_item || 0;
-        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : '-';
+        document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : 'N/A';
 
         // Oculta o campo "Solicitado" explicitamente quando chamado de alertas
         const itemQtdRetiradaElement = document.getElementById('itemQtdRetirada');
@@ -194,6 +238,7 @@ class UiService {
         document.getElementById('autorizarUsuario').value = retirada.usuario_nome || '-';
         document.getElementById('autorizarJustificativa').value = retirada.justificativa || '-';
         document.getElementById('autorizarData').value = formatDateTime(retirada.data_solicitacao);
+
         document.getElementById('autorizarDetalheStatus').value = ''; // Limpa o campo de detalhe
 
         this.renderItemList('autorizarItens', retirada.itens);
@@ -217,7 +262,7 @@ class UiService {
     fillModalConcluir(retirada) {
         document.getElementById('concluirRetiradaId').value = retirada.retirada_id;
         document.getElementById('concluirRetiradaDisplayId').textContent = retirada.retirada_id;
-        document.getElementById('concluirDetalheStatus').value = retirada.detalhe_status || ''; // Preenche com detalhe existente ou vazio
+        document.getElementById('concluirDetalheStatus').value = retirada.detalhe_status || ''; // Preenche com detalhe existente
     }
 
     getModalInstance(id) {

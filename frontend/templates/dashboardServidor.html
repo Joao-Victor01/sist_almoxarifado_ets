@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="/static/css/custom.css">
 </head>
 <body>
-    <!-- REMOVIDO: <script src="/static/js/validar-acesso.js"></script> -->
 
     <!-- Partial: topbar.html -->
     {% include 'partials/topbar.html' %}
@@ -26,14 +25,18 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarMenu">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <!-- Apenas os itens de navegação relevantes para o servidor -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="servidorDropdown" data-bs-toggle="dropdown">SERVIDOR</a>
-                        <ul class="dropdown-menu" aria-labelledby="servidorDropdown">
-                            <li><a class="dropdown-item" id="solicitar-retirada-servidor-link" href="#">Solicitar Retirada de Itens</a></li>
-                            <li><a class="dropdown-item" id="historico-retiradas-servidor-link" href="#">Meu Histórico de Retiradas</a></li>
-                        </ul>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="solicitar-retirada-servidor-link" >
+                            SOLICITAR RETIRADA DE ITENS
+                        </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="historico-retiradas-servidor-link" >
+                            MEU HISTÓRICO DE RETIRADAS
+                        </a>
+                    </li>
+                    
                 </ul>
                 <div class="d-flex align-items-center">
                     <div class="dropdown">
@@ -48,7 +51,6 @@
                             <li><a class="dropdown-item" href="#" id="new-withdrawal-requests-menu-item" style="display: none;">Novas Solicitações de Retirada</a></li>
                             <li><a class="dropdown-item" href="#" id="new-alerts-menu-item" style="display: none;">Novos Alertas</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" id="open-all-notifications-link">Ver todas as notificações</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
@@ -66,56 +68,19 @@
 
     <!-- Conteúdo principal dinâmico -->
     <div class="container mt-5" id="main-content">
-        <h3 class="mb-3">Bem-vindo ao SiCA - Servidor</h3>
-        <p>Use o menu "Servidor" acima para solicitar itens ou ver seu histórico de retiradas.</p>
+        <h3 class="mb-3">Olá, Servidor(a)! Bem-vindo(a) ao Sistema de Controle de Almoxarifado do ETS</h3>
+        <p>Use o menu  acima para solicitar itens ou ver seu histórico de retiradas.</p>
     </div>
 
     <!-- Partial: global_overlays.html -->
     {% include 'partials/global_overlays.html' %}
 
-    <!-- Incluindo TODOS os modais do dashboardAlmoxarifado para evitar erros de referência no JS -->
-    {% include 'partials/modals/modal_cadastrar_item.html' %}
-    {% include 'partials/modals/modal_editar_item.html' %}
-    {% include 'partials/modals/modal_cadastrar_categoria.html' %}
-    {% include 'partials/modals/modal_editar_categoria.html' %}
+    <!-- Incluindo modais -->
     {% include 'partials/modals/modal_ver_detalhes_retirada.html' %}
     {% include 'partials/modals/modal_autorizar_retirada.html' %}
     {% include 'partials/modals/modal_item_detalhes.html' %}
     {% include 'partials/modals/modal_solicitar_retirada.html' %}
     {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
-    {% include 'partials/modals/modal_concluir_retirada.html' %}
-    {% include 'partials/modals/modal_reports_dashboard.html' %}
-    {% include 'partials/modals/modal_report_quantidade_itens.html' %}
-    {% include 'partials/modals/modal_report_entrada_itens.html' %}
-    {% include 'partials/modals/modal_report_retiradas_setor.html' %}
-    {% include 'partials/modals/modal_report_retiradas_usuario.html' %}
-    <!-- O modal de importação de tabela também deve ser incluído se o JS o referenciar -->
-    <div class="modal fade" id="modalImportarTabelaItens" tabindex="-1" aria-labelledby="modalImportarTabelaItensLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 shadow">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="modalImportarTabelaItensLabel">Importar Tabela de Itens</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="form-importar-tabela-itens">
-                        <div class="mb-3">
-                            <label for="arquivoItens" class="form-label">Selecione o arquivo (.xlsx ou .csv)</label>
-                            <input class="form-control" type="file" id="arquivoItens" name="file" accept=".xlsx,.csv">
-                        </div>
-                    </form>
-                    <div id="import-feedback" class="mt-3" style="display:none;">
-                        <div class="alert" role="alert" id="import-alert"></div>
-                        <ul id="import-errors-list" class="list-group list-group-flush"></ul>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 justify-content-center">
-                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btn-enviar-tabela-itens">Enviar</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
 
     <!-- Partial: scripts.html -->
