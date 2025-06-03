@@ -13,18 +13,18 @@ class AlertasModule {
         this.currentTotalPages = 1;
 
         // Armazenar as referências das funções bound uma única vez
-        this._boundHandlePaginationClick = this._handlePaginationClick.bind(this);
-        this._boundHandlePageSizeChange = this._handlePageSizeChange.bind(this);
-        this._boundHandleTableActionClick = this._handleTableActionClick.bind(this);
-        this._boundHandleSearchAlert = this._handleSearchAlert.bind(this);
-        this._boundHandleClearAlertSearch = this._handleClearAlertSearch.bind(this);
+        this._boundHandlePaginationClick   = this._handlePaginationClick.bind(this);
+        this._boundHandlePageSizeChange    = this._handlePageSizeChange.bind(this);
+        this._boundHandleTableActionClick  = this._handleTableActionClick.bind(this);
+        this._boundHandleSearchAlert       = this._handleSearchAlert.bind(this);
+        this._boundHandleClearAlertSearch  = this._handleClearAlertSearch.bind(this);
     }
 
     init() {
         // Nada de especial aqui, os bindings são feitos após a renderização
     }
 
-    async renderAlertsPage(){
+    async renderAlertsPage() {
         uiService.showLoading();
         try {
             const params = {
@@ -46,23 +46,36 @@ class AlertasModule {
 
             const tableHeaders = ['Tipo', 'Mensagem', 'Item ID', 'Data do Alerta', 'Ações'];
 
+            // **** BLOCO DE FILTROS AGORA EM UM CARD, COM 3 COLUNAS 'col' PARA IGUAL DISTRIBUIÇÃO ****
             const searchAndFilterHtml = `
-                <div id="alertas-search-bar" class="row mb-3">
-                    <div class="col-md-4 mb-2">
-                        <input type="text" id="alert-search-term" class="form-control"
-                            placeholder="Buscar por mensagem ou ID do item" value="${this.currentSearchTerm || ''}">
-                    </div>
-                    <div class="col-md-4 mb-2">
+                <div class="card mb-3">
+                  <div class="card-header">Filtros de Busca</div>
+                  <div class="card-body">
+                    <form id="alertas-search-bar" class="row g-3 mb-0">
+                      <div class="col">
+                        <label for="alert-search-term" class="form-label">Busca</label>
+                        <input
+                          type="text"
+                          id="alert-search-term"
+                          class="form-control"
+                          placeholder="Buscar por mensagem ou ID do item"
+                          value="${this.currentSearchTerm || ''}"
+                        >
+                      </div>
+                      <div class="col">
+                        <label for="alert-type-filter" class="form-label">Tipo de Alerta</label>
                         <select id="alert-type-filter" class="form-select">
-                            <option value="">Todos os Tipos</option>
-                            <option value="1" ${this.currentTipoAlerta === 1 ? 'selected' : ''}>Estoque Baixo</option>
-                            <option value="2" ${this.currentTipoAlerta === 2 ? 'selected' : ''}>Validade Próxima</option>
+                          <option value="">Todos os Tipos</option>
+                          <option value="1" ${this.currentTipoAlerta === 1 ? 'selected' : ''}>Estoque Baixo</option>
+                          <option value="2" ${this.currentTipoAlerta === 2 ? 'selected' : ''}>Validade Próxima</option>
                         </select>
-                    </div>
-                    <div class="col-md-4 d-flex mb-2">
+                      </div>
+                      <div class="col d-flex justify-content-end align-items-end">
                         <button id="btn-search-alert" class="btn btn-primary me-2">Buscar</button>
                         <button id="btn-clear-alert-search" class="btn btn-secondary">Limpar</button>
-                    </div>
+                      </div>
+                    </form>
+                  </div>
                 </div>`;
 
             const tableHtml = uiService.renderTable(tableHeaders, alerts, {
@@ -90,8 +103,8 @@ class AlertasModule {
             const paginationHtml = uiService.renderPagination(
                 data.page,
                 data.total_pages,
-                'alerts', // Type for alerts pagination
-                'alertsPageSizeSelect',
+                'alerts',               // tipo de paginação para alertas
+                'alertsPageSizeSelect', // id do select de pageSize
                 this.pageSize
             );
 
@@ -121,12 +134,12 @@ class AlertasModule {
     }
 
     _bindPageEvents() {
-        const alertsPaginationNav = document.getElementById('alerts-pagination-nav');
-        const pageSizeSelect = document.getElementById('alertsPageSizeSelect');
-        const btnSearchAlert = document.getElementById('btn-search-alert');
-        const btnClearAlertSearch = document.getElementById('btn-clear-alert-search');
-        
-        // Remove previous listeners to avoid duplicates
+        const alertsPaginationNav    = document.getElementById('alerts-pagination-nav');
+        const pageSizeSelect         = document.getElementById('alertsPageSizeSelect');
+        const btnSearchAlert         = document.getElementById('btn-search-alert');
+        const btnClearAlertSearch    = document.getElementById('btn-clear-alert-search');
+
+        // Remove previous listeners para evitar duplicação
         if (alertsPaginationNav) {
             alertsPaginationNav.removeEventListener('click', this._boundHandlePaginationClick);
         }
@@ -140,7 +153,7 @@ class AlertasModule {
             btnClearAlertSearch.removeEventListener('click', this._boundHandleClearAlertSearch);
         }
 
-        // Add new listeners
+        // Adiciona novos listeners
         if (alertsPaginationNav) {
             alertsPaginationNav.addEventListener('click', this._boundHandlePaginationClick);
         }
@@ -156,29 +169,29 @@ class AlertasModule {
     }
 
     _handleSearchAlert() {
-        this.currentSearchTerm = document.getElementById('alert-search-term').value.trim();
-        const selectedType = document.getElementById('alert-type-filter').value;
-        this.currentTipoAlerta = selectedType ? parseInt(selectedType) : null;
-        this.currentPage = 1;
+        this.currentSearchTerm   = document.getElementById('alert-search-term').value.trim();
+        const selectedType       = document.getElementById('alert-type-filter').value;
+        this.currentTipoAlerta   = selectedType ? parseInt(selectedType) : null;
+        this.currentPage         = 1;
         this.renderAlertsPage();
     }
 
     _handleClearAlertSearch() {
         document.getElementById('alert-search-term').value = '';
         document.getElementById('alert-type-filter').value = '';
-        this.currentSearchTerm = '';
-        this.currentTipoAlerta = null;
-        this.currentPage = 1;
+        this.currentSearchTerm   = '';
+        this.currentTipoAlerta   = null;
+        this.currentPage         = 1;
         this.renderAlertsPage();
     }
 
     _handlePaginationClick(e) {
         e.preventDefault();
 
-        // Specific for alerts pagination links (e.g., data-page="alerts-1")
+        // Links de paginação: data-page="alerts-<número>"
         const clickedPageLink = e.target.closest('a[data-page^="alerts-"]');
         if (clickedPageLink) {
-            const pageValue = clickedPageLink.dataset.page.split('-')[1]; // Extract the number part
+            const pageValue = clickedPageLink.dataset.page.split('-')[1];
             const newPage = parseInt(pageValue);
             if (!isNaN(newPage) && newPage !== this.currentPage) {
                 this.currentPage = newPage;
@@ -187,16 +200,16 @@ class AlertasModule {
             return;
         }
 
-        // Specific for alerts action buttons (e.g., data-action="alerts-prev")
+        // Ações "Anterior / Próximo": data-action="alerts-prev" ou "alerts-next"
         const clickedActionButton = e.target.closest('a[data-action^="alerts-"]');
         if (clickedActionButton) {
             const action = clickedActionButton.dataset.action;
             let newPage = this.currentPage;
 
-            if (action === 'alerts-prev') {
-                if (newPage > 1) newPage--;
-            } else if (action === 'alerts-next'){
-                if (newPage < this.currentTotalPages) newPage++;
+            if (action === 'alerts-prev' && newPage > 1) {
+                newPage--;
+            } else if (action === 'alerts-next' && newPage < this.currentTotalPages) {
+                newPage++;
             }
 
             if (newPage !== this.currentPage) {
@@ -216,7 +229,7 @@ class AlertasModule {
     _bindTableActions() {
         const mainContent = document.getElementById('main-content');
         if (mainContent) {
-            // Usa a referência da função bound armazenada
+            // Remove e adiciona listener único para clique na tabela
             mainContent.removeEventListener('click', this._boundHandleTableActionClick);
             mainContent.addEventListener('click', this._boundHandleTableActionClick);
         }
@@ -246,7 +259,7 @@ class AlertasModule {
             } finally {
                 uiService.hideLoading();
             }
-            return; // Add return to prevent further propagation if a button is clicked
+            return; // Evita propagação caso um botão seja clicado
         }
     }
 
@@ -254,7 +267,10 @@ class AlertasModule {
         uiService.showLoading();
         try {
             await apiService.patch(`/alertas/ignorar/${alertId}`);
-            showAlert('Alerta ignorado com sucesso. Futuros alertas para este item/motivo não serão gerados.', 'success');
+            showAlert(
+              'Alerta ignorado com sucesso. Futuros alertas para este item/motivo não serão gerados.',
+              'success'
+            );
             this.renderAlertsPage();
         } catch (error) {
             console.error('Erro ao ignorar alerta', error);

@@ -14,7 +14,7 @@ async function carregarCategorias() {
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
     });
 
-    if (resp.status == 401) {
+    if (resp.status === 401) {
         window.location = '/';
         return [];
     }
@@ -67,34 +67,65 @@ async function buscarItens(nome, categoria, page = currentPage, size = pageSize)
     return data;
 }
 
-//3) Templates HTML
+// 3) Templates HTML
 function criarSearchBar() {
     return `
-        <div class="row mb-3" id="search-bar">
-            <div class="col-md-4">
-                <input type="text" id="search-nome" class="form-control"
-                       placeholder="Buscar por nome" value="${searchNome}">
-            </div>
-            <div class="col-md-4">
-                <input type="text" id="search-categoria" class="form-control"
-                       placeholder="Buscar por categoria" value="${searchCategoria}">
-            </div>
-            <div class="col-md-4 d-flex">
+        <h3 class="mb-3">Lista de Itens</h3>
+
+        <div class="card mb-3">
+          <div class="card-header">Filtros de Busca</div>
+          <div class="card-body">
+            <form id="search-bar" class="row g-3 mb-0">
+              
+              <!-- Agora usamos 'col' em vez de 'col-md-4' para que as 3 colunas dividam igualmente o espaço -->
+              <div class="col">
+                <label for="search-nome" class="form-label">Nome</label>
+                <input
+                  type="text"
+                  id="search-nome"
+                  class="form-control"
+                  placeholder="Buscar por nome"
+                  value="${searchNome}"
+                >
+              </div>
+              
+              <div class="col">
+                <label for="search-categoria" class="form-label">Categoria</label>
+                <input
+                  type="text"
+                  id="search-categoria"
+                  class="form-control"
+                  placeholder="Buscar por categoria"
+                  value="${searchCategoria}"
+                >
+              </div>
+              
+              <div class="col d-flex justify-content-end align-items-end">
                 <button id="btn-search" class="btn btn-primary me-2">Buscar</button>
                 <button id="btn-clear-search" class="btn btn-secondary">Limpar</button>
-            </div>
+              </div>
+              
+            </form>
+          </div>
         </div>`;
 }
 
 function criarTabelaItens(itens, categoryMap) {
     let html = `
-        <h3 class="mb-3">Lista de Itens</h3>
         <div class="table-responsive">
             <table class="table table-bordered table-striped">
                 <thead class="table-secondary text-center">
                     <tr>
-                        <th>ID</th><th>Nome</th><th>Descrição</th><th>Unidade de Medida</th><th>Quantidade</th>
-                        <th>Validade</th><th>Entrada</th><th>Marca</th><th>Categoria</th><th>Ações</th>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Descrição</th>
+                        <th>Unidade de Medida</th>
+                        <th>Quantidade</th>
+                        <th>Validade</th>
+                        <th>Entrada</th>
+                        <th>Marca</th>
+                        <th>Categoria</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>`;
@@ -135,16 +166,23 @@ function criarTabelaItens(itens, categoryMap) {
             </tr>`;
     });
 
-    html += `</tbody></table></div>`;
+    html += `
+                </tbody>
+            </table>
+        </div>`;
+
     return html;
 }
 
 function criarControlesPaginacao(totalPages) {
-    let html = `<nav aria-label="Page navigation" id="itens-pagination-nav"><ul class="pagination justify-content-center">`;
+    let html = `
+        <nav aria-label="Page navigation" id="itens-pagination-nav">
+          <ul class="pagination justify-content-center">`;
 
-    html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-action="itens-prev">Anterior</a>
-             </li>`;
+    html += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+              <a class="page-link" href="#" data-action="itens-prev">Anterior</a>
+            </li>`;
 
     const start = Math.max(1, currentPage - 2);
     const end = Math.min(totalPages, currentPage + 2);
@@ -152,28 +190,30 @@ function criarControlesPaginacao(totalPages) {
     for (let p = start; p <= end; p++) {
         html += `
             <li class="page-item ${p === currentPage ? 'active' : ''}">
-                <a class="page-link" href="#" data-page="itens-${p}">${p}</a>
+              <a class="page-link" href="#" data-page="itens-${p}">${p}</a>
             </li>`;
     }
 
-    html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-action="itens-next">Próximo</a>
-             </li>`;
+    html += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+              <a class="page-link" href="#" data-action="itens-next">Próximo</a>
+            </li>
+          </ul>
+        </nav>
 
-    html += `</ul></nav>
-
-    <div class="d-flex justify-content-center my-2">
-        <label class="me-2">Itens por página: </label>
-        <select id="page-size-select"
-                class="form-select w-auto">
-            ${pageSizeOptions.map(opt => `<option value="${opt}" ${opt === pageSize ? 'selected' : ''}>${opt}</option>`).join('')}
-        </select>
-    </div>`;
+        <div class="d-flex justify-content-center my-2">
+          <label class="me-2">Itens por página:</label>
+          <select id="page-size-select" class="form-select w-auto">
+            ${pageSizeOptions
+              .map(opt => `<option value="${opt}" ${opt === pageSize ? 'selected' : ''}>${opt}</option>`)
+              .join('')}
+          </select>
+        </div>`;
 
     return html;
 }
 
-//4) Carrega e renderiza tudo
+// 4) Carrega e renderiza tudo
 async function renderizarListItens() {
     try {
         // se tiver filtro, chama buscarItens, senão lista geral
@@ -209,7 +249,7 @@ async function renderizarListItens() {
     }
 }
 
-//5) Bindings de busca
+// 5) Bindings de busca
 function bindSearch() {
     document.getElementById('btn-search')?.addEventListener('click', e => {
         e.preventDefault();
@@ -238,7 +278,7 @@ function bindSearch() {
     });
 }
 
-//6) Bindings de paginação
+// 6) Bindings de paginação
 function bindPagination(totalPages) {
     const itensPaginationNav = document.getElementById('itens-pagination-nav');
     const pageSizeSelect = document.getElementById('page-size-select');
@@ -302,7 +342,7 @@ function bindPagination(totalPages) {
     }
 }
 
-//7) Bindings de ações nas linhas
+// 7) Bindings de ações nas linhas
 function bindRowActions(categorias) {
     // deletar
     document.querySelectorAll('.btn-deletar').forEach(btn => {
@@ -319,9 +359,9 @@ function bindRowActions(categorias) {
 
                 if (!resp.ok) {
                     const error = await resp.json();
-                    const matches = error.detail?.match(/retirada_item.DETAIL: Chave \(item_id\)=\(\d+\)/);
+                    const matches = error.detail?.match(/retirada_item\.DETALH: Chave \(item_id\)=\((\d+)\)/);
                     if (matches && matches[1]) {
-                        throw new Error(`Item vinculado à retirada ID: ${matches[1]}). Não pode ser excluído.`);
+                        throw new Error(`Item vinculado à retirada ID: ${matches[1]}. Não pode ser excluído.`);
                     }
                     throw new Error(error.detail || 'Erro ao excluir item');
                 }
@@ -345,7 +385,7 @@ function bindRowActions(categorias) {
             const id = btn.dataset.id;
             const token = localStorage.getItem('token');
 
-            //1) busca item
+            // 1) busca item
             const respItem = await fetch(`/api/almoxarifado/itens/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -379,7 +419,7 @@ function bindRowActions(categorias) {
             const saveBtn = document.getElementById('btn-salvar-editar-item');
             saveBtn.dataset.id = id;
 
-            //5) exibe modal
+            // 5) exibe modal
             new bootstrap.Modal(
                 document.getElementById('modalEditarItem')
             ).show();
@@ -387,7 +427,7 @@ function bindRowActions(categorias) {
     });
 }
 
-//8) salvar edição
+// 8) salvar edição
 document.getElementById('btn-salvar-editar-item')?.addEventListener('click', async e => {
     const id = e.currentTarget.dataset.id;
     if (!id) return alert('ID de edição não definido');
