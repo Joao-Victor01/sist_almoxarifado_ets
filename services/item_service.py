@@ -88,7 +88,7 @@ class ItemService:
         if item_data.marca_item:
             existing.marca_item = item_data.marca_item
 
-        # NOVO: Se o item estava inativo e sua quantidade foi incrementada, reativá-lo
+        # Se o item estava inativo e sua quantidade foi incrementada, reativá-lo
         if not existing.ativo:
             existing.ativo = True
 
@@ -166,7 +166,7 @@ class ItemService:
         if existing and existing.item_id != item.item_id:
             # Transfere quantidade para o item existente (duplicata)
             existing.quantidade_item += item.quantidade_item
-            # NOVO: Reativa o item existente se ele estava inativo
+            # Reativa o item existente se ele estava inativo
             if not existing.ativo:
                 existing.ativo = True
 
@@ -186,7 +186,7 @@ class ItemService:
         for key, valor in valores.items():
             setattr(item, key, valor)
 
-        # NOVO: Lógica para reativar o item se a quantidade for > 0 ou se 'ativo' for explicitamente True
+        # Lógica para reativar o item se a quantidade for > 0 ou se 'ativo' for explicitamente True
         if 'quantidade_item' in valores and valores['quantidade_item'] > 0 and not item.ativo:
             item.ativo = True
         elif 'ativo' in valores: # Permite definir o status ativo/inativo explicitamente
