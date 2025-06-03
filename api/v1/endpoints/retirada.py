@@ -19,6 +19,9 @@ async def solicitar_retirada(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(todos_usuarios)
 ):
+    """
+    Endpoint para um usuário solicitar uma nova retirada de itens.
+    """
     return await RetiradaService.solicitar_retirada(db, retirada, current_user.usuario_id)
 
 @router.put("/{retirada_id}", response_model=RetiradaOut)
@@ -28,9 +31,12 @@ async def atualizar_status_retirada(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado)
 ):
+    """
+    Endpoint para um usuário do almoxarifado atualizar o status de uma retirada.
+    """
     return await RetiradaService.atualizar_status(db, retirada_id, status_data, current_user.usuario_id)
 
-# Listagem paginada de todas as retiradas
+# Listagem paginada de todas as retiradas (para almoxarifado)
 @router.get(
     "/paginated",
     response_model=RetiradaPaginated,
@@ -42,9 +48,12 @@ async def listar_retiradas_paginadas(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado)
 ):
+    """
+    Lista todas as retiradas com paginação. Apenas para usuários do almoxarifado.
+    """
     return await RetiradaService.get_retiradas_paginadas(db, page, page_size)
 
-# Listagem paginada de retiradas pendentes
+# Listagem paginada de retiradas pendentes (para todos os usuários, mas com filtro de permissão)
 @router.get(
     "/pendentes/paginated",
     response_model=RetiradaPaginated,
@@ -54,11 +63,14 @@ async def listar_pendentes_paginados(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(todos_usuarios)
+    current_user=Depends(todos_usuarios) # Pode ser acessado por todos, mas o serviço deve filtrar
 ):
+    """
+    Lista retiradas pendentes com paginação.
+    """
     return await RetiradaService.get_retiradas_pendentes_paginated(db, page, page_size)
 
-# Busca com filtros e paginação
+# Busca com filtros e paginação (para almoxarifado)
 @router.get(
     "/search",
     response_model=RetiradaPaginated,
@@ -74,6 +86,9 @@ async def buscar_retiradas(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado)
 ):
+    """
+    Busca retiradas com filtros e paginação. Apenas para usuários do almoxarifado.
+    """
     params = RetiradaFilterParams(
         status=status,
         solicitante=solicitante,
@@ -82,11 +97,31 @@ async def buscar_retiradas(
     )
     return await RetiradaService.filter_retiradas_paginated(db, params, page, page_size)
 
-# Recupera uma específica
+# Recupera uma específica (para almoxarifado)
 @router.get("/{retirada_id}", response_model=RetiradaOut)
 async def get_retirada(
     retirada_id: int,
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado)
 ):
+    """
+    Recupera uma retirada específica pelo ID. Apenas para usuários do almoxarifado.
+    """
     return await RetiradaService.get_retirada_by_id(db, retirada_id)
+
+# NOVO ENDPOINT: Listagem paginada das minhas retiradas (para servidor)
+@router.get(
+    "/minhas-retiradas/paginated",
+    response_model=RetiradaPaginated,
+    name="Listar minhas retiradas paginadas"
+)
+async def listar_minhas_retiradas_paginadas(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: AsyncSession = Depends(get_session),
+    current_user=Depends(todos_usuarios) # Acessível por qualquer usuário logado
+):
+    """
+    Lista as retiradas solicitadas pelo usuário logado, com paginação.
+    """
+    return await RetiradaService.get_retiradas_by_user_paginated(db, current_user.usuario_id, page, page_size)

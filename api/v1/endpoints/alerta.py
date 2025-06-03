@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from services.alerta_service import AlertaService
-from core.security import usuario_almoxarifado, direcao_ou_almoxarifado 
+from core.security import usuario_almoxarifado, direcao_ou_almoxarifado, todos_usuarios
 from models.alerta import TipoAlerta
 from schemas.alerta import PaginatedAlertas, AlertaOut
 
@@ -32,7 +32,7 @@ async def ignorar_alerta (alerta_id: int, db: AsyncSession = Depends(get_session
     return await AlertaService.mark_alerta_as_ignorar_novos(db, alerta_id)
 
 # NOVO: Endpoint para obter a contagem de alertas não visualizados
-@router.get("/unviewed-count", dependencies=[Depends(direcao_ou_almoxarifado)])
+@router.get("/unviewed-count", dependencies=[Depends(todos_usuarios)])
 async def get_unviewed_alerts_count(db: AsyncSession = Depends(get_session)):
     """Retorna o número de alertas não visualizados."""
     count = await AlertaService.get_unviewed_alerts_count(db)

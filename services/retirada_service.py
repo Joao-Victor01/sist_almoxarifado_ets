@@ -9,7 +9,7 @@ from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus, RetiradaPaginated, RetiradaFilterParams
 from services.alerta_service import AlertaService
-from utils.websocket_endpoints import manager 
+from utils.websocket_endpoints import manager
 
 class RetiradaService:
 
@@ -17,6 +17,9 @@ class RetiradaService:
     async def get_retiradas_paginadas(
         db: AsyncSession, page: int, page_size: int
     ) -> RetiradaPaginated:
+        """
+        Retorna uma lista paginada de todas as retiradas.
+        """
         total = await RetiradaRepository.count_retiradas(db)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
@@ -31,6 +34,9 @@ class RetiradaService:
         page: int,
         page_size: int
     ) -> RetiradaPaginated:
+        """
+        Filtra e retorna retiradas com paginação.
+        """
         total = await RetiradaRepository.count_retiradas_filter(db, params)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
@@ -42,6 +48,9 @@ class RetiradaService:
 
     @staticmethod
     async def solicitar_retirada(db: AsyncSession, retirada_data: RetiradaCreate, usuario_id: int):
+        """
+        Cria uma nova solicitação de retirada e seus itens associados.
+        """
         try:
             # 1) cria Retirada
             nova_retirada = Retirada(
@@ -89,6 +98,9 @@ class RetiradaService:
 
     @staticmethod
     async def atualizar_status(db: AsyncSession, retirada_id: int, status_data: RetiradaUpdateStatus, admin_id: int):
+        """
+        Atualiza o status de uma retirada e, se concluída, decrementa o estoque dos itens.
+        """
         try:
             if status_data.status not in (s.value for s in StatusEnum):
                 raise HTTPException(400, "Status inválido.")
@@ -105,8 +117,8 @@ class RetiradaService:
                     # Lógica para permitir retirada mesmo abaixo do mínimo, mas não abaixo de 0
                     if item.quantidade_item < ri.quantidade_retirada:
                         raise HTTPException(
-                            status.HTTP_400_BAD_REQUEST,
-                            f"Estoque insuficiente para item {ri.item_id}"
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Estoque insuficiente para item {ri.item_id}"
                         )
 
                     await RetiradaRepository.atualizar_quantidade_item(
@@ -141,6 +153,9 @@ class RetiradaService:
     async def get_retiradas_pendentes_paginated(
         db: AsyncSession, page: int, page_size: int
     ) -> RetiradaPaginated:
+        """
+        Retorna uma lista paginada de retiradas pendentes.
+        """
         total = await RetiradaRepository.count_retiradas_pendentes(db)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
@@ -150,6 +165,9 @@ class RetiradaService:
 
     @staticmethod
     async def get_all_retiradas(db: AsyncSession):
+        """
+        Retorna todas as retiradas.
+        """
         try:
             all_r = await RetiradaRepository.get_retiradas(db)
             if not all_r:
@@ -160,6 +178,9 @@ class RetiradaService:
 
     @staticmethod
     async def get_retirada_by_id(db: AsyncSession, retirada_id: int):
+        """
+        Busca uma retirada pelo ID.
+        """
         r = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
         if not r:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Retirada não encontrada")
@@ -167,6 +188,9 @@ class RetiradaService:
 
     @staticmethod
     async def get_retiradas_por_setor_periodo(db: AsyncSession, setor_id: int, data_inicio: datetime, data_fim: datetime):
+        """
+        Retorna retiradas filtradas por setor e período.
+        """
         try:
             res = await RetiradaRepository.get_retiradas_por_setor_periodo(db, setor_id, data_inicio, data_fim)
             if not res:
@@ -177,6 +201,9 @@ class RetiradaService:
 
     @staticmethod
     async def get_retiradas_por_usuario_periodo(db: AsyncSession, usuario_id: int, data_inicio: datetime, data_fim: datetime):
+        """
+        Retorna retiradas filtradas por usuário e período.
+        """
         try:
             res = await RetiradaRepository.get_retiradas_por_usuario_periodo(db, usuario_id, data_inicio, data_fim)
             if not res:
@@ -184,3 +211,18 @@ class RetiradaService:
             return res
         except Exception as e:
             raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro: {e}")
+
+    #  Retorna retiradas paginadas para um usuário específico
+    @staticmethod
+    async def get_retiradas_by_user_paginated(
+        db: AsyncSession, usuario_id: int, page: int, page_size: int
+    ) -> RetiradaPaginated:
+        """
+        Retorna uma lista paginada de retiradas para um usuário específico.
+        """
+        total = await RetiradaRepository.count_retiradas_by_user(db, usuario_id)
+        pages = (total + page_size - 1) // page_size
+        offset = (page - 1) * page_size
+        sqlalchemy_items = await RetiradaRepository.get_retiradas_by_user_paginated(db, usuario_id, offset, page_size)
+        items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
+        return RetiradaPaginated(total=total, page=page, pages=pages, items=items)

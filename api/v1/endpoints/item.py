@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status, Query, UploadFile, File, HTTPExc
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from core.database import get_session
-from core.security import usuario_almoxarifado, direcao_ou_almoxarifado
+from core.security import usuario_almoxarifado, direcao_ou_almoxarifado, todos_usuarios
 from schemas.item import (
     ItemOut,
     ItemCreate,
@@ -23,13 +23,17 @@ async def create_item(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado),
 ):
+    """
+    Cria um novo item no sistema. Apenas para usuários do almoxarifado.
+    """
     return await ItemService.create_item(db, item, current_user)
 
 
 @router.get(
     "/buscar",
     response_model=PaginatedItems,
-    dependencies=[Depends(direcao_ou_almoxarifado)],
+    # A dependência de nível de função é a que realmente será aplicada
+    # A dependência de nível de rota (se houvesse) seria sobreposta
 )
 async def search_items(
     nome: str | None = Query(None, description="Nome total ou parcial do item"),
@@ -37,8 +41,11 @@ async def search_items(
     page: int = Query(1, ge=1, description="Número da página"),
     size: int = Query(10, description="Itens por página: 5,10,25,50 ou 100"),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(direcao_ou_almoxarifado),
+    current_user=Depends(todos_usuarios), # ALTERADO: Agora acessível por todos os usuários
 ):
+    """
+    Busca itens com filtros e paginação. Acessível por todos os tipos de usuários.
+    """
     return await ItemService.search_items_paginated(
         db, nome_produto=nome, nome_categoria=categoria, page=page, size=size
     )
@@ -47,13 +54,16 @@ async def search_items(
 @router.get(
     "/paginated",
     response_model=PaginatedItems,
-    dependencies=[Depends(direcao_ou_almoxarifado)],
+    dependencies=[Depends(todos_usuarios)], # Mantido para todos os usuários
 )
 async def get_items_paginated(
     page: int = Query(1, ge=1, description="Número da página"),
     size: int = Query(10, description="Itens por página: 5,10,25,50 ou 100"),
     db: AsyncSession = Depends(get_session),
 ):
+    """
+    Lista itens paginados. Acessível por todos os tipos de usuários.
+    """
     return await ItemService.get_items_paginated(db, page, size)
 
 
@@ -62,6 +72,9 @@ async def get_itens(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(direcao_ou_almoxarifado),
 ):
+    """
+    Retorna todos os itens. Apenas para direção ou almoxarifado.
+    """
     return await ItemService.get_itens(db)
 
 
@@ -69,8 +82,11 @@ async def get_itens(
 async def get_item(
     item_id: int,
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(direcao_ou_almoxarifado),
+    current_user=Depends(todos_usuarios), # Mantido para todos os usuários
 ):
+    """
+    Retorna um item específico pelo ID. Acessível por todos os tipos de usuários.
+    """
     return await ItemService.get_item_by_id(db, item_id)
 
 
@@ -80,6 +96,9 @@ async def delete_item(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado),
 ):
+    """
+    Deleta um item. Apenas para usuários do almoxarifado.
+    """
     return await ItemService.delete_item(db, item_id)
 
 
@@ -90,6 +109,9 @@ async def update_item(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado),
 ):
+    """
+    Atualiza um item existente. Apenas para usuários do almoxarifado.
+    """
     return await ItemService.update_item(db, item_id, item, current_user)
 
 
@@ -99,4 +121,7 @@ async def upload_items_bulk(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(usuario_almoxarifado),
 ):
+    """
+    Realiza o upload em massa de itens via arquivo. Apenas para usuários do almoxarifado.
+    """
     return await ItemService.process_bulk_upload(db, file, current_user.usuario_id)

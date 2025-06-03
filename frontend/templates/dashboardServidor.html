@@ -1,110 +1,134 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SiCA - Sistema de Controle de Almoxarifado</title>
-
-  <!-- Bootstrap CSS offline -->
-  <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-  <link href="/static/css/custom.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SiCA - Sistema de Controle de Almoxarifado</title>
+    <!-- Bootstrap CSS offline -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboards.css" />
+    <link rel="stylesheet" href="/static/css/custom.css">
 </head>
-<body class="bg-light">
-  <script src="/static/js/validar-acesso.js"></script>
+<body>
+    <!-- REMOVIDO: <script src="/static/js/validar-acesso.js"></script> -->
 
+    <!-- Partial: topbar.html -->
+    {% include 'partials/topbar.html' %}
 
-  <!-- Barra superior -->
-  <div class="d-flex justify-content-between align-items-center px-3 py-2 custom-header">
-    <img src="/static/img/SICA02_REDONDO.jpg" alt="Logo SiCA" style="height: 40px;">
-    <!-- <h5 class="m-0 text-white fw-bold text-center flex-grow-1">SISTEMA DE CONTROLE DE ALMOXARIFADO - CPT</h5> -->
-    <div class="custom-header text-center py-0 fw-bold">
-      SISTEMA DE CONTROLE DE ALMOXARIFADO - CPT
+    <!-- Partial: navbar.html -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container-fluid">
+            <button class="btn btn-outline-light me-3" id="home-button"><i class="bi bi-house-fill"></i></button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
+                aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Apenas os itens de navegação relevantes para o servidor -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="servidorDropdown" data-bs-toggle="dropdown">SERVIDOR</a>
+                        <ul class="dropdown-menu" aria-labelledby="servidorDropdown">
+                            <li><a class="dropdown-item" id="solicitar-retirada-servidor-link" href="#">Solicitar Retirada de Itens</a></li>
+                            <li><a class="dropdown-item" id="historico-retiradas-servidor-link" href="#">Meu Histórico de Retiradas</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <a class="nav-link position-relative me-3" href="#" id="alert-notification-bell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell-fill fs-5"></i>
+                        </a>
+                        <span id="notification-dot" class="notification-dot position-absolute">
+                            <span class="visually-hidden">Novas notificações</span>
+                        </span>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="alert-notification-bell">
+                            <li><span class="dropdown-item text-muted" id="no-notifications-menu-item" style="display: none;">Sem novas notificações</span></li>
+                            <li><a class="dropdown-item" href="#" id="new-withdrawal-requests-menu-item" style="display: none;">Novas Solicitações de Retirada</a></li>
+                            <li><a class="dropdown-item" href="#" id="new-alerts-menu-item" style="display: none;">Novos Alertas</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="open-all-notifications-link">Ver todas as notificações</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" href="#" id="logout-link">Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo principal dinâmico -->
+    <div class="container mt-5" id="main-content">
+        <h3 class="mb-3">Bem-vindo ao SiCA - Servidor</h3>
+        <p>Use o menu "Servidor" acima para solicitar itens ou ver seu histórico de retiradas.</p>
     </div>
-    <img src="/static/img/cpt_logo.png" alt="Logo CPT" style="height: 40px;">
-  </div>
 
-  <!-- Barra de navegação -->
-  <nav class="navbar navbar-expand-lg" style="background-color: #00448d;">
-    <div class="container-fluid">
-        <div class="navbar-collapse">
-          <ul class="navbar-nav mx-auto">
+    <!-- Partial: global_overlays.html -->
+    {% include 'partials/global_overlays.html' %}
 
-          <!-- Itens -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-white" href="#" id="itensDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Itens
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Cadastrar item</a></li>
-              <li><a class="dropdown-item" href="#">Listar item</a></li>
-              <li><a class="dropdown-item" href="#">Editar item</a></li>
-              <li><a class="dropdown-item" href="#">Excluir item</a></li>
-            </ul>
-          </li>
-
-          <!-- Categorias -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-white" href="#" id="categoriasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Categorias
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Cadastrar categoria</a></li>
-              <li><a class="dropdown-item" href="#">Listar categorias</a></li>
-              <li><a class="dropdown-item" href="#">Editar categorias</a></li>
-              <li><a class="dropdown-item" href="#">Excluir categorias</a></li>
-            </ul>
-          </li>
-
-          <!-- Retiradas -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-white" href="#" id="retiradasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Retiradas
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Registrar retirada</a></li>
-              <li><a class="dropdown-item" href="#">Visualizar solicitações pendentes</a></li>
-              <li><a class="dropdown-item" href="#">Visualizar retiradas</a></li>
-            </ul>
-          </li>
-
-          <!-- Relatórios -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-white" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Relatórios
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Por categoria</a></li>
-              <li><a class="dropdown-item" href="#">Por produto</a></li>
-              <li><a class="dropdown-item" href="#">Por setor</a></li>
-              <li><a class="dropdown-item" href="#">Por servidor</a></li>
-              <li><a class="dropdown-item" href="#">Entradas</a></li>
-            </ul>
-          </li>
-
-          <!-- Alertas -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-white" href="#" id="alertasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Alertas
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Baixo estoque</a></li>
-              <li><a class="dropdown-item" href="#">Validade próxima</a></li>
-            </ul>
-          </li>
-
-        </ul>
-      </div>
+    <!-- Incluindo TODOS os modais do dashboardAlmoxarifado para evitar erros de referência no JS -->
+    {% include 'partials/modals/modal_cadastrar_item.html' %}
+    {% include 'partials/modals/modal_editar_item.html' %}
+    {% include 'partials/modals/modal_cadastrar_categoria.html' %}
+    {% include 'partials/modals/modal_editar_categoria.html' %}
+    {% include 'partials/modals/modal_ver_detalhes_retirada.html' %}
+    {% include 'partials/modals/modal_autorizar_retirada.html' %}
+    {% include 'partials/modals/modal_item_detalhes.html' %}
+    {% include 'partials/modals/modal_solicitar_retirada.html' %}
+    {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
+    {% include 'partials/modals/modal_concluir_retirada.html' %}
+    {% include 'partials/modals/modal_reports_dashboard.html' %}
+    {% include 'partials/modals/modal_report_quantidade_itens.html' %}
+    {% include 'partials/modals/modal_report_entrada_itens.html' %}
+    {% include 'partials/modals/modal_report_retiradas_setor.html' %}
+    {% include 'partials/modals/modal_report_retiradas_usuario.html' %}
+    <!-- O modal de importação de tabela também deve ser incluído se o JS o referenciar -->
+    <div class="modal fade" id="modalImportarTabelaItens" tabindex="-1" aria-labelledby="modalImportarTabelaItensLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="modalImportarTabelaItensLabel">Importar Tabela de Itens</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-importar-tabela-itens">
+                        <div class="mb-3">
+                            <label for="arquivoItens" class="form-label">Selecione o arquivo (.xlsx ou .csv)</label>
+                            <input class="form-control" type="file" id="arquivoItens" name="file" accept=".xlsx,.csv">
+                        </div>
+                    </form>
+                    <div id="import-feedback" class="mt-3" style="display:none;">
+                        <div class="alert" role="alert" id="import-alert"></div>
+                        <ul id="import-errors-list" class="list-group list-group-flush"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-enviar-tabela-itens">Enviar</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </nav>
 
-  <!-- Conteúdo da página -->
-  <div class="container mt-5">
-    <h2>Bem-vindo ao SiCA</h2>
-    <p>Escolha uma opção no menu acima para começar.</p>
-  </div>
 
-  <!-- Bootstrap JS offline -->
-  <script src="/static/js/bootstrap.bundle.min.js"></script>
-
+    <!-- Partial: scripts.html -->
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/logout.js"></script>
+    <script type="module" src="/static/js/estadoGlobal.js"></script>
+    <script type="module" src="/static/js/utils.js"></script>
+    <script type="module" src="/static/js/apiService.js"></script>
+    <script type="module" src="/static/js/dataService.js"></script>
+    <script type="module" src="/static/js/uiService.js"></script>
+    <script type="module" src="/static/js/solicitar-retirada.js"></script>
+    <script type="module" src="/static/js/selecionar-item-module.js"></script>
+    <script type="module" src="/static/js/historicoServidorModule.js"></script> <!-- NOVO -->
+    <script type="module" src="/static/js/main.js"></script>
 </body>
 </html>

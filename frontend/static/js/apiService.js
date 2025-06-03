@@ -10,8 +10,7 @@ class ApiService {
     }
 
     _getHeaders() {
-        // This method will now ONLY return the Authorization header.
-        // Content-Type will be handled conditionally in _fetch.
+
         return {
             'Authorization': `Bearer ${this.token}`
         };
@@ -20,17 +19,13 @@ class ApiService {
     async _fetch(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
         const requestHeaders = {
-            ...this._getHeaders(), // Start with Authorization header
-            ...options.headers // Merge any custom headers provided in options
+            ...this._getHeaders(), 
+            ...options.headers 
         };
 
-        // IMPORTANT: If the body is FormData, DO NOT set Content-Type.
-        // The browser will automatically set 'Content-Type: multipart/form-data'
-        // with the correct boundary. Manually setting it will break the upload.
         if (options.body instanceof FormData) {
-            delete requestHeaders['Content-Type']; // Ensure Content-Type is not set for FormData
+            delete requestHeaders['Content-Type']; 
         } else if (!requestHeaders['Content-Type']) {
-            // If Content-Type is not explicitly set and it's not FormData, default to application/json
             requestHeaders['Content-Type'] = 'application/json';
         }
 
@@ -44,7 +39,7 @@ class ApiService {
                 if (response.status === 204) {
                     return {};
                 }
-                const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido na resposta da API.' }));
+                const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido na resposta.' }));
                 throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
             }
 
@@ -86,7 +81,7 @@ class ApiService {
         });
     }
 
-    // Métodos específicos (mantidos do seu código original)
+    // Métodos específicos 
 
     async getUsuarioById(id) {
         try {
@@ -176,13 +171,13 @@ class ApiService {
         return this.get(`/itens/${itemId}`);
     }
 
-    // NOVO: Obter contagem de alertas não visualizados
+    //  Obter contagem de alertas não visualizados
     async getUnviewedAlertsCount() {
         try {
             const response = await this.get('/alertas/unviewed-count');
             return response.count;
         } catch (error) {
-            console.error('Erro ao buscar contagem de alertas não visualizados:', error);
+            console.error('Erro ao buscar contagem de alertas não visualizados', error);
             return 0;
         }
     }
@@ -192,11 +187,11 @@ class ApiService {
         try {
             await this.patch('/alertas/mark-viewed');
         } catch (error) {
-            console.error('Erro ao marcar alertas como visualizados:', error);
+            console.error('Erro ao marcar alertas como visualizados', error);
         }
     }
 
-    // NOVO: Método para upload de arquivo em massa
+    // Método para upload de arquivo em massa
     async uploadBulkItems(file) {
         const formData = new FormData();
         formData.append('file', file);
@@ -204,9 +199,19 @@ class ApiService {
         return this._fetch('/itens/upload-bulk/', {
             method: 'POST',
             body: formData,
-            // Headers for FormData are handled automatically by _fetch
-            // No need to explicitly set Content-Type here.
+
         });
+    }
+
+    //   Obter histórico de retiradas do usuário logado
+    async fetchUserRetiradasPaginated(page, pageSize) {
+        const responseData = await this.get(`/retiradas/minhas-retiradas/paginated`, { page, page_size: pageSize });
+        return {
+            current_page: responseData.page,
+            total_pages: responseData.pages,
+            total_items: responseData.total,
+            items: responseData.items
+        };
     }
 }
 

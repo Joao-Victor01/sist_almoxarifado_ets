@@ -10,6 +10,9 @@ import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert
 // Import uiService
 import { uiService } from './uiService.js'; // Esta importação é crucial
 
+// NOVO: Importar o módulo do histórico do servidor
+import { historicoServidorModule } from './historicoServidorModule.js';
+
 const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3';
 const NOTIFICATION_SOUND_PATH_RETIRADA = '/static/audio/notificacao02.mp3';
 
@@ -29,6 +32,7 @@ const mainContent = document.getElementById('main-content');
 let defaultHTML = mainContent ? mainContent.innerHTML : ''; // Armazena o conteúdo inicial
 
 document.addEventListener('DOMContentLoaded', () => {
+
     const homeButton = document.getElementById('home-button');
     if (homeButton && mainContent) {
         homeButton.addEventListener('click', e => {
@@ -67,17 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const modalCadastrarCategoriaEl = document.getElementById('modalCadastrarCategoria');
         if (modalCadastrarCategoriaEl) {
-            const modalCat = new bootstrap.Modal(modalCadastrarCategoriaEl);
+            const modalcat = new bootstrap.Modal(modalCadastrarCategoriaEl);
             document.getElementById('btn-open-cadastrar-categoria')?.addEventListener('click', e => {
                 e.preventDefault();
-                modalCat.show();
+                modalcat.show();
             });
         }
 
         document.getElementById('listar-categoria-link')?.addEventListener('click', e => {
             e.preventDefault();
             if (typeof window.renderizarCategorias === 'function') window.renderizarCategorias();
-            else console.warn("Função global renderizarCategorias não encontrada. Verifique se listar-categorias.js está carregado.");
+            else console.warn("Função global 'renderizarCategorias' não encontrada. Verifique se listar-categorias.js está carregado.");
         });
 
         document.getElementById('listar-categoria-link-quick')?.addEventListener('click', e => {
@@ -143,8 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             try {
                 // Adiciona um log para depuração
-                console.log('uiService no click do botão:', uiService);
-
+                console.log('uiService no click do botão', uiService);
                 const modalImportarTabela = uiService.getModalInstance('modalImportarTabelaItens');
                 // Limpa o formulário e feedback de importação antes de abrir
                 document.getElementById('form-importar-tabela-itens').reset();
@@ -152,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('import-alert').className = 'alert'; // Reseta a classe
                 document.getElementById('import-alert').textContent = '';
                 document.getElementById('import-errors-list').innerHTML = '';
-
                 modalImportarTabela.show();
             } catch (error) {
                 // Captura qualquer ReferenceError ou outro erro ao acessar uiService
@@ -180,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const file = fileInput.files[0];
+
             uiService.showLoading();
             importFeedback.style.display = 'block';
             importAlert.className = 'alert'; // Reseta a classe
@@ -188,8 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const result = await apiService.uploadBulkItems(file);
+
                 importAlert.classList.add('alert-success');
-                importAlert.textContent = `Processamento concluído: ${result.total_items_processed} itens processados. ${result.items_created} criados, ${result.items_updated} atualizados.`;
+                importAlert.textContent = `Processamento concluído: ${result.total_items_processed} itens processados.`;
 
                 if (result.errors && result.errors.length > 0) {
                     importAlert.classList.remove('alert-success');
@@ -202,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         importErrorsList.appendChild(li);
                     });
                 }
+
                 // Re-renderiza a lista de itens após o upload em massa
                 if (typeof window.renderizarListItens === 'function') {
                     window.renderizarListItens();
@@ -210,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 importAlert.classList.add('alert-danger');
                 importAlert.textContent = `Erro ao importar tabela: ${error.message || 'Erro desconhecido.'}`;
-                console.error('Erro no upload em massa:', error);
+                console.error('Erro no upload em massa', error);
             } finally {
                 uiService.hideLoading();
             }
@@ -225,11 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função para verificar alertas e solicitações de retirada (agora chamada inicialmente e via WebSoc
+    // Função para verificar alertas e solicitações de retirada (agora chamada inicialmente e via WebSocket)
     async function checkAlertsNotification() {
         try {
             const alertsCount = await apiService.getUnviewedAlertsCount();
-
             // Futuramente, você pode ter um endpoint para contar novas solicitações de retirada
             // Por enquanto, o flag será definido apenas pelo WebSocket
 
@@ -241,8 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 setNewAlertsFlag(false);
             }
 
-            // O setNewWithdrawalRequestsFlag será chamado pelo WebSocket ao receber a notificação
-            updateNotificationBellUI(); // Garante que o sino seja atualizado com base em ambos os
+            // setNewWithdrawalRequestsFlag será chamado pelo WebSocket ao receber a notificação
+            updateNotificationBellUI(); // Garante que o sino seja atualizado com base em ambos os flags
         } catch (error) {
             console.error('checkAlertsNotification: Erro ao verificar notificações:', error);
             setNewAlertsFlag(false);
@@ -275,11 +279,24 @@ document.addEventListener('DOMContentLoaded', () => {
         btnConfirmarNegar.addEventListener('click', retiradasModule._handleAuthorizeDeny.bind(retiradasModule, 'NEGADA'));
     }
 
+    // NOVO: Listeners para o dashboard do Servidor
+    document.getElementById('solicitar-retirada-servidor-link')?.addEventListener('click', e => {
+        e.preventDefault();
+        solicitarRetiradaModule.openModal();
+    });
+
+    document.getElementById('historico-retiradas-servidor-link')?.addEventListener('click', e => {
+        e.preventDefault();
+        historicoServidorModule.renderMinhasRetiradas();
+    });
+
+
     // Inicializar os módulos
     solicitarRetiradaModule.init();
     selecionarItemModule.init();
     reportsModule.init();
     alertasModule.init();
+    historicoServidorModule.init(); // NOVO: Inicializar o módulo do histórico do servidor
 
     // Iniciar a verificação inicial de alertas (ao carregar a página)
     checkAlertsNotification();
@@ -341,6 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Chama a função para conectar ao WebSocket quando o DOM estiver pronto
     connectAlertsWebSocket();
 
-    // Re-inicializa os dropdowns do Bootstrap uma vez que o DOM está pronto e todos os scripts foram ca
+    // Re-inicializa os dropdowns do Bootstrap uma vez que o DOM está pronto e todos os scripts foram carregados
     reinitializeBootstrapDropdowns();
 });
