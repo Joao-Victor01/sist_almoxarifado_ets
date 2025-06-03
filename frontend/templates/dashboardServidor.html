@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SiCA - Sistema de Controle de Almoxarifado</title>
+    <title>Sistema de Controle de Almoxarifado Dashboard Servidor</title>
     <!-- Bootstrap CSS offline -->
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
@@ -12,59 +12,9 @@
 </head>
 <body>
 
-    <!-- Partial: topbar.html -->
+    <!-- navbar e topbar -->
     {% include 'partials/topbar.html' %}
-
-    <!-- Partial: navbar.html -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
-        <div class="container-fluid">
-            <button class="btn btn-outline-light me-3" id="home-button"><i class="bi bi-house-fill"></i></button>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
-                aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarMenu">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="solicitar-retirada-servidor-link" >
-                            SOLICITAR RETIRADA DE ITENS
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="historico-retiradas-servidor-link" >
-                            MEU HISTÓRICO DE RETIRADAS
-                        </a>
-                    </li>
-                    
-                </ul>
-                <div class="d-flex align-items-center">
-                    <div class="dropdown">
-                        <a class="nav-link position-relative me-3" href="#" id="alert-notification-bell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-bell-fill fs-5"></i>
-                        </a>
-                        <span id="notification-dot" class="notification-dot position-absolute">
-                            <span class="visually-hidden">Novas notificações</span>
-                        </span>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="alert-notification-bell">
-                            <li><span class="dropdown-item text-muted" id="no-notifications-menu-item" style="display: none;">Sem novas notificações</span></li>
-                            <li><a class="dropdown-item" href="#" id="new-withdrawal-requests-menu-item" style="display: none;">Novas Solicitações de Retirada</a></li>
-                            <li><a class="dropdown-item" href="#" id="new-alerts-menu-item" style="display: none;">Novos Alertas</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                            <li><a class="dropdown-item" href="#" id="logout-link">Sair</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    {% include 'partials/navbar_servidor.html' %}    
 
     <!-- Conteúdo principal dinâmico -->
     <div class="container mt-5" id="main-content">
@@ -81,7 +31,6 @@
     {% include 'partials/modals/modal_item_detalhes.html' %}
     {% include 'partials/modals/modal_solicitar_retirada.html' %}
     {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
-
 
     <!-- Partial: scripts.html -->
     <script src="/static/js/bootstrap.bundle.min.js"></script>
