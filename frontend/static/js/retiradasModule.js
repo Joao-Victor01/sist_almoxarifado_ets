@@ -30,7 +30,7 @@ class RetiradasModule {
         try {
             const data = await dataService.getProcessedRetiradas(apiService.fetchAllRetiradas.bind(apiService), page, pageSize, filters);
             estadoGlobal.setHistoricoPagination(data.current_page, data.total_pages, pageSize, filters);
-            estadoGlobal.setAllRetiradas(data.items); // Isso atualiza as retiradas para o histórico
+            estadoGlobal.setAllRetiradas(data.items);
 
             const filterFormHtml = this._getHistoricoFilterFormHtml(filters);
 
@@ -45,19 +45,26 @@ class RetiradasModule {
                     getStatusText(r.status)
                 ],
                 actionsHtml: (r) => {
+                    // Container flex para empilhar em telas pequenas e garantir btn-acoes
                     let actions = `
-                        <button class="btn btn-sm btn-primary btn-detalhes-retirada" data-id="${r.retirada_id}">
-                            <i class="bi bi-eye"></i> Detalhes
-                        </button>
-                    `;
-                    // Adicionar botão de "Concluir" SOMENTE se o status for AUTORIZADA
+                    <div class="d-flex flex-wrap justify-content-center gap-1">
+                      <button 
+                        class="btn btn-sm btn-primary btn-acoes btn-detalhes-retirada" 
+                        data-id="${r.retirada_id}"
+                      >
+                        <i class="bi bi-eye"></i> Detalhes
+                      </button>`;
                     if (r.status === estadoGlobal.statusMapUpdate.AUTORIZADA) {
                         actions += `
-                            <button class="btn btn-sm btn-success btn-concluir-retirada-trigger ms-2" data-id="${r.retirada_id}">
-                                <i class="bi bi-check-circle"></i> Concluir Retirada
-                            </button>
-                        `;
+                      <button 
+                        class="btn btn-sm btn-success btn-acoes btn-concluir-retirada-trigger" 
+                        data-id="${r.retirada_id}"
+                      >
+                        <i class="bi bi-check-circle"></i> Concluir Retirada
+                      </button>`;
                     }
+                    actions += `
+                    </div>`;
                     return actions;
                 }
             });
@@ -80,9 +87,8 @@ class RetiradasModule {
             `);
 
             this._bindHistoricoEvents();
-            this._bindCommonRetiradaActions(); // Mantenha esta chamada
-            this._bindConcluirRetiradaEvents(); // NOVO: Bind para o modal de conclusão
-
+            this._bindCommonRetiradaActions();
+            this._bindConcluirRetiradaEvents();
         } catch (error) {
             console.error("Erro ao renderizar histórico de retiradas:", error);
             showAlert(error.message || 'Ocorreu um erro ao carregar o histórico de retiradas.', 'danger');
@@ -96,7 +102,7 @@ class RetiradasModule {
         try {
             const data = await dataService.getProcessedRetiradas(apiService.fetchRetiradasPendentes.bind(apiService), page, pageSize);
             estadoGlobal.setPendentesPagination(data.current_page, data.total_pages, pageSize);
-            estadoGlobal.setPendentesRetiradas(data.items); // Isso atualiza as retiradas pendentes
+            estadoGlobal.setPendentesRetiradas(data.items);
 
             const tableHeaders = ['ID', 'Usuário', 'Setor', 'Data', 'Ações'];
 
@@ -109,12 +115,20 @@ class RetiradasModule {
                     new Date(r.data_solicitacao).toLocaleDateString('pt-BR')
                 ],
                 actionsHtml: (r) => `
-                    <button class="btn btn-sm btn-success btn-autorizar-retirada-trigger" data-id="${r.retirada_id}">
+                    <div class="d-flex flex-wrap justify-content-center gap-1">
+                      <button 
+                        class="btn btn-sm btn-success btn-acoes btn-autorizar-retirada-trigger" 
+                        data-id="${r.retirada_id}"
+                      >
                         <i class="bi bi-check-circle"></i> Autorizar/Negar
-                    </button>
-                    <button class="btn btn-sm btn-info btn-detalhes-retirada" data-id="${r.retirada_id}">
+                      </button>
+                      <button 
+                        class="btn btn-sm btn-info btn-acoes btn-detalhes-retirada" 
+                        data-id="${r.retirada_id}"
+                      >
                         <i class="bi bi-eye"></i> Ver detalhes
-                    </button>
+                      </button>
+                    </div>
                 `
             });
 
@@ -143,22 +157,19 @@ class RetiradasModule {
 
     // NOVO: Lógica para o modal de Concluir Retirada
     _bindConcluirRetiradaEvents() {
-        // Delegate event for "Concluir Retirada" buttons
         document.querySelectorAll('.btn-concluir-retirada-trigger').forEach(btn => {
             btn.onclick = () => {
                 const id = parseInt(btn.dataset.id);
-                // Encontra a retirada na lista de todas as retiradas
                 const retirada = estadoGlobal.allRetiradas.find(r => r.retirada_id === id);
                 if (retirada) {
-                    uiService.fillModalConcluir(retirada); // Preenche o novo modal
-                    this.modalConcluirRetirada.show(); // Abre o novo modal
+                    uiService.fillModalConcluir(retirada);
+                    this.modalConcluirRetirada.show();
                 } else {
                     showAlert('Retirada não encontrada para conclusão.', 'warning');
                 }
             };
         });
 
-        // Evento para o botão de confirmação dentro do modal de conclusão
         if (this.btnConfirmarConcluirRetirada) {
             this.btnConfirmarConcluirRetirada.onclick = () => {
                 const retiradaId = parseInt(this.concluirRetiradaIdInput.value);
@@ -170,47 +181,43 @@ class RetiradasModule {
 
     _getHistoricoFilterFormHtml(currentFilters) {
         return `
-            <form id="form-filter-historico">
-                <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
-                    <div class="flex-grow-1">
-                        <label for="filterStatus" class="form-label">Status</label>
-                        <select class="form-select" id="filterStatus">
-                            <option value="">Todos</option>
-                            <option value="PENDENTE" ${currentFilters.status === estadoGlobal.statusMapUpdate.PENDENTE ? 'selected' : ''}>PENDENTE</option>
-                            <option value="AUTORIZADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.AUTORIZADA ? 'selected' : ''}>AUTORIZADA</option>
-                            <option value="CONCLUIDA" ${currentFilters.status === estadoGlobal.statusMapUpdate.CONCLUIDA ? 'selected' : ''}>CONCLUÍDA</option>
-                            <option value="NEGADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.NEGADA ? 'selected' : ''}>NEGADA</option>
-                        </select>
-                    </div>
-                    <div class="flex-grow-1">
-                        <label for="filterSolicitante" class="form-label">Solicitante</label>
-                        <input type="text" class="form-control" id="filterSolicitante" value="${currentFilters.solicitante || ''}">
-                    </div>
-                    <div class="flex-grow-1">
-                        <label for="filterStartDate" class="form-label">Data Inicial</label>
-                        <input type="date" class="form-control" id="filterStartDate" value="${currentFilters.start_date || ''}">
-                    </div>
-                    <div class="flex-grow-1">
-                        <label for="filterEndDate" class="form-label">Data Final</label>
-                        <input type="date" class="form-control" id="filterEndDate" value="${currentFilters.end_date || ''}">
-                    </div>
-                    <div class="d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary" id="btn-search-historico">Buscar</button>
-                        <button type="button" class="btn btn-secondary" id="btn-clear-filters">Limpar Filtros</button>
-                    </div>
-                </div>
+            <form id="form-filter-historico" class="row g-3 mb-0">
+              <div class="col-12 col-md">
+                <label for="filterStatus" class="form-label">Status</label>
+                <select class="form-select" id="filterStatus">
+                  <option value="">Todos</option>
+                  <option value="PENDENTE" ${currentFilters.status === estadoGlobal.statusMapUpdate.PENDENTE ? 'selected' : ''}>PENDENTE</option>
+                  <option value="AUTORIZADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.AUTORIZADA ? 'selected' : ''}>AUTORIZADA</option>
+                  <option value="CONCLUIDA" ${currentFilters.status === estadoGlobal.statusMapUpdate.CONCLUIDA ? 'selected' : ''}>CONCLUÍDA</option>
+                  <option value="NEGADA" ${currentFilters.status === estadoGlobal.statusMapUpdate.NEGADA ? 'selected' : ''}>NEGADA</option>
+                </select>
+              </div>
+              <div class="col-12 col-md">
+                <label for="filterSolicitante" class="form-label">Solicitante</label>
+                <input type="text" class="form-control" id="filterSolicitante" value="${currentFilters.solicitante || ''}">
+              </div>
+              <div class="col-12 col-md">
+                <label for="filterStartDate" class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="filterStartDate" value="${currentFilters.start_date || ''}">
+              </div>
+              <div class="col-12 col-md">
+                <label for="filterEndDate" class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="filterEndDate" value="${currentFilters.end_date || ''}">
+              </div>
+              <div class="col-12 col-md d-flex justify-content-end align-items-end">
+                <button type="submit" class="btn btn-primary me-2" id="btn-search-historico">Buscar</button>
+                <button type="button" class="btn btn-secondary" id="btn-clear-filters">Limpar Filtros</button>
+              </div>
             </form>
         `;
     }
 
     _bindHistoricoEvents() {
-        // Get the specific pagination nav element and the form
         const historicoPaginationNav = document.getElementById('historico-pagination-nav');
         const formFilter = document.getElementById('form-filter-historico');
         const pageSizeSelect = document.getElementById(this.historicoPageSizeSelectId);
         const btnClearFilters = document.getElementById('btn-clear-filters');
 
-        // Remove previous listeners to avoid duplicates
         if (historicoPaginationNav) {
             historicoPaginationNav.removeEventListener('click', this._boundHandleHistoricoPaginationClick);
         }
@@ -224,7 +231,6 @@ class RetiradasModule {
             btnClearFilters.removeEventListener('click', this._boundHandleHistoricoClearFilters);
         }
 
-        // Add new listeners
         if (historicoPaginationNav) {
             historicoPaginationNav.addEventListener('click', this._boundHandleHistoricoPaginationClick);
         }
@@ -241,7 +247,6 @@ class RetiradasModule {
 
     async _handleHistoricoFilterSubmit(e) {
         e.preventDefault();
-        console.log("Filtro de histórico submetido!"); // Debug
         const selectedStatusString = document.getElementById('filterStatus').value;
         const statusInt = selectedStatusString ? estadoGlobal.statusMapUpdate[selectedStatusString] : null;
         const filters = {
@@ -250,12 +255,10 @@ class RetiradasModule {
             start_date: document.getElementById('filterStartDate').value,
             end_date: document.getElementById('filterEndDate').value,
         };
-        console.log("Filtros aplicados:", filters); // Debug
         this.renderHistoricoRetiradas(1, filters, estadoGlobal.currentHistoricoPageSize);
     }
 
     _handleHistoricoClearFilters() {
-        console.log("Limpar filtros de histórico clicado!"); // Debug
         document.getElementById('filterStatus').value = '';
         document.getElementById('filterSolicitante').value = '';
         document.getElementById('filterStartDate').value = '';
@@ -265,12 +268,10 @@ class RetiradasModule {
 
     _handleHistoricoPaginationClick(e) {
         e.preventDefault();
-        // Look for links with data-page starting with 'historico-'
         const clickedPageLink = e.target.closest('a[data-page^="historico-"]');
         const clickedActionButton = e.target.closest('a[data-action^="historico-"]');
 
         if (clickedPageLink) {
-            // Extract the page number from the data-page attribute (e.g., "historico-4" -> "4")
             const pageValue = clickedPageLink.dataset.page.split('-')[1];
             const newPage = parseInt(pageValue);
             if (!isNaN(newPage) && newPage !== estadoGlobal.currentHistoricoPage) {
@@ -283,10 +284,10 @@ class RetiradasModule {
             const action = clickedActionButton.dataset.action;
             let newPage = estadoGlobal.currentHistoricoPage;
 
-            if (action === 'historico-prev') {
-                if (newPage > 1) newPage--;
-            } else if (action === 'historico-next') {
-                if (newPage < estadoGlobal.totalHistoricoPages) newPage++;
+            if (action === 'historico-prev' && newPage > 1) {
+                newPage--;
+            } else if (action === 'historico-next' && newPage < estadoGlobal.totalHistoricoPages) {
+                newPage++;
             }
 
             if (newPage !== estadoGlobal.currentHistoricoPage) {
@@ -309,20 +310,17 @@ class RetiradasModule {
 
         if (!pendentesPaginationNav) return;
 
-        // Remove previous listeners to prevent duplicates
-        pendentesPaginationNav.removeEventListener('click', this._boundHandlePendentesPaginationClick); // Assuming you'd have a bound handler for pendentes
+        pendentesPaginationNav.removeEventListener('click', this._boundHandlePendentesPaginationClick);
         if (pageSizeSelect) {
-            pageSizeSelect.removeEventListener('change', this._boundHandlePendentesPageSizeChange); // Assuming you'd have a bound handler for pendentes
+            pageSizeSelect.removeEventListener('change', this._boundHandlePendentesPageSizeChange);
         }
 
-        // Add new listeners
         pendentesPaginationNav.addEventListener('click', this._boundHandlePendentesPaginationClick);
         if (pageSizeSelect) {
             pageSizeSelect.addEventListener('change', this._boundHandlePendentesPageSizeChange);
         }
     }
 
-    // New bound handler for pendentes pagination clicks
     _boundHandlePendentesPaginationClick = (e) => {
         e.preventDefault();
         const clickedPageLink = e.target.closest('a[data-page^="pendentes-"]');
@@ -341,10 +339,10 @@ class RetiradasModule {
             const action = clickedActionButton.dataset.action;
             let newPage = estadoGlobal.currentPendentesPage;
 
-            if (action === 'pendentes-prev') {
-                if (newPage > 1) newPage--;
-            } else if (action === 'pendentes-next') {
-                if (newPage < estadoGlobal.totalPendentesPages) newPage++;
+            if (action === 'pendentes-prev' && newPage > 1) {
+                newPage--;
+            } else if (action === 'pendentes-next' && newPage < estadoGlobal.totalPendentesPages) {
+                newPage++;
             }
 
             if (newPage !== estadoGlobal.currentPendentesPage) {
@@ -354,7 +352,6 @@ class RetiradasModule {
         }
     }
 
-    // New bound handler for pendentes page size changes
     _boundHandlePendentesPageSizeChange = (e) => {
         if (e.target.id === this.pendentesPageSizeSelectId) {
             const newPageSize = parseInt(e.target.value);
@@ -362,9 +359,7 @@ class RetiradasModule {
         }
     }
 
-
     _bindCommonRetiradaActions() {
-        // Remove previous listeners to avoid duplicates for common actions
         document.querySelectorAll('.btn-detalhes-retirada').forEach(btn => {
             btn.removeEventListener('click', this._boundHandleDetalhesRetiradaClick);
         });
@@ -372,7 +367,6 @@ class RetiradasModule {
             btn.removeEventListener('click', this._boundHandleAutorizarRetiradaClick);
         });
 
-        // Add new listeners for common actions
         document.querySelectorAll('.btn-detalhes-retirada').forEach(btn => {
             btn.addEventListener('click', this._boundHandleDetalhesRetiradaClick);
         });
@@ -382,7 +376,6 @@ class RetiradasModule {
         });
     }
 
-    // Bound handler for detalhes retirada button
     _boundHandleDetalhesRetiradaClick = (e) => {
         const id = parseInt(e.currentTarget.dataset.id);
         const retirada = [...estadoGlobal.allRetiradas, ...estadoGlobal.pendentesRetiradas].find(r => r.retirada_id === id);
@@ -394,7 +387,6 @@ class RetiradasModule {
         }
     }
 
-    // Bound handler for autorizar retirada button
     _boundHandleAutorizarRetiradaClick = (e) => {
         const id = parseInt(e.currentTarget.dataset.id);
         const retirada = estadoGlobal.pendentesRetiradas.find(x => x.retirada_id === id);
@@ -428,15 +420,12 @@ class RetiradasModule {
         }
     }
 
-    // NOVO: Função para lidar com a conclusão de uma retirada
     async _handleConcluirRetirada(retiradaId, detalhe) {
         uiService.showLoading();
         try {
             await apiService.updateRetiradaStatus(retiradaId, estadoGlobal.statusMapUpdate.CONCLUIDA, detalhe);
             showAlert('Retirada marcada como "Concluída" com sucesso! Estoque decrementado.', 'success');
-            this.modalConcluirRetirada.hide(); // Fecha o modal de conclusão
-
-            // Recarrega a tela de histórico para refletir a mudança de status
+            this.modalConcluirRetirada.hide();
             this.renderHistoricoRetiradas(estadoGlobal.currentHistoricoPage, estadoGlobal.currentHistoricoFilters, estadoGlobal.currentHistoricoPageSize);
         } catch (error) {
             console.error("Erro ao concluir retirada", error);
