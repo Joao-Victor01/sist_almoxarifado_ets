@@ -9,7 +9,7 @@ from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus, RetiradaPaginated, RetiradaFilterParams
 from services.alerta_service import AlertaService
-from utils.websocket_endpoints import manager # Importar o manager
+from utils.websocket_endpoints import manager 
 
 class RetiradaService:
 
@@ -20,10 +20,8 @@ class RetiradaService:
         total = await RetiradaRepository.count_retiradas(db)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
-
         sqlalchemy_items = await RetiradaRepository.get_retiradas_paginated(db, offset, page_size)
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
-
         return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
@@ -36,12 +34,10 @@ class RetiradaService:
         total = await RetiradaRepository.count_retiradas_filter(db, params)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
-
         sqlalchemy_items = await RetiradaRepository.filter_retiradas_paginated(
             db, params, offset, page_size
         )
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
-
         return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
@@ -80,11 +76,10 @@ class RetiradaService:
             await manager.broadcast({
                 "type": "new_withdrawal_request",
                 "retirada_id": retirada_completa.retirada_id,
-                "message": f"Nova solicitação de retirada do setor {retirada_completa.setor_id} - ID: {retirada_completa.retirada_id}"
+                "message": f"Nova solicitação de retirada do setor {retirada_completa.setor_id} ID: {retirada_completa.retirada_id}"
             })
 
             return retirada_completa
-
         except Exception as e:
             await db.rollback()
             raise HTTPException(
@@ -99,7 +94,6 @@ class RetiradaService:
                 raise HTTPException(400, "Status inválido.")
 
             retirada = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
-
             if not retirada:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, "Retirada não encontrada")
 
@@ -107,14 +101,23 @@ class RetiradaService:
             if status_data.status == StatusEnum.CONCLUIDA:
                 for ri in retirada.itens:
                     item = await RetiradaRepository.buscar_item_por_id(db, ri.item_id)
+
+                    # Lógica para permitir retirada mesmo abaixo do mínimo, mas não abaixo de 0
                     if item.quantidade_item < ri.quantidade_retirada:
                         raise HTTPException(
                             status.HTTP_400_BAD_REQUEST,
                             f"Estoque insuficiente para item {ri.item_id}"
                         )
+
                     await RetiradaRepository.atualizar_quantidade_item(
                         db, item, item.quantidade_item - ri.quantidade_retirada
                     )
+
+                    # NOVO: Se a quantidade do item chegar a 0, marcar como inativo (soft delete)
+                    if item.quantidade_item == 0:
+                        item.ativo = False # Marca o item como inativo
+                        await db.flush() # Garante que a mudança seja persistida antes do commit
+
                     await AlertaService.verificar_estoque_baixo(db, ri.item_id)
 
             retirada.status = status_data.status
@@ -141,19 +144,17 @@ class RetiradaService:
         total = await RetiradaRepository.count_retiradas_pendentes(db)
         pages = (total + page_size - 1) // page_size
         offset = (page - 1) * page_size
-
         sqlalchemy_items = await RetiradaRepository.get_retiradas_pendentes_paginated(db, offset, page_size)
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
-
         return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
     async def get_all_retiradas(db: AsyncSession):
         try:
-            allr = await RetiradaRepository.get_retiradas(db)
-            if not allr:
+            all_r = await RetiradaRepository.get_retiradas(db)
+            if not all_r:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, "Não há retiradas")
-            return allr
+            return all_r
         except Exception as e:
             raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro: {e}")
 

@@ -18,8 +18,8 @@ from schemas.item import (
     BulkItemUploadResult,
 )
 
-
 class ItemService:
+
     @staticmethod
     async def create_item(db: AsyncSession, item_data: ItemCreate, current_user):
         # 1) Valida campos obrigatórios
@@ -36,13 +36,13 @@ class ItemService:
                 "nome_item_original": nome_original,
                 "nome_item": nome_normalizado,
                 "auditoria_usuario_id": current_user.usuario_id,
-                # Se não vier data_entrada_item, usa agora
-                "data_entrada_item": dados.get("data_entrada_item") or datetime.now(),
             }
         )
+        # Se não vier data_entrada_item, usa agora
+        dados["data_entrada_item"] = dados.get("data_entrada_item") or datetime.now()
 
         try:
-            # 4) Verifica duplicata
+            # 4) Verifica duplicata (incluindo itens inativos para reativação)
             existing = await ItemFinder.find_exact_match(
                 db,
                 nome_normalizado,
@@ -50,13 +50,13 @@ class ItemService:
                 dados["categoria_id"],
                 dados.get("marca_item"),
             )
+
             if existing:
-                # Se existir duplicado, incrementa quantidade
+                # Se existir duplicado, incrementa quantidade e reativa se necessário
                 return await ItemService._increment_existing_item(db, existing, item_data)
 
             # 5) Se não, cria via repositório
-            from models.item import Item
-
+            from models.item import Item # Importação local para evitar circular
             novo = Item(**dados)
             return await ItemRepository.create(db, novo)
 
@@ -75,10 +75,11 @@ class ItemService:
     async def _increment_existing_item(db: AsyncSession, existing, item_data: ItemCreate):
         """
         Incrementa apenas a quantidade (e atualiza campos opcionais)
-        sem criar novo registro.
+        sem criar novo registro. Reativa o item se ele estava inativo.
         """
         existing.quantidade_item += item_data.quantidade_item
         existing.data_entrada_item = item_data.data_entrada_item or datetime.now()
+
         # Atualiza campos opcionais, se vierem
         if item_data.data_validade_item:
             existing.data_validade_item = item_data.data_validade_item
@@ -86,6 +87,10 @@ class ItemService:
             existing.quantidade_minima_item = item_data.quantidade_minima_item
         if item_data.marca_item:
             existing.marca_item = item_data.marca_item
+
+        # NOVO: Se o item estava inativo e sua quantidade foi incrementada, reativá-lo
+        if not existing.ativo:
+            existing.ativo = True
 
         existing.auditoria_usuario_id = (
             item_data.auditoria_usuario_id
@@ -122,6 +127,7 @@ class ItemService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Item não encontrado"
             )
+        # O ItemRepository.delete já realiza o soft delete (seta ativo=False)
         await ItemRepository.delete(db, item)
         return {"message": "Item deletado com sucesso"}
 
@@ -129,7 +135,7 @@ class ItemService:
     async def update_item(
         db: AsyncSession, item_id: int, data: ItemUpdate, current_user
     ):
-        # 1) Busca o item
+        # 1) Busca o item (get_by_id já filtra por ativo=True)
         item = await ItemRepository.get_by_id(db, item_id)
         if not item:
             raise HTTPException(
@@ -139,14 +145,14 @@ class ItemService:
         # 2) Valida campos que vieram
         ItemValidator.validate_on_update(data)
 
-        # 3) Se vier nome_item, normaliza
+        # 3) Se vier nome item, normaliza
         valores = data.model_dump(exclude_unset=True)
         if "nome_item" in valores:
             nome_original = valores["nome_item"].strip()
             valores["nome_item_original"] = nome_original
             valores["nome_item"] = normalize_name(nome_original)
 
-        # 4) Verificar duplicata com novos valores
+        # 4) Verificar duplicata com novos valores (inclui inativos)
         novo_nome = valores.get("nome_item", item.nome_item)
         nova_marca = valores.get("marca_item", item.marca_item)
         nova_validade = valores.get("data_validade_item", item.data_validade_item)
@@ -155,23 +161,39 @@ class ItemService:
         existing = await ItemFinder.find_exact_match(
             db, novo_nome, nova_validade, nova_categoria, nova_marca
         )
+
+        # 5a) Merging: se encontrou uma duplicata diferente do item atual
         if existing and existing.item_id != item.item_id:
-            # 5a) Merging: transfere quantidade para existing e deleta original
+            # Transfere quantidade para o item existente (duplicata)
             existing.quantidade_item += item.quantidade_item
-            # Atualiza apenas campos que vieram
-            for campo in ["quantidade_minima_item", "data_validade_item", "marca_item"]:
+            # NOVO: Reativa o item existente se ele estava inativo
+            if not existing.ativo:
+                existing.ativo = True
+
+            # Atualiza apenas campos opcionais do item existente, se vierem
+            for campo in ["quantidade_minima_item", "data_validade_item", "marca_item", "unidade_medida_item", "descricao_item"]:
                 if campo in valores:
                     setattr(existing, campo, valores[campo])
+
             existing.auditoria_usuario_id = current_user.usuario_id
-            await db.delete(item)
+
+            # O item original (item_id) é soft-deletado
+            await ItemRepository.delete(db, item) # Já seta item.ativo = False
             await db.commit()
             await db.refresh(existing)
             return existing
-
-        # 5b) Senão, faz atualização pontual
+        # 5b) Senão, faz atualização pontual no próprio item
         for key, valor in valores.items():
             setattr(item, key, valor)
+
+        # NOVO: Lógica para reativar o item se a quantidade for > 0 ou se 'ativo' for explicitamente True
+        if 'quantidade_item' in valores and valores['quantidade_item'] > 0 and not item.ativo:
+            item.ativo = True
+        elif 'ativo' in valores: # Permite definir o status ativo/inativo explicitamente
+            item.ativo = valores['ativo']
+        
         item.auditoria_usuario_id = current_user.usuario_id
+
         await db.commit()
         await db.refresh(item)
         return item
@@ -188,11 +210,14 @@ class ItemService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="page deve ser >= 1"
             )
-        total = await ItemRepository.count(db)
+
+        total = await ItemRepository.count(db) # Já conta apenas itens ativos
         offset = (page - 1) * size
-        itens = await ItemRepository.get_paginated(db, offset, size)
+        itens = await ItemRepository.get_paginated(db, offset, size) # Já lista apenas itens ativos
+
         items_out = [ItemOut.model_validate(i) for i in itens]
         total_pages = (total // size) + (1 if total % size else 0)
+
         return PaginatedItems(
             page=page, size=size, total=total, total_pages=total_pages, items=items_out
         )
@@ -220,13 +245,15 @@ class ItemService:
                 db, nome_categoria_norm
             )
 
-        total = await ItemRepository.count_filtered(db, categoria_ids, nome_norm)
+        total = await ItemRepository.count_filtered(db, categoria_ids, nome_norm) # Já conta apenas itens ativos
         offset = (page - 1) * size
-        itens = await ItemRepository.get_filtered_paginated(
+        itens = await ItemRepository.get_filtered_paginated( # Já lista apenas itens ativos
             db, categoria_ids, nome_norm, offset, size
         )
+
         items_out = [ItemOut.model_validate(i) for i in itens]
         total_pages = (total // size) + (1 if total % size else 0)
+
         return PaginatedItems(
             page=page, size=size, total=total, total_pages=total_pages, items=items_out
         )
@@ -248,5 +275,5 @@ class ItemService:
             )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao criar/atualizar o item. Verifique os dados e tente novamente.",
+            detail="Erro ao criar/atualizar o item. Verifique os dados e tente novamente."
         )

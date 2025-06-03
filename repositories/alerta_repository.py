@@ -1,4 +1,4 @@
-#repositories\alerta_repository.py
+# repositories/alerta_repository.py
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,19 +11,19 @@ from datetime import datetime
 class AlertaRepository:
 
     @staticmethod
-    async def alerta_ja_existe (db, tipo_alerta: int, item_id: int) -> bool:
+    async def alerta_ja_existe(db, tipo_alerta: int, item_id: int) -> bool:
         result = await db.execute(
-            select (Alerta).where(
+            select(Alerta).where(
                 Alerta.tipo_alerta == tipo_alerta,
                 Alerta.item_id == item_id,
-                #Alerta não visualizado OU alerta marcado para não ignorar
+                # Alerta não visualizado OU alerta marcado para não ignorar
                 (Alerta.visualizado == False) | (Alerta.ignorar_novos == False)
             )
         )
         return result.scalars().first() is not None
 
     @staticmethod
-    async def create_alerta (db: AsyncSession, alerta_data: AlertaBase):
+    async def create_alerta(db: AsyncSession, alerta_data: AlertaBase):
         novo_alerta = Alerta(
             tipo_alerta=alerta_data.tipo_alerta,
             item_id=alerta_data.item_id,
@@ -35,7 +35,7 @@ class AlertaRepository:
         return novo_alerta
 
     @staticmethod
-    async def get_alertas (db: AsyncSession):
+    async def get_alertas(db: AsyncSession):
         result = await db.execute(select(Alerta))
         alertas = result.scalars().all()
         return alertas
@@ -48,17 +48,18 @@ class AlertaRepository:
     @staticmethod
     async def count_alertas( # Keep this one, it has the filters
         db: AsyncSession,
-        tipo_alerta: int = None,
-        search_term: str = None
+        tipo_alerta: int | None = None,
+        search_term: str | None = None
     ) -> int:
-        query = select (func.count()).select_from(Alerta)
+        query = select(func.count()).select_from(Alerta)
 
-        #Adicionar filtros
+        # Adicionar filtros
         if tipo_alerta is not None:
-            query = query.where (Alerta.tipo_alerta == tipo_alerta)
+            query = query.where(Alerta.tipo_alerta == tipo_alerta)
+
         if search_term:
-            #Tentar buscar por mensagem ou por ID do item.
-            #Se a busca por item_id for numérica, precisa de tratamento para evitar erro
+            # Tentar buscar por mensagem ou por ID do item.
+            # Se a busca por item_id for numérica, precisa de tratamento para evitar erro
             try:
                 item_id_int = int(search_term)
                 query = query.where(
@@ -66,10 +67,10 @@ class AlertaRepository:
                     (Alerta.item_id == item_id_int)
                 )
             except ValueError:
-                #Se não for um ID de item numérico, busca apenas na mensagem
+                # Se não for um ID de item numérico, busca apenas na mensagem
                 query = query.where(Alerta.mensagem_alerta.ilike(f"%{search_term}%"))
 
-        result = await db.execute (query)
+        result = await db.execute(query)
         return result.scalar_one()
 
     @staticmethod
@@ -77,14 +78,15 @@ class AlertaRepository:
         db: AsyncSession,
         offset: int,
         limit: int,
-        tipo_alerta: int = None,
-        search_term: str = None
-    )-> list [Alerta]:
-        query = select (Alerta)
+        tipo_alerta: int | None = None,
+        search_term: str | None = None
+    ) -> list[Alerta]:
+        query = select(Alerta)
 
-        #Adicionar filtros (mesma lógica de count_alertas)
+        # Adicionar filtros (mesma lógica de count_alertas)
         if tipo_alerta is not None:
-            query = query.where (Alerta.tipo_alerta == tipo_alerta)
+            query = query.where(Alerta.tipo_alerta == tipo_alerta)
+
         if search_term:
             try:
                 item_id_int = int(search_term)
@@ -93,41 +95,38 @@ class AlertaRepository:
                     (Alerta.item_id == item_id_int)
                 )
             except ValueError:
-                query = query.where (Alerta.mensagem_alerta.ilike(f"%{search_term}%"))
+                query = query.where(Alerta.mensagem_alerta.ilike(f"%{search_term}%"))
 
         query = query.offset(offset).limit(limit).order_by(Alerta.data_alerta.desc())
-
         result = await db.execute(query)
         return result.scalars().all()
 
     @staticmethod
-    async def delete_alerta (db: AsyncSession, alerta_id: int):
+    async def delete_alerta(db: AsyncSession, alerta_id: int):
         alerta = await AlertaRepository.get_alerta_by_id(db, alerta_id)
         await db.delete(alerta)
         await db.commit()
         return {"message": "Alerta deletado com sucesso"}
 
     @staticmethod
-    async def ignorar_alerta (db: AsyncSession, alerta_id:int):
+    async def ignorar_alerta(db: AsyncSession, alerta_id: int):
         alerta = await AlertaRepository.get_alerta_by_id(db, alerta_id)
         alerta.ignorar_novos = True
         await db.commit()
         return alerta
 
-    # NOVO: Conta alertas não visualizados
+    # Conta alertas não visualizados
     @staticmethod
     async def count_unviewed_alerts(db: AsyncSession) -> int:
         result = await db.execute(select(func.count()).select_from(Alerta).where(Alerta.visualizado == False))
         return result.scalar_one()
 
-    # NOVO: Marca todos os alertas como visualizados
+    # Marca todos os alertas como visualizados (e os deleta)
     @staticmethod
     async def mark_all_alerts_as_viewed(db: AsyncSession):
-        # Atualiza o campo 'visualizado' para True para todos os alertas
-        # ou apenas para os que estão como False
+        # Deleta todos os alertas que estão marcados como NÃO visualizados.
+        # Isso significa que, ao chamar este endpoint, eles são considerados "vistos" e removidos.
         await db.execute(
-            Alerta.__table__.update()
-            .where(Alerta.visualizado == False)
-            .values(visualizado=True)
+            Alerta.__table__.delete().where(Alerta.visualizado == False)
         )
         await db.commit()
