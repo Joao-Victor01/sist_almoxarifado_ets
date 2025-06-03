@@ -46,13 +46,13 @@ class AlertasModule {
 
             const tableHeaders = ['Tipo', 'Mensagem', 'Item ID', 'Data do Alerta', 'Ações'];
 
-            // **** BLOCO DE FILTROS AGORA EM UM CARD, COM 3 COLUNAS 'col' PARA IGUAL DISTRIBUIÇÃO ****
+            // BLOCO DE FILTROS EM CARD, COM col-12 col-md PARA EMPILHAR ANTES DE ENCOLHER
             const searchAndFilterHtml = `
                 <div class="card mb-3">
                   <div class="card-header">Filtros de Busca</div>
                   <div class="card-body">
                     <form id="alertas-search-bar" class="row g-3 mb-0">
-                      <div class="col">
+                      <div class="col-12 col-md">
                         <label for="alert-search-term" class="form-label">Busca</label>
                         <input
                           type="text"
@@ -62,7 +62,7 @@ class AlertasModule {
                           value="${this.currentSearchTerm || ''}"
                         >
                       </div>
-                      <div class="col">
+                      <div class="col-12 col-md">
                         <label for="alert-type-filter" class="form-label">Tipo de Alerta</label>
                         <select id="alert-type-filter" class="form-select">
                           <option value="">Todos os Tipos</option>
@@ -70,7 +70,7 @@ class AlertasModule {
                           <option value="2" ${this.currentTipoAlerta === 2 ? 'selected' : ''}>Validade Próxima</option>
                         </select>
                       </div>
-                      <div class="col d-flex justify-content-end align-items-end">
+                      <div class="col-12 col-md d-flex justify-content-end align-items-end">
                         <button id="btn-search-alert" class="btn btn-primary me-2">Buscar</button>
                         <button id="btn-clear-alert-search" class="btn btn-secondary">Limpar</button>
                       </div>
@@ -90,13 +90,21 @@ class AlertasModule {
                     ];
                 },
                 actionsHtml: (alerta) => `
-                    <button class="btn btn-sm btn-info me-1 btn-ver-item" data-item-id="${alerta.item_id}">
-                        <i class="bi bi-eye"></i> Item
-                    </button>
-                    ${!alerta.ignorar_novos ? `
-                    <button class="btn btn-sm btn-warning btn-ignorar-alerta" data-id="${alerta.alerta_id}">
-                        <i class="bi bi-x-circle"></i> Ignorar
-                    </button>` : `<span class="badge bg-secondary">Ignorado</span>`}
+                    <div class="d-flex flex-wrap justify-content-center gap-1">
+                      <button
+                        class="btn btn-sm btn-info btn-acoes btn-ver-item"
+                        data-item-id="${alerta.item_id}"
+                      >
+                        <i class="bi bi-eye"></i> Ver Item
+                      </button>
+                      ${!alerta.ignorar_novos ? `
+                      <button
+                        class="btn btn-sm btn-warning btn-acoes btn-ignorar-alerta"
+                        data-id="${alerta.alerta_id}"
+                      >
+                        <i class="bi bi-x-circle"></i> Ignorar Alertas
+                      </button>` : `<span class="badge bg-secondary">Ignorado</span>`}
+                    </div>
                 `
             });
 

@@ -36,16 +36,17 @@ async function renderizarCategorias() {
     : await carregarCategoriasPag(currentPageCat, pageSizeCat);
 
   main.innerHTML = `
-    <!-- Card de Filtros de Busca -->
+    <!-- Título -->
     <h3 class="mb-3">Lista de Categorias</h3>
 
+    <!-- Card de Filtros de Busca -->
     <div class="card mb-3">
       <div class="card-header">Filtros de Busca</div>
       <div class="card-body">
         <form id="search-bar" class="row g-3 mb-0">
 
-          <!-- Coluna 1: campo de texto -->
-          <div class="col">
+          <!-- Coluna 1: campo de texto empilha em telas < md -->
+          <div class="col-12 col-md">
             <label for="search-categoria-nome" class="form-label">Nome da Categoria</label>
             <input
               type="text"
@@ -56,8 +57,8 @@ async function renderizarCategorias() {
             >
           </div>
 
-          <!-- Coluna 2: botões alinhados à direita -->
-          <div class="col d-flex justify-content-end align-items-end">
+          <!-- Coluna 2: botões empilham em telas < md -->
+          <div class="col-12 col-md d-flex justify-content-end align-items-end">
             <button type="button" id="btn-search-cat" class="btn btn-primary me-2">Buscar</button>
             <button type="button" id="btn-clear-search-cat" class="btn btn-secondary">Limpar</button>
           </div>
@@ -66,6 +67,7 @@ async function renderizarCategorias() {
       </div>
     </div>
 
+    <!-- Tabela de Categorias -->
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
         <thead class="table-secondary text-center">
@@ -83,13 +85,28 @@ async function renderizarCategorias() {
               <td>${c.nome_original}</td>
               <td>${c.descricao_categoria || '-'}</td>
               <td class="text-center">
-                <button class="btn btn-sm btn-primary btn-editar-cat me-1" data-id="${c.categoria_id}">Editar</button>
-                <button class="btn btn-sm btn-danger btn-deletar-cat" data-id="${c.categoria_id}">Deletar</button>
+                <!-- Container flex para igualar largura e espaçar verticalmente -->
+                <div class="d-flex flex-wrap justify-content-center gap-1">
+                  <button
+                    class="btn btn-sm btn-primary btn-acoes btn-editar-cat"
+                    data-id="${c.categoria_id}"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    class="btn btn-sm btn-danger btn-acoes btn-deletar-cat"
+                    data-id="${c.categoria_id}"
+                  >
+                    Deletar
+                  </button>
+                </div>
               </td>
             </tr>`).join('')}
         </tbody>
       </table>
     </div>
+
+    <!-- Paginação -->
     <nav>
       <ul class="pagination justify-content-center">
         <li class="page-item ${currentPageCat === 1 ? 'disabled' : ''}">
@@ -112,6 +129,8 @@ async function renderizarCategorias() {
         </li>
       </ul>
     </nav>
+
+    <!-- Controle de itens por página -->
     <div class="d-flex justify-content-center my-2">
       <label class="me-2">Categorias por página:</label>
       <select id="page-size-cat" class="form-select w-auto">

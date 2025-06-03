@@ -76,9 +76,9 @@ function criarSearchBar() {
           <div class="card-header">Filtros de Busca</div>
           <div class="card-body">
             <form id="search-bar" class="row g-3 mb-0">
-              
-              <!-- Agora usamos 'col' em vez de 'col-md-4' para que as 3 colunas dividam igualmente o espaço -->
-              <div class="col">
+
+              <!-- Agora, cada coluna usa "col-12 col-md" para que empilhem em telas < md -->
+              <div class="col-12 col-md">
                 <label for="search-nome" class="form-label">Nome</label>
                 <input
                   type="text"
@@ -88,8 +88,8 @@ function criarSearchBar() {
                   value="${searchNome}"
                 >
               </div>
-              
-              <div class="col">
+
+              <div class="col-12 col-md">
                 <label for="search-categoria" class="form-label">Categoria</label>
                 <input
                   type="text"
@@ -99,16 +99,18 @@ function criarSearchBar() {
                   value="${searchCategoria}"
                 >
               </div>
-              
-              <div class="col d-flex justify-content-end align-items-end">
+
+              <!-- Botões também acompanham col-12 col-md, empilham antes de encolher -->
+              <div class="col-12 col-md d-flex justify-content-end align-items-end">
                 <button id="btn-search" class="btn btn-primary me-2">Buscar</button>
                 <button id="btn-clear-search" class="btn btn-secondary">Limpar</button>
               </div>
-              
+
             </form>
           </div>
         </div>`;
 }
+
 
 function criarTabelaItens(itens, categoryMap) {
     let html = `
@@ -156,12 +158,21 @@ function criarTabelaItens(itens, categoryMap) {
                 <td>${item.marca_item || '-'}</td>
                 <td class="text-center">${label}</td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-primary me-1 btn-editar" data-id="${item.item_id}">
+                    <!-- restauramos btn-editar e btn-deletar, mantendo btn-acoes -->
+                    <div class="d-flex flex-wrap justify-content-center gap-1">
+                      <button 
+                        class="btn btn-sm btn-primary btn-editar btn-acoes" 
+                        data-id="${item.item_id}"
+                      >
                         <i class="bi bi-pencil-square"></i> Editar
-                    </button>
-                    <button class="btn btn-sm btn-danger btn-deletar" data-id="${item.item_id}">
+                      </button>
+                      <button 
+                        class="btn btn-sm btn-danger btn-deletar btn-acoes" 
+                        data-id="${item.item_id}"
+                      >
                         <i class="bi bi-trash"></i> Deletar
-                    </button>
+                      </button>
+                    </div>
                 </td>
             </tr>`;
     });
@@ -173,6 +184,8 @@ function criarTabelaItens(itens, categoryMap) {
 
     return html;
 }
+
+
 
 function criarControlesPaginacao(totalPages) {
     let html = `

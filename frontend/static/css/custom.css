@@ -144,3 +144,21 @@
     padding-top: 5px; /* para dar espaço à bolinha no lado superior */
 }
 
+
+/* Garante que ambos os botões (Editar/Deletar) tenham a mesma largura */
+.btn-acoes {
+  min-width: 5rem;         /* ou qualquer valor que você julgar ideal */
+  text-align: center;      /* centraliza o ícone/texto dentro do botão */
+}
+
+/* Em telas muito estreitas, eles se empilham (graças ao flex-wrap).
+   Para espaçamento vertical maior, garantimos margem inferior quando empilhados. */
+@media (max-width: 576px) {
+  .btn-acoes {
+    width: 100%;           /* ocupam toda a largura da célula */
+    margin-bottom: 0.5rem; /* 0.5rem de espaçamento entre eles empilhados */
+  }
+}
+
+
+
