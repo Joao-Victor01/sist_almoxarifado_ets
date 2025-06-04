@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.configs import settings
-from utils.scheduler import tarefa_diaria, scheduler, tarefa_limpar_relatorios # Importar a nova tarefa
+from utils.scheduler import tarefa_diaria, scheduler, tarefa_limpar_relatorios 
 import uvicorn
 from contextlib import asynccontextmanager
 from api.v1.endpoints.categoria import router as categoria_router
@@ -27,8 +27,8 @@ mimetypes.add_type('application/javascript', 'mjs') # Para módulos ES6 com exte
 async def lifespan(app: FastAPI):
     # Executado antes do app iniciar
     try:
-        scheduler.add_job(tarefa_diaria, 'cron', hour=13, minute=38) # verificar validade dos produtos (i
-        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=13, minute=38) # limpar relatórios todo
+        scheduler.add_job(tarefa_diaria, 'cron', hour=7) # verificar validade dos produtos 
+        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=6) # limpar relatórios todo
         scheduler.start()
         print("Scheduler iniciado com sucesso via lifespan.")
     except Exception as e:

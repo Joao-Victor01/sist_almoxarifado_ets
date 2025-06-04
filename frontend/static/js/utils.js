@@ -20,7 +20,8 @@ export function showAlert(message, type = 'success', duration = 5000) {
                 ${message}
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
-        </div>`;
+        </div>
+    `;
 
     toastContainer.appendChild(toastElement);
 
@@ -92,10 +93,10 @@ export function updateNotificationBellUI() {
     if (notificationDot) {
         if (newAlerts || newWithdrawalRequests) {
             notificationDot.style.display = 'block';
-            notificationDot.classList.add('animate_animated', 'animate_pulse');
+            notificationDot.classList.add('animate__animated', 'animate__pulse');
         } else {
             notificationDot.style.display = 'none';
-            notificationDot.classList.remove('animate_animated', 'animate_pulse');
+            notificationDot.classList.remove('animate__animated', 'animate__pulse');
         }
     } else {
         console.warn('updateNotificationBellUI: Elemento #notification-dot não encontrado.');
@@ -103,21 +104,37 @@ export function updateNotificationBellUI() {
 
     const newAlertsMenuItem = document.getElementById('new-alerts-menu-item');
     const newWithdrawalRequestsMenuItem = document.getElementById('new-withdrawal-requests-menu-item');
-    const noNotificationsMenuItem = document.getElementById('no-notifications-menu-item'); // NOVO: Referência ao item "Sem notificações"
+    const noNotificationsMenuItem = document.getElementById('no-notifications-menu-item'); 
 
     if (newAlertsMenuItem) {
         newAlertsMenuItem.style.display = newAlerts ? 'block' : 'none';
     }
+
     if (newWithdrawalRequestsMenuItem) {
         newWithdrawalRequestsMenuItem.style.display = newWithdrawalRequests ? 'block' : 'none';
     }
 
-    // NOVO: Lógica para exibir/ocultar "Sem notificações"
+    //  Lógica para exibir/ocultar "Sem notificações"
     if (noNotificationsMenuItem) {
-        if (!newAlerts && !newWithdrawalRequests) {
+        if (!newAlerts && !newWithdrawalRequests) { // Corrigido para verificar ambos os flags
             noNotificationsMenuItem.style.display = 'block'; // Exibe "Sem notificações"
         } else {
             noNotificationsMenuItem.style.display = 'none'; // Oculta "Sem notificações"
         }
+    }
+}
+
+//  Função para decodificar o token JWT e obter o ID do usuário
+export function getUserIdFromToken() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        return null;
+    }
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.usuario_id || null; // Retorna o ID do usuário
+    } catch (e) {
+        console.error("Erro ao decodificar token JWT:", e);
+        return null;
     }
 }
