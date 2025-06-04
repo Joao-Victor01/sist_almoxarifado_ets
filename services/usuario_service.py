@@ -62,8 +62,8 @@ class UsuarioService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Usuário não encontrado"
             )
-        # Permite que admins ou o próprio usuário possa deletar
-        if current_user.usuario_id != usuario_id and current_user.tipo_usuario != 1: # 1 é USUARIO_GERAL (ou admin)
+        # Permite que direcao deletar
+        if current_user.tipo_usuario != 3: 
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Sem permissão para esta operação"
@@ -167,7 +167,7 @@ class UsuarioService:
     @staticmethod
     def _validate_permission(usuario_id: int, current_user: Usuario):
         """ Verifica se o usuário tem permissão para atualizar os dados. """
-        if current_user.usuario_id != usuario_id and current_user.tipo_usuario != 1: # 1 é USUARIO_GERAL (ou admin)
+        if current_user.tipo_usuario != 3: # 1 é USUARIO_GERAL (ou admin)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Sem permissão para esta operação"
