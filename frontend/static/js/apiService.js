@@ -1,16 +1,15 @@
 // frontend/static/js/apiService.js
 
 class ApiService {
-    constructor(baseUrl = '/api/almoxarifado') {
+    constructor (baseUrl = '/api/almoxarifado') {
         this.baseUrl = baseUrl;
         this.token = localStorage.getItem('token');
-        if (!this.token) {
+        if ( !this.token) { 
             console.warn("Token de autenticação não encontrado no localStorage.");
         }
     }
 
     _getHeaders() {
-
         return {
             'Authorization': `Bearer ${this.token}`
         };
@@ -19,30 +18,33 @@ class ApiService {
     async _fetch(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
         const requestHeaders = {
-            ...this._getHeaders(), 
-            ...options.headers 
+            ...this._getHeaders()
         };
 
+        options.headers = { ...requestHeaders, ...options.headers }; // Merge headers
+
         if (options.body instanceof FormData) {
-            delete requestHeaders['Content-Type']; 
-        } else if (!requestHeaders['Content-Type']) {
-            requestHeaders['Content-Type'] = 'application/json';
+            delete options.headers['Content-Type']; // Remova Content-Type para FormData
+        } else if (!options.headers['Content-Type']) { // Se não foi definido, defina como JSON
+            options.headers['Content-Type'] = 'application/json';
         }
 
         try {
             const response = await fetch(url, {
                 ...options,
-                headers: requestHeaders // Use the prepared headers
+                headers: options.headers // Use the prepared headers
             });
 
             if (!response.ok) {
+                // Se a resposta for 204 No Content, não tente parsear JSON
                 if (response.status === 204) {
-                    return {};
+                    return {}; // Retorna um objeto vazio para 204
                 }
-                const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido na resposta.' }));
+                const errorData = await response.json().catch(() => ({ detail: `Erro desconhecido na resposta: ${response.statusText}` }));
                 throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
             }
 
+            // Se a resposta for 204 No Content, não tente parsear JSON
             if (response.status === 204) {
                 return {};
             }
@@ -54,7 +56,7 @@ class ApiService {
         }
     }
 
-    async get(endpoint, params = {}) {
+    async get (endpoint, params = {}) {
         const queryString = new URLSearchParams(params).toString();
         const urlWithParams = `${endpoint}${queryString ? `?${queryString}` : ''}`;
         return await this._fetch(urlWithParams, { method: 'GET' });
@@ -67,7 +69,7 @@ class ApiService {
         });
     }
 
-    async put(endpoint, data) {
+    async put (endpoint, data) {
         return this._fetch(endpoint, {
             method: 'PUT',
             body: JSON.stringify(data)
@@ -81,7 +83,14 @@ class ApiService {
         });
     }
 
-    // Métodos específicos 
+    // DELETE alertas
+    async delete(endpoint) {
+        return this._fetch(endpoint, {
+            method: 'DELETE'
+        });
+    }
+
+    // Métodos específicos
 
     async getUsuarioById(id) {
         try {
@@ -101,7 +110,7 @@ class ApiService {
         }
     }
 
-    async fetchAllRetiradas(page, pageSize, filters) {
+    async fetchAllRetiradas (page, pageSize, filters = {}) {
         const params = { page, page_size: pageSize };
         const queryParamsForApi = {};
 
@@ -130,7 +139,7 @@ class ApiService {
         };
     }
 
-    async fetchRetiradasPendentes(page, pageSize) {
+    async fetchRetiradasPendentes (page, pageSize) {
         const responseData = await this.get(`/retiradas/pendentes/paginated`, { page, page_size: pageSize });
         return {
             current_page: responseData.page,
@@ -141,7 +150,7 @@ class ApiService {
     }
 
     async updateRetiradaStatus(id, status, detail) {
-        return this.put(`/retiradas/${id}`, { status, detalhe_status: detail });
+        return this.put(`/retiradas/${id}`, { status, detalhe_status: detail});
     }
 
     async fetchAllItens() {
@@ -152,12 +161,12 @@ class ApiService {
         return this.get('/setores');
     }
 
-    async solicitarRetirada(data) {
+    async solicitarRetirada (data) {
         return this.post('/retiradas/', data);
     }
 
-    async searchItems(nome = null, categoria = null, page = 1, size = 10) {
-        const params = { page, size };
+    async searchItems (nome = null, categoria = null, page = 1, size = 10) {
+        const params = {page, size };
         if (nome) {
             params.nome = nome;
         }
@@ -171,7 +180,7 @@ class ApiService {
         return this.get(`/itens/${itemId}`);
     }
 
-    //  Obter contagem de alertas não visualizados
+    // Obter contagem de alertas não visualizados
     async getUnviewedAlertsCount() {
         try {
             const response = await this.get('/alertas/unviewed-count');
@@ -188,6 +197,7 @@ class ApiService {
             await this.patch('/alertas/mark-viewed');
         } catch (error) {
             console.error('Erro ao marcar alertas como visualizados', error);
+            throw error; // Re-lançar o erro para que o módulo de alertas possa lidar com ele
         }
     }
 
@@ -195,15 +205,13 @@ class ApiService {
     async uploadBulkItems(file) {
         const formData = new FormData();
         formData.append('file', file);
-
         return this._fetch('/itens/upload-bulk/', {
             method: 'POST',
             body: formData,
-
         });
     }
 
-    //   Obter histórico de retiradas do usuário logado
+    // Obter histórico de retiradas do usuário logado
     async fetchUserRetiradasPaginated(page, pageSize) {
         const responseData = await this.get(`/retiradas/minhas-retiradas/paginated`, { page, page_size: pageSize });
         return {

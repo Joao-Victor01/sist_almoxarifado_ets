@@ -104,6 +104,12 @@ class AlertasModule {
                       >
                         <i class="bi bi-x-circle"></i> Ignorar Alertas
                       </button>` : `<span class="badge bg-secondary">Ignorado</span>`}
+                                              <button
+                            class="btn btn-sm btn-danger btn-acoes btn-deletar-alerta"
+                            data-id="${alerta.alerta_id}"
+                        >
+                            <i class="bi bi-trash"></i> Deletar
+                        </button>
                     </div>
                 `
             });
@@ -250,15 +256,27 @@ class AlertasModule {
     }
 
     async _handleTableActionClick(e) {
+        // Verifica se o botão de ignorar alerta foi clicado
         const ignoreButton = e.target.closest('.btn-ignorar-alerta');
         if (ignoreButton) {
             const alertId = parseInt(ignoreButton.dataset.id);
             if (confirm('Tem certeza que deseja ignorar futuros alertas para este item/motivo?')) {
                 await this.ignoreAlert(alertId);
             }
-            return;
+            return; // Retorna após tratar este clique
         }
 
+        // Verifica se o botão de deletar alerta foi clicado
+        const deleteButton = e.target.closest('.btn-deletar-alerta');
+        if (deleteButton) {
+            const alertId = parseInt(deleteButton.dataset.id);
+            if (confirm('Tem certeza que deseja DELETAR este alerta? Esta ação é irreversível.')) {
+                await this.deleteAlert(alertId);
+            }
+            return; // Retorna após tratar este clique
+        }
+
+        // Verifica se o botão de ver item foi clicado
         const viewItemButton = e.target.closest('.btn-ver-item');
         if (viewItemButton) {
             const itemId = parseInt(viewItemButton.dataset.itemId);
@@ -268,12 +286,12 @@ class AlertasModule {
                 uiService.fillModalDetalhesItem(itemDetails);
                 uiService.getModalInstance('modalDetalheItem').show();
             } catch (error) {
-                console.error("Erro ao carregar detalhes do item:", error);
+                console.error("Erro ao carregar detalhes do item", error);
                 showAlert("Não foi possível carregar os detalhes do item.", "danger");
             } finally {
                 uiService.hideLoading();
+                return; // Retorna após tratar este clique
             }
-            return; // Evita propagação caso um botão seja clicado
         }
     }
 
@@ -289,6 +307,22 @@ class AlertasModule {
         } catch (error) {
             console.error('Erro ao ignorar alerta', error);
             showAlert(error.message || 'Erro ao ignorar o alerta.', 'danger');
+        } finally {
+            uiService.hideLoading();
+        }
+    }
+
+    async deleteAlert(alertId) {
+        uiService.showLoading();
+        try {
+            await apiService.delete(`/alertas/${alertId}`);
+            showAlert(
+              'Alerta deletado com sucesso.'
+            );
+            this.renderAlertsPage();
+        } catch (error) {
+            console.error('Erro ao deletar alerta', error);
+            showAlert(error.message || 'Erro ao deletar o alerta.', 'danger');
         } finally {
             uiService.hideLoading();
         }
