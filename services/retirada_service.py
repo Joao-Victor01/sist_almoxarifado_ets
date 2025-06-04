@@ -74,7 +74,7 @@ class RetiradaService:
                 db, nova_retirada.retirada_id
             )
 
-            # NOVO: Transmitir o evento de nova solicitação de retirada via WebSocket
+            #  Transmitir o evento de nova solicitação de retirada via WebSocket
             # Esta notificação ainda vai para as conexões gerais, pois é um alerta para o almoxarifado
             await manager.broadcast({
                 "type": "new_withdrawal_request",
