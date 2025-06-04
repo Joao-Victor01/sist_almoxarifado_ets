@@ -1,5 +1,4 @@
 # main.py
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.configs import settings
@@ -21,15 +20,15 @@ import mimetypes
 from utils.websocket_endpoints import websocket_router, manager
 
 # Forçar o tipo MIME para arquivos .js. Isso deve ser feito ANTES de StaticFiles ser montado.
-mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('application/javascript','.js')
 mimetypes.add_type('application/javascript', 'mjs') # Para módulos ES6 com extensão .mjs
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Executado antes do app iniciar
     try:
-        scheduler.add_job(tarefa_diaria, 'cron', hour=13, minute=38) # verificar validade dos produtos(itens) todo dia às 6h
-        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=13, minute=38) # limpar relatórios todo dia às 2h
+        scheduler.add_job(tarefa_diaria, 'cron', hour=13, minute=38) # verificar validade dos produtos (i
+        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=13, minute=38) # limpar relatórios todo
         scheduler.start()
         print("Scheduler iniciado com sucesso via lifespan.")
     except Exception as e:
@@ -64,6 +63,7 @@ app.include_router(relatorio_router, prefix=settings.API_STR, tags=['Geração d
 app.include_router(alerta_router, prefix=settings.API_STR, tags=['Gerenciamento de Alertas'])
 
 # Incluir o roteador WebSocket
+# Adicionado um parâmetro para o user_id no WebSocket, que será opcional na rota
 app.include_router(websocket_router, prefix=settings.API_STR) # Prefixo para o WebSocket
 
 # Montar pasta de arquivos estáticos
