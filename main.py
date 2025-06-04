@@ -28,8 +28,8 @@ mimetypes.add_type('application/javascript', 'mjs') # Para módulos ES6 com exte
 async def lifespan(app: FastAPI):
     # Executado antes do app iniciar
     try:
-        scheduler.add_job(tarefa_diaria, 'cron', hour=6) # verificar validade dos produtos(itens) todo dia às 6h
-        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=2) # limpar relatórios todo dia às 2h
+        scheduler.add_job(tarefa_diaria, 'cron', hour=13, minute=38) # verificar validade dos produtos(itens) todo dia às 6h
+        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=13, minute=38) # limpar relatórios todo dia às 2h
         scheduler.start()
         print("Scheduler iniciado com sucesso via lifespan.")
     except Exception as e:

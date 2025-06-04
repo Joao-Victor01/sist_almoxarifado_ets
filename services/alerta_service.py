@@ -23,7 +23,7 @@ class AlertaService:
     @staticmethod
     async def verificar_validade_itens (db: AsyncSession):
         threshold_date = datetime.now() + timedelta (days=60)
-        items = await ItemRepository.find_items_expiring_before(db, threshold_date)
+        items = await ItemRepository.get_items_expiring_before(db, threshold_date)        
         for item in items:
             alerta_existe = await AlertaRepository.alerta_ja_existe(
                 db, TipoAlerta.VALIDADE_PROXIMA.value, item.item_id

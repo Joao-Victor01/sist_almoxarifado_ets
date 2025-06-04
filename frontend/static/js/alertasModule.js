@@ -151,14 +151,25 @@ class AlertasModule {
         if (alertsPaginationNav) {
             alertsPaginationNav.removeEventListener('click', this._boundHandlePaginationClick);
         }
+        
         if (pageSizeSelect) {
             pageSizeSelect.removeEventListener('change', this._boundHandlePageSizeChange);
         }
+
         if (btnSearchAlert) {
             btnSearchAlert.removeEventListener('click', this._boundHandleSearchAlert);
-        }
+            btnSearchAlert.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                this._boundHandleSearchAlert();
+            });
+        }        
+
         if (btnClearAlertSearch) {
             btnClearAlertSearch.removeEventListener('click', this._boundHandleClearAlertSearch);
+            btnClearAlertSearch.addEventListener('click', (e) => { 
+                e.preventDefault();
+                this._boundHandleClearAlertSearch();
+            });
         }
 
         // Adiciona novos listeners
@@ -168,12 +179,7 @@ class AlertasModule {
         if (pageSizeSelect) {
             pageSizeSelect.addEventListener('change', this._boundHandlePageSizeChange);
         }
-        if (btnSearchAlert) {
-            btnSearchAlert.addEventListener('click', this._boundHandleSearchAlert);
-        }
-        if (btnClearAlertSearch) {
-            btnClearAlertSearch.addEventListener('click', this._boundHandleClearAlertSearch);
-        }
+
     }
 
     _handleSearchAlert() {
