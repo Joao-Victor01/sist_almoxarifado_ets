@@ -1,4 +1,4 @@
-#repositories\retirada_repository.py
+# repositories/retirada_repository.py
 
 from sqlalchemy import func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,6 @@ from models.retirada import Retirada, StatusEnum
 from models.retirada_item import RetiradaItem
 from models.item import Item
 from models.usuario import Usuario
-from models.retirada_item import RetiradaItem
 from datetime import datetime
 
 
@@ -26,7 +25,8 @@ class RetiradaRepository:
     @staticmethod
     async def get_retiradas_paginated(db: AsyncSession, offset: int, limit: int):
         """
-        Retorna uma lista paginada de retiradas, com eager loading de itens, usuário e admin.
+        Retorna uma lista paginada de retiradas, ordenadas por data_solicitacao (desc),
+        com eager loading de itens, usuário e admin.
         """
         q = (
             select(Retirada)
@@ -35,6 +35,7 @@ class RetiradaRepository:
                 selectinload(Retirada.usuario),
                 selectinload(Retirada.admin),
             )
+            .order_by(Retirada.data_solicitacao.desc())  # ordena do mais recente para o mais antigo
             .offset(offset)
             .limit(limit)
         )
@@ -45,8 +46,60 @@ class RetiradaRepository:
         """
         Conta o total de retiradas com status PENDENTE.
         """
-        result = await db.execute(select(func.count(Retirada.retirada_id)).where(Retirada.status == StatusEnum.PENDENTE))
+        result = await db.execute(
+            select(func.count(Retirada.retirada_id))
+            .where(Retirada.status == StatusEnum.PENDENTE)
+        )
         return result.scalar_one()
+
+    @staticmethod
+    async def get_retiradas_pendentes_paginated(db: AsyncSession, offset: int, limit: int):
+        """
+        Retorna uma lista paginada de retiradas pendentes, ordenadas por data_solicitacao (desc),
+        com eager loading de itens, usuário e admin.
+        """
+        q = (
+            select(Retirada)
+            .options(
+                selectinload(Retirada.itens).selectinload(RetiradaItem.item),
+                selectinload(Retirada.usuario),
+                selectinload(Retirada.admin),
+            )
+            .where(Retirada.status == StatusEnum.PENDENTE)
+            .order_by(Retirada.data_solicitacao.desc())  # pendentes mais recentes primeiro
+            .offset(offset)
+            .limit(limit)
+        )
+        return (await db.execute(q)).scalars().all()
+
+    @staticmethod
+    async def count_retiradas_filter(db: AsyncSession, params: RetiradaFilterParams) -> int:
+        """
+        Conta o total de retiradas filtradas com base nos parâmetros fornecidos.
+        """
+        q = select(func.count(Retirada.retirada_id))
+        conditions = []
+        if params.status is not None:
+            conditions.append(Retirada.status == params.status)
+        if params.solicitante:
+            alias = aliased(Usuario)
+            q = q.select_from(Retirada).join(alias, Retirada.usuario)
+            conditions.append(
+                or_(
+                    alias.nome_usuario.ilike(f"%{params.solicitante}%"),
+                    Retirada.solicitado_localmente_por.ilike(f"%{params.solicitante}%")
+                )
+            )
+        if params.start_date and params.end_date:
+            conditions.append(
+                and_(
+                    Retirada.data_solicitacao >= params.start_date,
+                    Retirada.data_solicitacao <= params.end_date
+                )
+            )
+        if conditions:
+            q = q.where(*conditions)
+        return (await db.execute(q)).scalar_one()
 
     @staticmethod
     async def filter_retiradas_paginated(
@@ -57,7 +110,7 @@ class RetiradaRepository:
     ):
         """
         Filtra e retorna retiradas paginadas com base nos parâmetros fornecidos,
-        com eager loading de itens, usuário e admin.
+        ordenadas por data_solicitacao (desc), com eager loading de itens, usuário e admin.
         """
         q = select(Retirada)
         q = q.options(
@@ -72,17 +125,26 @@ class RetiradaRepository:
             alias = aliased(Usuario)
             q = q.join(alias, Retirada.usuario)
             conditions.append(
-                or_(alias.nome_usuario.ilike(f"%{params.solicitante}%"),
-                    Retirada.solicitado_localmente_por.ilike(f"%{params.solicitante}%"))
+                or_(
+                    alias.nome_usuario.ilike(f"%{params.solicitante}%"),
+                    Retirada.solicitado_localmente_por.ilike(f"%{params.solicitante}%")
+                )
             )
         if params.start_date and params.end_date:
             conditions.append(
-                and_(Retirada.data_solicitacao >= params.start_date,
-                     Retirada.data_solicitacao <= params.end_date)
+                and_(
+                    Retirada.data_solicitacao >= params.start_date,
+                    Retirada.data_solicitacao <= params.end_date
+                )
             )
         if conditions:
             q = q.where(*conditions)
-        q = q.offset(offset).limit(limit)
+
+        q = (
+            q.order_by(Retirada.data_solicitacao.desc())  # ordena do mais recente para o mais antigo
+             .offset(offset)
+             .limit(limit)
+        )
         return (await db.execute(q)).scalars().all()
 
     @staticmethod
@@ -120,52 +182,9 @@ class RetiradaRepository:
         return result.scalars().first()
 
     @staticmethod
-    async def get_retiradas_pendentes_paginated(db: AsyncSession, offset: int, limit: int):
-        """
-        Retorna uma lista paginada de retiradas pendentes, com eager loading.
-        """
-        q = (
-            select(Retirada)
-            .options(
-                selectinload(Retirada.itens).selectinload(RetiradaItem.item),
-                selectinload(Retirada.usuario),
-                selectinload(Retirada.admin),
-            )
-            .where(Retirada.status == StatusEnum.PENDENTE)
-            .offset(offset)
-            .limit(limit)
-        )
-        return (await db.execute(q)).scalars().all()
-
-    @staticmethod
-    async def count_retiradas_filter(db: AsyncSession, params: RetiradaFilterParams) -> int:
-        """
-        Conta o total de retiradas filtradas com base nos parâmetros fornecidos.
-        """
-        q = select(func.count(Retirada.retirada_id))
-        conditions = []
-        if params.status is not None:
-            conditions.append(Retirada.status == params.status)
-        if params.solicitante:
-            alias = aliased(Usuario)
-            q = q.select_from(Retirada).join(alias, Retirada.usuario)
-            conditions.append(
-                or_(alias.nome_usuario.ilike(f"%{params.solicitante}%"),
-                    Retirada.solicitado_localmente_por.ilike(f"%{params.solicitante}%"))
-            )
-        if params.start_date and params.end_date:
-            conditions.append(
-                and_(Retirada.data_solicitacao >= params.start_date,
-                     Retirada.data_solicitacao <= params.end_date)
-            )
-        if conditions:
-            q = q.where(*conditions)
-        return (await db.execute(q)).scalar_one()
-
-    @staticmethod
     async def get_retiradas(db: AsyncSession):
         """
-        Retorna todas as retiradas (sem paginação), com eager loading.
+        Retorna todas as retiradas (sem paginação), ordenadas por data_solicitacao (desc), com eager loading.
         """
         result = await db.execute(
             select(Retirada)
@@ -174,6 +193,7 @@ class RetiradaRepository:
                 selectinload(Retirada.usuario),
                 selectinload(Retirada.admin),
             )
+            .order_by(Retirada.data_solicitacao.desc())  # ordena do mais recente para o mais antigo
         )
         return result.scalars().unique().all()
 
@@ -185,7 +205,8 @@ class RetiradaRepository:
         data_fim: datetime
     ):
         """
-        Retorna retiradas filtradas por setor e período, com eager loading.
+        Retorna retiradas filtradas por setor e período, com eager loading. (Não possui paginação,
+        mas, se quiser, pode adicionar order_by conforme necessidade.)
         """
         result = await db.execute(
             select(Retirada)
@@ -199,6 +220,7 @@ class RetiradaRepository:
                 Retirada.data_solicitacao >= data_inicio,
                 Retirada.data_solicitacao <= data_fim
             )
+            .order_by(Retirada.data_solicitacao.desc())  # opcional: ordena do mais recente para o mais antigo
         )
         return result.scalars().unique().all()
 
@@ -210,7 +232,8 @@ class RetiradaRepository:
         data_fim: datetime
     ):
         """
-        Retorna retiradas filtradas por usuário e período, com eager loading.
+        Retorna retiradas filtradas por usuário e período, com eager loading. (Não possui paginação,
+        mas, se quiser, pode adicionar order_by conforme necessidade.)
         """
         result = await db.execute(
             select(Retirada)
@@ -224,6 +247,7 @@ class RetiradaRepository:
                 Retirada.data_solicitacao >= data_inicio,
                 Retirada.data_solicitacao <= data_fim
             )
+            .order_by(Retirada.data_solicitacao.desc())  # opcional: ordena do mais recente para o mais antigo
         )
         return result.scalars().unique().all()
 
@@ -232,8 +256,6 @@ class RetiradaRepository:
         """
         Atualiza uma retirada existente no banco de dados.
         """
-        # O objeto `retirada` já deve estar no estado gerenciado pela sessão ou ser adicionado
-        # db.add(retirada) # Pode ser necessário se o objeto não estiver gerenciado
         await db.commit()
         await db.refresh(retirada)
         return retirada
@@ -255,25 +277,34 @@ class RetiradaRepository:
         await db.flush()
         return item
 
-    #  Retorna retiradas paginadas para um usuário específico
     @staticmethod
     async def get_retiradas_by_user_paginated(db: AsyncSession, usuario_id: int, offset: int, limit: int):
         """
-        Retorna retiradas paginadas para um usuário específico, com eager loading de itens, usuário e admin.
+        Retorna retiradas paginadas para um usuário específico, ordenadas por data_solicitacao (desc),
+        com eager loading de itens, usuário e admin.
         """
-        query = select(Retirada).where(Retirada.usuario_id == usuario_id).options(
-            selectinload(Retirada.itens).selectinload(RetiradaItem.item),
-            selectinload(Retirada.usuario),
-            selectinload(Retirada.admin),
-        ).offset(offset).limit(limit)
+        query = (
+            select(Retirada)
+            .where(Retirada.usuario_id == usuario_id)
+            .options(
+                selectinload(Retirada.itens).selectinload(RetiradaItem.item),
+                selectinload(Retirada.usuario),
+                selectinload(Retirada.admin),
+            )
+            .order_by(Retirada.data_solicitacao.desc())  # minhas retiradas mais recentes primeiro
+            .offset(offset)
+            .limit(limit)
+        )
         result = await db.execute(query)
         return result.scalars().all()
 
-    # Conta o total de retiradas para um usuário específico
     @staticmethod
-    async def count_retiradas_by_user(db: AsyncSession, usuario_id: int):
+    async def count_retiradas_by_user(db: AsyncSession, usuario_id: int) -> int:
         """
         Conta o total de retiradas para um usuário específico.
         """
-        result = await db.execute(select(func.count(Retirada.retirada_id)).where(Retirada.usuario_id == usuario_id))
+        result = await db.execute(
+            select(func.count(Retirada.retirada_id))
+            .where(Retirada.usuario_id == usuario_id)
+        )
         return result.scalar_one()

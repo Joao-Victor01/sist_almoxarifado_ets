@@ -3,25 +3,30 @@
 class ApiService {
     constructor (baseUrl = '/api/almoxarifado') {
         this.baseUrl = baseUrl;
-        this.token = localStorage.getItem('token');
-        if ( !this.token) { 
-            console.warn("Token de autenticação não encontrado no localStorage.");
-        }
+        // Não inicializamos this.token aqui, ele será pego dinamicamente
     }
 
+    // MODIFICADO: Esta função agora lê o token do localStorage a cada chamada
     _getHeaders() {
-        return {
-            'Authorization': `Bearer ${this.token}`
-        };
+        const token = localStorage.getItem('token'); // Obter o token mais recente
+        const headers = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        } else {
+            console.warn("Token de autenticação não encontrado no localStorage para a requisição.");
+        }
+        return headers;
     }
 
-    async _fetch(endpoint, options = {}) {
+    async _fetch(endpoint, options ={}) {
         const url = `${this.baseUrl}${endpoint}`;
+        
+        // NOVO: Chamar _getHeaders() a cada requisição para garantir o token mais recente
         const requestHeaders = {
-            ...this._getHeaders()
+            ...this._getHeaders(), 
+            ...options.headers // Mescla com quaisquer headers específicos da requisição
         };
-
-        options.headers = { ...requestHeaders, ...options.headers }; // Merge headers
+        options.headers = requestHeaders; // Atribui os headers mesclados de volta às opções
 
         if (options.body instanceof FormData) {
             delete options.headers['Content-Type']; // Remova Content-Type para FormData
@@ -40,7 +45,7 @@ class ApiService {
                 if (response.status === 204) {
                     return {}; // Retorna um objeto vazio para 204
                 }
-                const errorData = await response.json().catch(() => ({ detail: `Erro desconhecido na resposta: ${response.statusText}` }));
+                const errorData = await response.json().catch(() => ({ detail: `Erro desconhecido na resposta (${response.status})` }));
                 throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
             }
 
@@ -50,19 +55,20 @@ class ApiService {
             }
 
             return response.json();
+
         } catch (error) {
             console.error(`Falha na requisição para ${url}:`, error);
             throw error;
         }
     }
 
-    async get (endpoint, params = {}) {
+    async get (endpoint, params ={}) {
         const queryString = new URLSearchParams(params).toString();
         const urlWithParams = `${endpoint}${queryString ? `?${queryString}` : ''}`;
         return await this._fetch(urlWithParams, { method: 'GET' });
     }
 
-    async post(endpoint, data) {
+    async post (endpoint, data) {
         return this._fetch(endpoint, {
             method: 'POST',
             body: JSON.stringify(data)
@@ -76,14 +82,14 @@ class ApiService {
         });
     }
 
-    async patch(endpoint, data = {}) {
+    async patch(endpoint, data ={}) {
         return this._fetch(endpoint, {
             method: 'PATCH',
             body: JSON.stringify(data)
         });
     }
 
-    // DELETE alertas
+    // DELETE alertas.
     async delete(endpoint) {
         return this._fetch(endpoint, {
             method: 'DELETE'
@@ -140,7 +146,7 @@ class ApiService {
     }
 
     async fetchRetiradasPendentes (page, pageSize) {
-        const responseData = await this.get(`/retiradas/pendentes/paginated`, { page, page_size: pageSize });
+        const responseData = await this.get('/retiradas/pendentes/paginated', { page, page_size: pageSize });
         return {
             current_page: responseData.page,
             total_pages: responseData.pages,
@@ -150,7 +156,7 @@ class ApiService {
     }
 
     async updateRetiradaStatus(id, status, detail) {
-        return this.put(`/retiradas/${id}`, { status, detalhe_status: detail});
+        return this.put(`/retiradas/${id}`, { status, detalhe_status: detail });
     }
 
     async fetchAllItens() {
@@ -166,7 +172,7 @@ class ApiService {
     }
 
     async searchItems (nome = null, categoria = null, page = 1, size = 10) {
-        const params = {page, size };
+        const params = { page, size };
         if (nome) {
             params.nome = nome;
         }
@@ -202,7 +208,7 @@ class ApiService {
     }
 
     // Método para upload de arquivo em massa
-    async uploadBulkItems(file) {
+    async uploadBulkItems (file) {
         const formData = new FormData();
         formData.append('file', file);
         return this._fetch('/itens/upload-bulk/', {
@@ -212,7 +218,7 @@ class ApiService {
     }
 
     // Obter histórico de retiradas do usuário logado
-    async fetchUserRetiradasPaginated(page, pageSize) {
+    async fetchUserRetiradasPaginated (page, pageSize) {
         const responseData = await this.get(`/retiradas/minhas-retiradas/paginated`, { page, page_size: pageSize });
         return {
             current_page: responseData.page,
@@ -220,6 +226,25 @@ class ApiService {
             total_items: responseData.total,
             items: responseData.items
         };
+    }
+
+    // NOVO: Método para obter detalhes completos do usuário logado, incluindo nome do setor
+    async getCurrentUserDetails(userId) {
+        try {
+            const user = await this.get(`/usuarios/${userId}`);
+            // Certifique-se de que o endpoint /setores/{id} está acessível a todos os usuários
+            // ou que o setor_id já vem com o nome do setor no objeto user, se necessário.
+            // Assumindo que getSetorById é acessível por todos ou que o user.setor_id é suficiente.
+            const sectorName = await this.getSetorById(user.setor_id); 
+            return {
+                name: user.nome_usuario,
+                siape: user.siape_usuario,
+                sectorName: sectorName 
+            };
+        } catch (error) {
+            console.error("Erro ao carregar detalhes do usuário ou setor:", error);
+            return { name: 'Usuário', siape: 'N/A', sectorName: 'N/A' };
+        }
     }
 }
 

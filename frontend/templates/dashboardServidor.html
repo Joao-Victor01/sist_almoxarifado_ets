@@ -1,25 +1,48 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistema de Controle de Almoxarifado Dashboard Servidor</title>
+
     <!-- Bootstrap CSS offline -->
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/dashboards.css" />
     <link rel="stylesheet" href="/static/css/custom.css">
+    <!-- Animate.css para animações (usado no sino de notificação) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 </head>
+
 <body>
 
     <!-- navbar e topbar -->
     {% include 'partials/topbar.html' %}
-    {% include 'partials/navbar_servidor.html' %}    
+    {% include 'partials/navbar_servidor.html' %}
 
     <!-- Conteúdo principal dinâmico -->
     <div class="container mt-5" id="main-content">
-        <h3 class="mb-3">Olá, Servidor(a)! Bem-vindo(a) ao Sistema de Controle de Almoxarifado do ETS</h3>
-        <p>Use o menu  acima para solicitar itens ou ver seu histórico de retiradas.</p>
+        <!-- Seção de Boas-Vindas Personalizada -->
+        <h3 class="mb-3">Olá, <span id="welcome-user-name">Servidor(a)</span>!</h3>
+        <p class="text-muted">Bem-vindo(a) ao Sistema de Controle de Almoxarifado do CPT.</p>
+        <div class="card bg-white rounded-lg shadow-sm p-4 mb-4">
+            <p class="mb-1"><strong>SIAPE:</strong> <span id="user-siape">Carregando...</span></p>
+            <p class="mb-0"><strong>Setor:</strong> <span id="user-sector">Carregando...</span></p>
+        </div>
+
+        <!-- Seção de Últimas Retiradas com Barra de Progresso -->
+        <h4 class="mb-3 mt-5">Minhas Últimas Solicitações</h4>
+        <div class="card bg-white rounded-lg shadow-sm p-4">
+            <div id="latest-withdrawals-container" class="list-group">
+                <!-- Conteúdo dinâmico carregado via JS -->
+                <p class="text-muted text-center" id="loading-recent-withdrawals">Carregando últimas solicitações...</p>
+                <p class="text-muted text-center" id="no-recent-withdrawals" style="display: none;">Nenhuma solicitação recente encontrada.</p>
+            </div>
+            <div class="text-center mt-3">
+                <a href="#" id="view-all-my-withdrawals-link" class="btn btn-sm btn-outline-primary">Ver todas as solicitações</a>
+            </div>
+        </div>
     </div>
 
     <!-- Partial: global_overlays.html -->
@@ -42,7 +65,9 @@
     <script type="module" src="/static/js/uiService.js"></script>
     <script type="module" src="/static/js/solicitar-retirada.js"></script>
     <script type="module" src="/static/js/selecionar-item-module.js"></script>
-    <script type="module" src="/static/js/historicoServidorModule.js"></script> <!-- NOVO -->
+    <script type="module" src="/static/js/historicoServidorModule.js"></script>
     <script type="module" src="/static/js/main.js"></script>
+
 </body>
+
 </html>

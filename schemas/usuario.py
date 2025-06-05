@@ -8,6 +8,7 @@ class UsuarioBase(BaseModel):
     tipo_usuario: int
     setor_id: int
     username: str
+    siape_usuario: int
 
 class UsuarioCreate(UsuarioBase):
     nome_usuario: str
