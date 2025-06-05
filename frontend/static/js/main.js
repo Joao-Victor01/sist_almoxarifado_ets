@@ -7,12 +7,9 @@ import { reportsModule } from './reportsModule.js';
 import { alertasModule } from './alertasModule.js';
 import { apiService } from './apiService.js';
 import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken, formatDateTime } from './utils.js'; // Importar getUserIdFromToken e formatDateTime
-// Import uiService
 import { uiService } from './uiService.js';
-import estadoGlobal from './estadoGlobal.js'; // Importar estadoGlobal para acessar statusMap
-import { dataService } from './dataService.js'; // Importar dataService
-
-// NOVO: Importar o módulo do histórico do servidor
+import estadoGlobal from './estadoGlobal.js'; 
+import { dataService } from './dataService.js'; 
 import { historicoServidorModule } from './historicoServidorModule.js';
 
 const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3';
@@ -34,13 +31,19 @@ const mainContent = document.getElementById('main-content');
 let defaultHTML = mainContent ? mainContent.innerHTML : ''; // Armazena o conteúdo inicial
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Determine the dashboard type once on DOMContentLoaded
+    const currentPath = window.location.pathname;
+    const isServidorDashboard = currentPath.includes('/dashboardServidor');
+
     const homeButton = document.getElementById('home-button');
     if (homeButton && mainContent) {
         homeButton.addEventListener('click', e => {
             e.preventDefault();
             mainContent.innerHTML = defaultHTML;
-            // ATUALIZADO: Chamar loadDashboardOverview e bindQuickAccessLinks após a inicialização dos módulos
-            loadDashboardOverview(); 
+            //  Chamar loadDashboardOverview se for o dashboard do servidor após restaurar o HTML
+            if (isServidorDashboard) {
+                window.loadDashboardOverview();
+            }
             bindQuickAccessLinks(); 
             bindLogoutLink();
             checkAlertsNotification(); // (Manter para a verificação inicial ao carregar a página)
@@ -116,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reportsModule.modalReportsDashboard.show();
         });
 
-        // NOVO: Listener para o link "Listar Alertas" do menu de navegação principal
+        //  Listener para o link "Listar Alertas" do menu de navegação principal
         document.getElementById('open-alertas-modal')?.addEventListener('click', e => {
             e.preventDefault();
             alertasModule.renderAlertsPage();
@@ -125,13 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clique no sino de notificação
         const alertBell = document.getElementById('alert-notification-bell');
         if (alertBell) {
-            // O sino agora é um dropdown toggle, seu comportamento é gerido pelo Bootstrap
+            // O sino é um dropdown toggle, seu comportamento é gerido pelo Bootstrap
             // Os itens do dropdown terão seus próprios listeners
         }
-
-        // Determina o comportamento do sino com base na URL do dashboard
-        const currentPath = window.location.pathname;
-        const isServidorDashboard = currentPath.includes('/dashboardServidor');
 
         const newWithdrawalRequestsMenuItem = document.getElementById('new-withdrawal-requests-menu-item');
         const newAlertsMenuItem = document.getElementById('new-alerts-menu-item');
@@ -149,9 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 setNewAlertsFlag(false);
                 updateNotificationBellUI();
                 if (isServidorDashboard) {
-                    historicoServidorModule.renderMinhasRetiradas(); // Para servidor
+                    historicoServidorModule.renderMinhasRetiradas();
                 } else {
-                    alertasModule.renderAlertsPage(); // Para almoxarifado/direção
+                    alertasModule.renderAlertsPage();
                 }
                 hideNotificationDropdown();
             });
@@ -164,9 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 setNewWithdrawalRequestsFlag(false);
                 updateNotificationBellUI();
                 if (isServidorDashboard) {
-                    historicoServidorModule.renderMinhasRetiradas(); // Para servidor
+                    historicoServidorModule.renderMinhasRetiradas();
                 } else {
-                    retiradasModule.renderPendentesRetiradas(); // Para almoxarifado/direção
+                    retiradasModule.renderPendentesRetiradas();
                 }
                 hideNotificationDropdown();
             });
@@ -180,32 +179,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 setNewWithdrawalRequestsFlag(false);
                 updateNotificationBellUI();
                 if (isServidorDashboard) {
-                    historicoServidorModule.renderMinhasRetiradas(); // Para servidor
+                    historicoServidorModule.renderMinhasRetiradas();
                 } else {
-                    alertasModule.renderAlertsPage(); // Por padrão, leva para a página de alertas para
+                    alertasModule.renderAlertsPage();
                 }
                 hideNotificationDropdown();
             });
         }
 
-        // NOVO: Adiciona listener para o link "Importar Tabela"
+        //  Adiciona listener para o link "Importar Tabela"
         document.getElementById('btn-open-importar-tabela')?.addEventListener('click', e => {
             e.preventDefault();
             try {
-                // Adiciona um log para depuração
                 console.log('uiService no click do botão', uiService);
                 const modalImportarTabela = uiService.getModalInstance('modalImportarTabelaItens');
 
-                // Limpa o formulário e feedback de importação antes de abrir
                 document.getElementById('form-importar-tabela-itens').reset();
                 document.getElementById('import-feedback').style.display = 'none';
-                document.getElementById('import-alert').className = 'alert'; // Reseta a classe
+                document.getElementById('import-alert').className = 'alert';
                 document.getElementById('import-alert').textContent = '';
                 document.getElementById('import-errors-list').innerHTML = '';
 
                 modalImportarTabela.show();
             } catch (error) {
-                // Captura qualquer ReferenceError ou outro erro ao acessar uiService
                 console.error("Erro ao abrir modal de importação:", error);
                 showAlert("Erro ao tentar abrir a tela de importação. Por favor, tente novamente.", "danger");
             }
@@ -233,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             uiService.showLoading();
             importFeedback.style.display = 'block';
-            importAlert.className = 'alert'; // Reseta a classe
+            importAlert.className = 'alert';
             importAlert.textContent = '';
             importErrorsList.innerHTML = '';
 
@@ -255,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
 
-                // Re-renderiza a lista de itens após o upload em massa
                 if (typeof window.renderizarListItens === 'function') {
                     window.renderizarListItens();
                 }
@@ -278,20 +273,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função para verificar alertas e solicitações de retirada (agora chamada inicialmente e via WebSoc
     async function checkAlertsNotification() {
         try {
             const alertsCount = await apiService.getUnviewedAlertsCount();
-            // Futuramente, você pode ter um endpoint para contar novas solicitações de retirada
-            // Por enquanto, o flag será definido apenas pelo WebSocket
 
             if (alertsCount > 0) {
                 setNewAlertsFlag(true);
             } else {
                 setNewAlertsFlag(false);
             }
-            // setNewWithdrawalRequestsFlag será chamado pelo WebSocket ao receber a notificação
-            updateNotificationBellUI(); // Garante que o sino seja atualizado com base em ambos os flags
+            updateNotificationBellUI();
         } catch (error) {
             console.error('checkAlertsNotification: Erro ao verificar notificações', error);
             setNewAlertsFlag(false);
@@ -299,31 +290,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // NOVO: Função para carregar e exibir informações do dashboard do servidor
-    async function loadDashboardOverview() {
+    // Exportar loadDashboardOverview para ser acessível globalmente
+    window.loadDashboardOverview = async function() {
         uiService.showLoading();
-        // Obtenha as referências para os elementos de carregamento/sem solicitações
         const loadingRecentWithdrawals = document.getElementById('loading-recent-withdrawals');
         const noRecentWithdrawals = document.getElementById('no-recent-withdrawals');
 
         try {
             const userId = getUserIdFromToken();
             if (userId) {
-                // 1. Carregar e exibir detalhes do usuário
-                const userDetails = await apiService.getCurrentUserDetails(userId);
-                document.getElementById('welcome-user-name').textContent = userDetails.name;
-                document.getElementById('user-siape').textContent = userDetails.siape || 'N/A';
-                document.getElementById('user-sector').textContent = userDetails.sectorName || 'N/A';
+                const welcomeUserName = document.getElementById('welcome-user-name');
+                const userSiape = document.getElementById('user-siape');
+                const userSector = document.getElementById('user-sector');
 
-                // 2. Carregar e exibir as últimas 3 solicitações de retirada
-                // Garanta que os elementos de status estejam visíveis antes de buscar dados
+                if (welcomeUserName && userSiape && userSector) {
+                    const userDetails = await apiService.getCurrentUserDetails(userId);
+                    welcomeUserName.textContent = userDetails.name;
+                    userSiape.textContent = userDetails.siape || 'N/A';
+                    userSector.textContent = userDetails.sectorName || 'N/A';
+                } else {
+                    console.warn("Elementos de detalhes do usuário não encontrados no DOM. Ignorando atualização.");
+                }
+
+
                 if (loadingRecentWithdrawals) loadingRecentWithdrawals.style.display = 'block';
                 if (noRecentWithdrawals) noRecentWithdrawals.style.display = 'none';
 
-                // ATUALIZADO: Usar dataService para processar as retiradas
                 const recentWithdrawalsData = await dataService.getProcessedRetiradas(apiService.fetchUserRetiradasPaginated.bind(apiService), 1, 3);
                 
-                // ATUALIZADO: Popula estadoGlobal.minhasRetiradas com os itens recentes PROCESSADOS
                 estadoGlobal.minhasRetiradas = recentWithdrawalsData.items; 
                 renderRecentWithdrawals(recentWithdrawalsData.items);
             } else {
@@ -344,18 +338,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // NOVO: Função para renderizar as últimas solicitações com barra de progresso
     function renderRecentWithdrawals(withdrawals) {
         const container = document.getElementById('latest-withdrawals-container');
-        // Obtenha as referências para os elementos de carregamento/sem solicitações
+        if (!container) {
+            console.warn("Elemento 'latest-withdrawals-container' não encontrado. Não é um dashboard de servidor.");
+            return;
+        }
+
         const loadingRecentWithdrawals = document.getElementById('loading-recent-withdrawals');
         const noRecentWithdrawals = document.getElementById('no-recent-withdrawals');
 
-        // Esconda os indicadores de carregamento/sem dados antes de popular a lista
         if (loadingRecentWithdrawals) loadingRecentWithdrawals.style.display = 'none';
         if (noRecentWithdrawals) noRecentWithdrawals.style.display = 'none';
         
-        container.innerHTML = ''; // Limpa o conteúdo existente
+        container.innerHTML = '';
 
         if (withdrawals.length === 0) {
             if (noRecentWithdrawals) noRecentWithdrawals.style.display = 'block';
@@ -368,20 +364,20 @@ document.addEventListener('DOMContentLoaded', () => {
             let statusText = estadoGlobal.statusMap[retirada.status] || 'Desconhecido';
 
             switch (retirada.status) {
-                case 1: // PENDENTE
+                case 1:
                     progress = 25;
                     progressBarClass = 'bg-info';
                     break;
-                case 2: // AUTORIZADA
+                case 2:
                     progress = 50;
                     progressBarClass = 'bg-primary';
                     break;
-                case 3: // CONCLUÍDA
+                case 3:
                     progress = 100;
                     progressBarClass = 'bg-success';
                     break;
-                case 4: // NEGADA
-                    progress = 100; // Ainda mostra 100% mas com cor de erro
+                case 4:
+                    progress = 100;
                     progressBarClass = 'bg-danger';
                     break;
             }
@@ -405,34 +401,25 @@ document.addEventListener('DOMContentLoaded', () => {
             container.insertAdjacentHTML('beforeend', withdrawalHtml);
         });
 
-        // Remove o listener de evento anterior para evitar duplicação
         container.removeEventListener('click', handleRecentWithdrawalItemClick);
-        // Adiciona o listener de evento por delegação após a renderização
         container.addEventListener('click', handleRecentWithdrawalItemClick);
     }
 
-    // NOVO: Função para lidar com o clique nos itens de últimas solicitações
     function handleRecentWithdrawalItemClick(e) {
         const clickedItem = e.target.closest('.recent-withdrawal-item');
         if (clickedItem) {
             const retiradaId = parseInt(clickedItem.dataset.retiradaId);
-            // Encontra a retirada correspondente no estado global
             const retirada = estadoGlobal.minhasRetiradas.find(r => r.retirada_id === retiradaId);
             
             if (retirada) {
-                // ATUALIZADO: Passar isServerView como true para o modal de detalhes do servidor
                 uiService.fillModalDetalhes(retirada, true); 
                 uiService.getModalInstance('modalVerDetalhesRetirada').show();
             } else {
-                // Se a retirada não estiver no estado global, tente buscar via API para garantir
-                // que os detalhes sejam carregados mesmo se a lista recente não estiver completa
                 uiService.showLoading();
-                // ATUALIZADO: Usar dataService para processar a retirada individual também
                 apiService.get(`/retiradas/${retiradaId}`)
                     .then(rawRetirada => dataService.getProcessedRetiradas(async () => ({ items: [rawRetirada], total: 1, page: 1, pages: 1 }), 1, 1))
                     .then(processedData => {
                         const fullRetirada = processedData.items[0];
-                        // ATUALIZADO: Passar isServerView como true para o modal de detalhes do servidor
                         uiService.fillModalDetalhes(fullRetirada, true); 
                         uiService.getModalInstance('modalVerDetalhesRetirada').show();
                     })
@@ -448,12 +435,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // Chamada inicial de binding
-    // ATUALIZADO: Mover bindQuickAccessLinks para depois das inicializações dos módulos
-    // bindQuickAccessLinks(); 
     bindLogoutLink();
 
-    // Lógica de Retiradas (modular) listeners que estão fora do main-content
     document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
         e.preventDefault();
         retiradasModule.renderHistoricoRetiradas();
@@ -474,12 +457,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnConfirmarNegar.addEventListener('click', retiradasModule._handleAuthorizeDeny.bind(retiradasModule, 'NEGADA'));
     }
 
-    // NOVO: Listener para o link "Ver todas as solicitações" na seção de últimas solicitações
-    // ATUALIZADO: Mudar para delegação de eventos
-    // document.getElementById('view-all-my-withdrawals-link')?.addEventListener('click', e => {
-    //     e.preventDefault();
-    //     historicoServidorModule.renderMinhasRetiradas();
-    // });
     mainContent.addEventListener('click', e => {
         const viewAllLink = e.target.closest('#view-all-my-withdrawals-link');
         if (viewAllLink) {
@@ -489,30 +466,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // Inicializar os módulos
     solicitarRetiradaModule.init();
     selecionarItemModule.init();
     reportsModule.init();
     alertasModule.init();
-    historicoServidorModule.init(); // NOVO: Inicializar o módulo do histórico do servidor
+    historicoServidorModule.init();
 
-    // ATUALIZADO: Chamar bindQuickAccessLinks após a inicialização dos módulos
     bindQuickAccessLinks();
 
-    // Iniciar a verificação inicial de alertas (ao carregar a página)
     checkAlertsNotification();
 
-    // Conectar ao WebSocket para receber alertas em tempo real
-    let ws; // Variável para a instância do WebSocket
+    let ws;
 
     function connectAlertsWebSocket() {
-        // Obtém o ID do usuário logado do token JWT
         const userId = getUserIdFromToken();
         console.log("UserID para WebSocket:", userId);
 
-        // Usa wss:// para HTTPS e ws:// para HTTP
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // URL do WebSocket para corresponder ao endpoint do backend, incluindo o user_id
         const wsUrl = `${protocol}//${window.location.host}/api/almoxarifado/ws/alerts${userId ? `?user_id=${userId}` : ''}`;
 
         ws = new WebSocket(wsUrl);
@@ -528,10 +498,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const isServidorDashboard = window.location.pathname.includes('/dashboardServidor');
 
             if (isServidorDashboard) {
-                // No DashboardServidor, processar APENAS as atualizações de status das próprias retiradas
                 if (message.type === "withdrawal_status_update") {
-                    setNewWithdrawalRequestsFlag(true); // Usar o mesmo flag para indicar nova notificação
-                    // Usar estadoGlobal.statusMap para converter o status numérico para texto
+                    setNewWithdrawalRequestsFlag(true);
                     const statusText = estadoGlobal.statusMap[message.status] || 'Desconhecido';
                     showAlert(`Sua solicitação de retirada ID ${message.retirada_id} foi atualizada para: ${statusText}.`, "primary", 5000);
                     try {
@@ -540,12 +508,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (e) {
                         console.error("Não foi possível criar objeto de audio para notificação:", e);
                     }
-                    // Após receber uma atualização, recarregar as últimas solicitações para atualizar a barra de progresso
-                    loadDashboardOverview(); 
+                    window.loadDashboardOverview(); // Chamar a função global
                 }
-                // Ignorar "new_alert" e "new_withdrawal_request" broadcasts neste dashboard
             } else {
-                // Nos outros dashboards (Almoxarifado/Direção), processar alertas e novas solicitações gerais
                 if (message.type === "new_alert") {
                     setNewAlertsFlag(true);
                     showAlert("Novo alerta: " + message.message, "info", 5000);
@@ -565,14 +530,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error("Não foi possível criar objeto de áudio para notificação:", e);
                     }
                 }
-                // Ignorar "withdrawal_status_update" neste dashboard, pois é específica do usuário
             }
-            updateNotificationBellUI(); // Garante que o sino seja atualizado
+            updateNotificationBellUI();
         };
 
         ws.onclose = (event) => {
             console.warn("WebSocket para notificações desconectado:", event.code, event.reason);
-            setTimeout(connectAlertsWebSocket, 5000); // Tenta reconectar a cada 5 segundos
+            setTimeout(connectAlertsWebSocket, 5000);
         };
 
         ws.onerror = (error) => {
@@ -581,12 +545,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Chama a função para conectar ao WebSocket quando o DOM estiver pronto
     connectAlertsWebSocket();
-
-    // Re-inicializa os dropdowns do Bootstrap uma vez que o DOM está pronto e todos os scripts foram ca
     reinitializeBootstrapDropdowns();
 
-    // Carrega os dados do overview do dashboard assim que a página é carregada
-    loadDashboardOverview();
+    if (isServidorDashboard) {
+        window.loadDashboardOverview(); // Chamar a função global
+    }
 });
