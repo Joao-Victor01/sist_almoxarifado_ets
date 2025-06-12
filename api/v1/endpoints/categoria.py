@@ -6,7 +6,7 @@ from services.categoria_service import CategoriaService
 from typing import List
 from core.database import get_session
 from fastapi import status
-from core.security import usuario_almoxarifado
+from core.security import usuario_almoxarifado, direcao_ou_almoxarifado
 
 router = APIRouter(prefix="/categorias")
 
@@ -29,7 +29,7 @@ async def search_categorias(
     page: int = Query(1, ge=1, description="Número da página"),
     size: int = Query(10, description="Itens por página: 5,10,25,50 ou 100"),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(usuario_almoxarifado)
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     """
      Busca categorias com paginação.
@@ -45,7 +45,7 @@ async def search_categorias(
 @router.get(
     "/paginated",
     response_model=PaginatedCategorias,
-    dependencies=[Depends(usuario_almoxarifado)]
+    dependencies=[Depends(direcao_ou_almoxarifado)]
 )
 async def get_items_paginated(
     page: int = Query(1, ge=1, description="Número da página"),
@@ -60,7 +60,7 @@ async def get_items_paginated(
 #Listar categorias
 @router.get("/", response_model=List[CategoriaOut], status_code=status.HTTP_200_OK)
 async def get_categorias(db: AsyncSession = Depends(get_session),
-                         current_user=Depends(usuario_almoxarifado)):
+                         current_user=Depends(direcao_ou_almoxarifado)):
     response = await CategoriaService.get_categorias(db)
     return response
 
@@ -68,7 +68,7 @@ async def get_categorias(db: AsyncSession = Depends(get_session),
 @router.get("/{categoria_id}", response_model=CategoriaOut, status_code=status.HTTP_200_OK)
 async def get_categoria_by_id(categoria_id: int, 
                               db: AsyncSession = Depends(get_session),
-                              current_user=Depends(usuario_almoxarifado)):
+                              current_user=Depends(direcao_ou_almoxarifado)):
     response =  await CategoriaService.get_categoria_by_id(db, categoria_id)
     return response
 
@@ -76,7 +76,7 @@ async def get_categoria_by_id(categoria_id: int,
 @router.get("/{categoria_name}", response_model=CategoriaOut, status_code=status.HTTP_200_OK)
 async def get_categoria_by_name(categoria_name: str, 
                               db: AsyncSession = Depends(get_session),
-                              current_user=Depends(usuario_almoxarifado)):
+                              current_user=Depends(direcao_ou_almoxarifado)):
     response =  await CategoriaService.get_categoria_by_name(db, categoria_name)
     return response
 

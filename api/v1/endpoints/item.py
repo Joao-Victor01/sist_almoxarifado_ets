@@ -32,8 +32,6 @@ async def create_item(
 @router.get(
     "/buscar",
     response_model=PaginatedItems,
-    # A dependência de nível de função é a que realmente será aplicada
-    # A dependência de nível de rota (se houvesse) seria sobreposta
 )
 async def search_items(
     nome: str | None = Query(None, description="Nome total ou parcial do item"),
@@ -41,7 +39,7 @@ async def search_items(
     page: int = Query(1, ge=1, description="Número da página"),
     size: int = Query(10, description="Itens por página: 5,10,25,50 ou 100"),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(todos_usuarios), # ALTERADO: Agora acessível por todos os usuários
+    current_user=Depends(todos_usuarios), 
 ):
     """
     Busca itens com filtros e paginação. Acessível por todos os tipos de usuários.
@@ -82,7 +80,7 @@ async def get_itens(
 async def get_item(
     item_id: int,
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(todos_usuarios), # Mantido para todos os usuários
+    current_user=Depends(todos_usuarios), 
 ):
     """
     Retorna um item específico pelo ID. Acessível por todos os tipos de usuários.

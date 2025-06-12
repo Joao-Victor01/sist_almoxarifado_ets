@@ -8,7 +8,7 @@ from schemas.retirada import (
     RetiradaPaginated, RetiradaFilterParams, StatusEnum
 )
 from services.retirada_service import RetiradaService
-from core.security import todos_usuarios, usuario_almoxarifado
+from core.security import todos_usuarios, usuario_almoxarifado, direcao_ou_almoxarifado
 
 
 router = APIRouter(prefix="/retiradas")
@@ -46,7 +46,7 @@ async def listar_retiradas_paginadas(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(usuario_almoxarifado)
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     """
     Lista todas as retiradas com paginação. Apenas para usuários do almoxarifado.
@@ -84,7 +84,7 @@ async def buscar_retiradas(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(usuario_almoxarifado)
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     """
     Busca retiradas com filtros e paginação. Apenas para usuários do almoxarifado.
@@ -102,7 +102,7 @@ async def buscar_retiradas(
 async def get_retirada(
     retirada_id: int,
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(usuario_almoxarifado)
+    current_user=Depends(direcao_ou_almoxarifado)
 ):
     """
     Recupera uma retirada específica pelo ID. Apenas para usuários do almoxarifado.

@@ -1,0 +1,19 @@
+<!-- frontend/templates/partials/modals/modal_confirmar_deletar_usuario.html -->
+<div class="modal fade" id="modalConfirmarDeleteUsuario" tabindex="-1" aria-labelledby="modalConfirmarDeleteUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalConfirmarDeleteUsuarioLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Tem certeza que deseja excluir o usuário com ID: <strong id="confirm-delete-user-id"></strong>?</p>
+                <p class="text-danger">Esta ação é irreversível!</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-deletar-usuario">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>

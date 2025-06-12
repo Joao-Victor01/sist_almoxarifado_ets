@@ -1,0 +1,76 @@
+<!-- frontend/templates/partials/navbar_direcao.html -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+    <div class="container-fluid">
+        <button class="btn btn-outline-light me-3" id="home-button"><i class="bi bi-house-fill"></i></button>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
+            aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <!-- Usuários -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="usuariosDropdown" data-bs-toggle="dropdown">USUÁRIOS</a>
+                    <ul class="dropdown-menu" aria-labelledby="usuariosDropdown">
+                        <li><a class="dropdown-item" id="btn-open-cadastrar-usuario" href="#">Cadastrar Usuário</a></li>
+                        <li><a class="dropdown-item" id="listar-usuarios-link" href="#">Listar Usuários</a></li>
+                    </ul>
+                </li>
+
+                <!-- Itens (apenas leitura) -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="listar-item-link">LISTAR ITENS</a>
+                </li>
+
+                <!-- Retiradas -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="retiradasDropdown" data-bs-toggle="dropdown">RETIRADAS</a>
+                    <ul class="dropdown-menu" aria-labelledby="retiradasDropdown">
+                        <li><a class="dropdown-item" id="btn-open-solicitar-retirada" href="#">Solicitar Retirada</a></li>
+                        <li><a class="dropdown-item" id="listar-retiradas-link" href="#">Histórico de Retiradas</a></li>
+                        <li><a class="dropdown-item" id="listar-retiradas-pendentes-link" href="#">Solicitações Pendentes</a></li>
+                    </ul>
+                </li>
+
+                <!-- Relatórios -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="open-reports-dashboard"
+                       data-bs-toggle="modal" data-bs-target="#modalReportsDashboard">RELATÓRIOS</a>
+                </li>
+
+                <!-- Alertas -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="open-alertas-modal">HISTÓRICO DE ALERTAS</a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <a class="nav-link position-relative me-3" href="#" id="alert-notification-bell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell-fill fs-5"></i>
+                        <span id="notification-dot" class="notification-dot position-absolute">
+                            <span class="visually-hidden">Novas notificações</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="alert-notification-bell">
+                        <li><span class="dropdown-item text-muted" id="no-notifications-menu-item" style="display: block;">Sem notificações</span></li>
+                        <li><a class="dropdown-item" href="#" id="new-withdrawal-requests-menu-item" style="display: none;">Novas Solicitações de Retirada</a></li>
+                        <li><a class="dropdown-item" href="#" id="new-alerts-menu-item" style="display: none;">Novos Alertas</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="open-all-notifications-link">Ver todas as notificações</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="bi bi-person-circle"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                        <li><a class="dropdown-item" href="#" id="logout-link">Sair</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

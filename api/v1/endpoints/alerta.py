@@ -14,12 +14,12 @@ from schemas.alerta import PaginatedAlertas, AlertaOut
 
 router = APIRouter (prefix="/alertas")
 
-@router.get("/", response_model=list [AlertaOut] , dependencies=[Depends (usuario_almoxarifado)])
+@router.get("/", response_model=list [AlertaOut] , dependencies=[Depends (direcao_ou_almoxarifado)])
 async def listar_todos_alertas (db: AsyncSession = Depends (get_session)):
     """Lista todos os alertas do sistema (sem paginação)."""
     return await AlertaService.get_alertas(db)
 
-@router.get("/paginated", response_model=PaginatedAlertas, dependencies=[Depends (usuario_almoxarifado)])
+@router.get("/paginated", response_model=PaginatedAlertas, dependencies=[Depends (direcao_ou_almoxarifado)])
 async def listar_alertas_paginados (
     page: int = Query(1, ge=1, description="Número da página"),
     size: int = Query(10, ge=1, le=100, description="Alertas por página: 5, 10, 25, 50 ou 100"),

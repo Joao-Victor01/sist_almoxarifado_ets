@@ -1,0 +1,54 @@
+<!-- frontend/templates/partials/modals/modal_editar_usuario.html -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="modalEditarUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalEditarUsuarioLabel">Editar Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-usuario" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="edit_nome_usuario" class="form-label">Nome Completo*</label>
+                        <input type="text" class="form-control" id="edit_nome_usuario" name="nome_usuario" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit_email_usuario" class="form-label">Email*</label>
+                        <input type="email" class="form-control" id="edit_email_usuario" name="email_usuario" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit_username" class="form-label">Username*</label>
+                        <input type="text" class="form-control" id="edit_username" name="username" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit_senha_usuario" class="form-label">Nova Senha (Opcional)</label>
+                        <input type="password" class="form-control" id="edit_senha_usuario" name="senha_usuario">
+                        <small class="form-text text-muted">Deixe em branco para manter a senha atual.</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit_tipo_usuario" class="form-label">Tipo de Usuário*</label>
+                        <select class="form-select" id="edit_tipo_usuario" name="tipo_usuario" required>
+                            <option value="1">Usuário Geral</option>
+                            <option value="2">Almoxarifado</option>
+                            <option value="3">Direção</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit_setor_id" class="form-label">Setor*</label>
+                        <select class="form-select" id="edit_setor_id" name="setor_id" required>
+                            <option value="" disabled selected>Selecione um setor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="edit_siape_usuario" class="form-label">SIAPE (Opcional)</label>
+                        <input type="number" class="form-control" id="edit_siape_usuario" name="siape_usuario">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-salvar-editar-usuario">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+</div>
