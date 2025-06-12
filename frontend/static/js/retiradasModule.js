@@ -3,7 +3,7 @@
 import { apiService } from './apiService.js';
 import { dataService } from './dataService.js';
 import { uiService } from './uiService.js';
-import { showAlert, getStatusText, getStatusValue } from './utils.js';
+import { showAlert, getStatusText, getStatusValue, getUserTypeFromToken } from './utils.js';
 import estadoGlobal from './estadoGlobal.js';
 
 class RetiradasModule {
@@ -23,6 +23,7 @@ class RetiradasModule {
         this._boundHandleHistoricoPageSizeChange = this._handleHistoricoPageSizeChange.bind(this);
         this._boundHandleHistoricoFilterSubmit = this._handleHistoricoFilterSubmit.bind(this);
         this._boundHandleHistoricoClearFilters = this._handleHistoricoClearFilters.bind(this);
+
     }
 
     async renderHistoricoRetiradas(page = 1, filters = estadoGlobal.currentHistoricoFilters, pageSize = estadoGlobal.currentHistoricoPageSize) {
@@ -31,6 +32,8 @@ class RetiradasModule {
             const data = await dataService.getProcessedRetiradas(apiService.fetchAllRetiradas.bind(apiService), page, pageSize, filters);
             estadoGlobal.setHistoricoPagination(data.current_page, data.total_pages, pageSize, filters);
             estadoGlobal.setAllRetiradas(data.items);
+
+            const userType = await getUserTypeFromToken();
 
             const filterFormHtml = this._getHistoricoFilterFormHtml(filters);
 
@@ -54,7 +57,7 @@ class RetiradasModule {
                       >
                         <i class="bi bi-eye"></i> Detalhes
                       </button>`;
-                    if (r.status === estadoGlobal.statusMapUpdate.AUTORIZADA) {
+                    if (r.status === estadoGlobal.statusMapUpdate.AUTORIZADA && userType ==2 ) {
                         actions += `
                       <button 
                         class="btn btn-sm btn-success btn-acoes btn-concluir-retirada-trigger" 

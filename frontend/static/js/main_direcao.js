@@ -1,17 +1,13 @@
 // frontend/static/js/main_direcao.js
 
-import { retiradasModule } from './retiradasModule.js';
+import { historicoDirecaoModule } from './historicoDirecaoModule.js';
 import { solicitarRetiradaModule } from './solicitar-retirada.js';
 import { selecionarItemModule } from './selecionar-item-module.js';
 import { reportsModule } from './reportsModule.js';
 import { alertasModule } from './alertasModule.js';
 import { apiService } from './apiService.js';
-import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken, formatDateTime } from './utils.js';
-import { uiService } from './uiService.js';
-import estadoGlobal from './estadoGlobal.js'; 
-import { dataService } from './dataService.js'; 
-// import { historicoServidorModule } from './historicoServidorModule.js'; // Not needed for Direcao
-import { usuariosModule } from './usuariosModule.js'; // New module for user management
+import { setNewAlertsFlag,  updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken, formatDateTime } from './utils.js';
+import { usuariosModule } from './usuariosModule.js';
 
 const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3';
 const NOTIFICATION_SOUND_PATH_RETIRADA = '/static/audio/notificacao02.mp3';
@@ -80,11 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
             e.preventDefault();
-            retiradasModule.renderHistoricoRetiradas();
+            historicoDirecaoModule.renderRetiradasDirecao();
         });
         document.getElementById('listar-retiradas-pendentes-link')?.addEventListener('click', e => {
             e.preventDefault();
-            retiradasModule.renderPendentesRetiradas();
+            historicoDirecaoModule.renderPendentesRetiradas();
         });
 
         // Relatórios
@@ -121,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 setNewWithdrawalRequestsFlag(false);
                 updateNotificationBellUI();
-                retiradasModule.renderPendentesRetiradas();
+                historicoDirecaoModule.renderPendentesRetiradas();
                 hideNotificationDropdown();
             });
         }
