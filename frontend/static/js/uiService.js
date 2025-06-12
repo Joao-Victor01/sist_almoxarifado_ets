@@ -127,7 +127,7 @@ class UiService {
         `;
     }
 
-    // MODIFICADO: Adicionado parâmetro 'isRestrictedView' para controlar a exibição de estoque/estoque mínimo
+    //  Adicionado parâmetro 'isRestrictedView' para controlar a exibição de estoque/estoque mínimo
     renderItemList(containerId, items, isRestrictedView = false) {
         const cont = document.getElementById(containerId);
         if (!cont) {
@@ -140,13 +140,13 @@ class UiService {
             btn.type = 'button';
             btn.className = 'list-group-item list-group-item-action';
             btn.textContent = `${i.item.nome_item_original} Quantidade: ${i.quantidade_retirada}`; // Ajustado para nome
-            // MODIFICADO: Passa 'isRestrictedView' para openItemDetail
+            //  Passa 'isRestrictedView' para openItemDetail
             btn.onclick = () => this.openItemDetail(i.item, i.quantidade_retirada, isRestrictedView);
             cont.appendChild(btn);
         });
     }
 
-    // MODIFICADO: Adicionado parâmetro 'isRestrictedView'
+    //  Adicionado parâmetro 'isRestrictedView'
     openItemDetail(item, qtdRetirada, isRestrictedView = false) {
         document.getElementById('itemNome').textContent = item.nome_item_original; // Ajustado para nome
 
@@ -187,7 +187,7 @@ class UiService {
         this.getModalInstance('modalDetalheItem').show();
     }
 
-    // MODIFICADO: Adicionado parâmetro isServerView para controlar a exibição do estoque
+    //  Adicionado parâmetro isServerView para controlar a exibição do estoque
     fillModalDetalhes(retirada, isServerView = false) {
         document.getElementById('detalheRetiradaId').value = retirada.retirada_id;
         document.getElementById('detalheStatus').value = getStatusText(retirada.status);
@@ -205,7 +205,7 @@ class UiService {
             itemEstoqueLi.style.display = isServerView ? 'none' : 'block';
         }
 
-        // MODIFICADO: Passa 'isServerView' para renderItemList
+        //  Passa 'isServerView' para renderItemList
         this.renderItemList('detalheItens', retirada.itens, isServerView);
     }
 
@@ -217,7 +217,7 @@ class UiService {
         }
 
         document.getElementById('itemNome').textContent = item.nome_item_original || 'N/A';
-        // Aqui, como este modal pode ser acessado por diferentes perfis (ex: almoxarifado via alertas),
+        // como este modal pode ser acessado por diferentes perfis (ex: almoxarifado via alertas),
         // e não temos o contexto do perfil do usuário diretamente aqui,
         // manteremos a exibição de estoque e estoque mínimo.
         // Se a intenção for *nunca* mostrar estoque para o servidor em *qualquer* modal de item,

@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         homeButton.addEventListener('click', e => {
             e.preventDefault();
             mainContent.innerHTML = defaultHTML;
-            //  Chamar loadDashboardOverview se for o dashboard do servidor após restaurar o HTML
+            //  Chamar loadDashboardOverview se for o dashboard do servidor após restaurar o HTML
             if (isServidorDashboard) {
                 window.loadDashboardOverview();
             }
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Vincula o clique do card "Solicitar Retirada de Itens"
         document.getElementById('solicitar-retirada-servidor-link')?.addEventListener('click', e => {
             e.preventDefault();
-            solicitarRetiradaModule.openModal();
+            solicitarRetiradaModule.openModal(isServidorDashboard); // Passa a flag isServidorDashboard
         });
 
         // Vincula o clique do card "Meu Histórico de Retiradas"
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reportsModule.modalReportsDashboard.show();
         });
 
-        //  Listener para o link "Listar Alertas" do menu de navegação principal
+        //  Listener para o link "Listar Alertas" do menu de navegação principal
         document.getElementById('open-alertas-modal')?.addEventListener('click', e => {
             e.preventDefault();
             alertasModule.renderAlertsPage();
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        //  Adiciona listener para o link "Importar Tabela"
+        //  Adiciona listener para o link "Importar Tabela"
         document.getElementById('btn-open-importar-tabela')?.addEventListener('click', e => {
             e.preventDefault();
             try {
@@ -262,6 +262,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 uiService.hideLoading();
             }
+        });
+
+        // Handler para o link "Solicitar Retirada" no menu de navegação (para Almoxarifado/Direcao)
+        document.getElementById('btn-open-solicitar-retirada')?.addEventListener('click', e => {
+            e.preventDefault();
+            solicitarRetiradaModule.openModal(false); // Sempre false para este link (não é dashboard do servidor)
         });
     }
 
