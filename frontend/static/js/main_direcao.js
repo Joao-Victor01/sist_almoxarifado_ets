@@ -10,8 +10,8 @@ import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert
 import { uiService } from './uiService.js';
 import estadoGlobal from './estadoGlobal.js'; 
 import { dataService } from './dataService.js'; 
-// import { historicoServidorModule } from './historicoServidorModule.js'; // Not needed for Direcao
-import { usuariosModule } from './usuariosModule.js'; // New module for user management
+import { usuariosModule } from './usuariosModule.js';
+import { setoresModule } from './setoresModule.js'; 
 
 const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3';
 const NOTIFICATION_SOUND_PATH_RETIRADA = '/static/audio/notificacao02.mp3';
@@ -32,17 +32,15 @@ const mainContent = document.getElementById('main-content');
 let defaultHTML = mainContent ? mainContent.innerHTML : ''; // Armazena o conteúdo inicial
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Determine the dashboard type once on DOMContentLoaded
     const currentPath = window.location.pathname;
-    const isDirecaoDashboard = currentPath.includes('/dashboardDirecao'); // Flag for Direcao Dashboard
+    const isDirecaoDashboard = currentPath.includes('/dashboardDirecao'); 
 
     const homeButton = document.getElementById('home-button');
     if (homeButton && mainContent) {
         homeButton.addEventListener('click', e => {
             e.preventDefault();
             mainContent.innerHTML = defaultHTML;
-            // No specific overview for Direcao like Server, so no window.loadDashboardOverview() here
-            bindDirecaoLinks(); // Use Direcao-specific binder
+            bindDirecaoLinks(); 
             bindLogoutLink();
             checkAlertsNotification();
             reinitializeBootstrapDropdowns();
@@ -60,10 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
             usuariosModule.modalCadastrarUsuario.show(); // Trigger modal directly
         });
 
-        // Itens (read-only)
+        //  Setores
+        document.getElementById('listar-setores-link')?.addEventListener('click', e => {
+            e.preventDefault();
+            setoresModule.renderSetoresList();
+        });
+
+        document.getElementById('btn-open-cadastrar-setor')?.addEventListener('click', e => {
+            e.preventDefault();
+            setoresModule.modalCadastrarSetor.show();
+        });
+
+        // Itens 
         document.getElementById('listar-item-link')?.addEventListener('click', e => {
             e.preventDefault();
-            // Pass true to indicate read-only view for Direcao
             if (typeof window.renderizarListItens === 'function') {
                 window.renderizarListItens(true); 
             } else {
@@ -74,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Retiradas
         document.getElementById('btn-open-solicitar-retirada')?.addEventListener('click', e => {
             e.preventDefault();
-            // Direcao is not a server, so false for the isServidorDashboard flag
             solicitarRetiradaModule.openModal(false); 
         });
         document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
@@ -98,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alertasModule.renderAlertsPage();
         });
 
-        // Event listeners for notification dropdown items (similar to main.js)
         const newWithdrawalRequestsMenuItem = document.getElementById('new-withdrawal-requests-menu-item');
         const newAlertsMenuItem = document.getElementById('new-alerts-menu-item');
         const openAllNotificationsLink = document.getElementById('open-all-notifications-link');
@@ -130,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setNewAlertsFlag(false);
                 setNewWithdrawalRequestsFlag(false);
                 updateNotificationBellUI();
-                alertasModule.renderAlertsPage(); // Or a combined notification view
+                alertasModule.renderAlertsPage(); 
                 hideNotificationDropdown();
             });
         }
@@ -179,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = JSON.parse(event.data);
             console.log("Mensagem WebSocket recebida", message);
 
-            // Notification handling for Almoxarifado/Direcao (similar logic)
             if (message.type === "new_alert") {
                 setNewAlertsFlag(true);
                 showAlert("Novo alerta: " + message.message, "info", 5000);
@@ -213,14 +218,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Initialize modules
+    // Initializar modules
     solicitarRetiradaModule.init();
     selecionarItemModule.init();
     reportsModule.init();
     alertasModule.init();
-    usuariosModule.init(); // Initialize the new module
+    usuariosModule.init(); 
+    setoresModule.init(); 
 
-    // Bind initial links for Direcao dashboard
     bindDirecaoLinks();
     checkAlertsNotification();
     connectAlertsWebSocket();

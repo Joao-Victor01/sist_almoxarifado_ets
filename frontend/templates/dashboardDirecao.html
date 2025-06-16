@@ -5,43 +5,51 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 </head>
 <body>
-    {% include 'partials/topbar.html' %}
-    {% include 'partials/navbar_direcao.html' %}
 
-    <!-- Conteúdo principal dinâmico -->
-    <div class="container mt-5" id="main-content">
-        <h3 class="mb-3">Bem-vindo(a) à Direção!</h3>
-        <p class="text-muted">Utilize o menu de navegação para gerenciar o sistema.</p>
-    </div>
+{% include 'partials/topbar.html'%}
+{% include 'partials/navbar_direcao.html' %}
 
-    <!-- Partial: global_overlays.html -->
-    {% include 'partials/global_overlays.html' %}
+<!-- Conteúdo principal dinâmico-->
+<div class="container mt-5" id="main-content">
+    <h3 class="mb-3">Bem-vindo(a) à Direção!</h3>
+    <p class="text-muted">Utilize o menu de navegação para gerenciar o sistema.</p>
+</div>
 
-    <!-- Incluindo modais de Usuários -->
-    {% include 'partials/modals/modal_cadastrar_usuario.html' %}
-    {% include 'partials/modals/modal_editar_usuario.html' %}
-    {% include 'partials/modals/modal_confirmar_deletar_usuario.html' %}
+<!-- Partial: global_overlays.html -->
+{% include 'partials/global_overlays.html' %}
 
-    <!-- Incluindo modais de Retiradas -->
-    {% include 'partials/modals/modal_ver_detalhes_retirada.html' %}
-    {% include 'partials/modals/modal_autorizar_retirada.html' %}
-    {% include 'partials/modals/modal_solicitar_retirada.html' %}
-    {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
-    {% include 'partials/modals/modal_concluir_retirada.html' %}
-    
-    <!-- Incluindo modais de Itens (detalhes) -->
-    {% include 'partials/modals/modal_item_detalhes.html' %}
+<!-- Incluindo modais de Usuários -->
+{% include 'partials/modals/modal_cadastrar_usuario.html' %}
+{% include 'partials/modals/modal_editar_usuario.html' %}
+{% include 'partials/modals/modal_confirmar_deletar_usuario.html' %}
 
-    <!-- Incluindo modais de Relatórios -->
-    {% include 'partials/modals/modal_reports_dashboard.html' %}
-    {% include 'partials/modals/modal_report_quantidade_itens.html' %}
-    {% include 'partials/modals/modal_report_entrada_itens.html' %}
-    {% include 'partials/modals/modal_report_retiradas_setor.html' %}
-    {% include 'partials/modals/modal_report_retiradas_usuario.html' %}
-    
-    {% include 'partials/scripts.html' %}
-    <script type="module" src="/static/js/usuariosModule.js"></script>
-    <script type="module" src="/static/js/main_direcao.js"></script> 
+<!-- NOVO: Incluindo modais de Setores -->
+{% include 'partials/modals/modal_cadastrar_setor.html' %}
+{% include 'partials/modals/modal_editar_setor.html' %}
+{% include 'partials/modals/modal_confirmar_deletar_setor.html' %}
+
+<!-- Incluindo modais de Retiradas -->
+{% include 'partials/modals/modal_ver_detalhes_retirada.html'%}
+{% include 'partials/modals/modal_autorizar_retirada.html' %}
+{% include 'partials/modals/modal_solicitar_retirada.html' %}
+{% include 'partials/modals/modal_selecionar_item_retirada.html'%}
+{% include 'partials/modals/modal_concluir_retirada.html' %}
+
+<!-- Incluindo modais de Itens (detalhes) -->
+{% include 'partials/modals/modal_item_detalhes.html' %}
+
+<!-- Incluindo modais de Relatórios -->
+{% include 'partials/modals/modal_reports_dashboard.html' %}
+{% include 'partials/modals/modal_report_quantidade_itens.html' %}
+{% include 'partials/modals/modal_report_entrada_itens.html' %}
+{% include 'partials/modals/modal_report_retiradas_setor.html' %}
+{% include 'partials/modals/modal_report_retiradas_usuario.html' %}
+
+{% include 'partials/scripts.html' %}
+
+<script type="module" src="/static/js/usuariosModule.js"></script>
+<script type="module" src="/static/js/setoresModule.js"></script> {# NOVO SCRIPT #}
+<script type="module" src="/static/js/main_direcao.js"></script>
 
 </body>
 </html>

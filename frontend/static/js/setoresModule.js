@@ -50,7 +50,7 @@ class SetoresModule {
 
         // Confirmar Deleção
         this.btnConfirmarDeletarSetor?.addEventListener('click', this._deleteSetorConfirmed.bind(this));
-        
+
         // Salvar Edição
         this.btnSalvarEditarSetor?.addEventListener('click', this.boundUpdateSetor);
     }
@@ -58,7 +58,7 @@ class SetoresModule {
     async renderSetoresList() {
         uiService.showLoading();
         try {
-            // Fetch all sectors. For simplicity, fetching all and then filtering/paginating in frontend.
+            // Fetch all sectors. For simplicity, fetching all and then filtering/paginating in frontend
             // For large datasets, backend pagination/filtering would be more efficient.
             const allSetores = await apiService.get('/setores');
 
@@ -125,12 +125,12 @@ class SetoresModule {
             `);
 
             this._bindPageEvents(); // Re-bind events after content is rendered
-            this.bindTableActions(); // Re-bind table action events
+            this._bindTableActions(); // Re-bind table action events
 
         } catch (error) {
-            console.error('Erro ao renderizar lista de setores:', error);
+            console.error('Erro ao renderizar lista de setores', error);
             showAlert(error.message || 'Erro ao carregar setores.', 'danger');
-            uiService.renderPage('Gerenciamento de Setores', `<div class="alert alert-warning">Erro ao carregar setores: ${error.message}</div>`);
+            uiService.renderPage('Gerenciamento de Setores', `<div class="alert alert-warning">Erro ao carregar setores: ${error.message || 'Verifique sua conexão.'}</div>`);
         } finally {
             uiService.hideLoading();
         }
@@ -139,8 +139,8 @@ class SetoresModule {
     _bindPageEvents() {
         const paginationNav = document.getElementById('setores-pagination-nav');
         const pageSizeSelect = document.getElementById('setoresPageSizeSelect');
-        const btnSearch = document.getElementById('btn-search-setor');
         const btnClearSearch = document.getElementById('btn-clear-search-setor');
+        const btnSearch = document.getElementById('btn-search-setor');
 
         // Remove previous listeners to prevent duplication
         if (paginationNav) {
@@ -173,6 +173,7 @@ class SetoresModule {
 
     _handlePaginationClick(e) {
         e.preventDefault();
+
         const clickedPageLink = e.target.closest('a[data-page^="setores-"]');
         const clickedActionButton = e.target.closest('a[data-action^="setores-"]');
 
@@ -228,7 +229,7 @@ class SetoresModule {
         this.renderSetoresList();
     }
 
-    bindTableActions() {
+    _bindTableActions() {
         const mainContent = document.getElementById('main-content');
         if (mainContent) {
             mainContent.removeEventListener('click', this.boundHandleTableActions); // Remove old listener
@@ -268,7 +269,7 @@ class SetoresModule {
             this.modalCadastrarSetor.hide();
             this.renderSetoresList(); // Refresh list
         } catch (error) {
-            console.error('Erro ao cadastrar setor:', error);
+            console.error('Erro ao cadastrar setor', error);
             showAlert(error.message || 'Erro ao cadastrar setor.', 'danger');
         } finally {
             uiService.hideLoading();
@@ -279,16 +280,14 @@ class SetoresModule {
         uiService.showLoading();
         try {
             const setor = await apiService.get(`/setores/${setorId}`);
-
             this.formEditarSetor.querySelector('input[name="nome_setor"]').value = setor.nome_setor;
             this.formEditarSetor.querySelector('textarea[name="descricao_setor"]').value = setor.descricao_setor || '';
-            
+
             // Store setor ID in the save button for later use
             this.btnSalvarEditarSetor.dataset.id = setorId;
-
             this.modalEditarSetor.show();
         } catch (error) {
-            console.error('Erro ao carregar dados do setor para edição:', error);
+            console.error('Erro ao carregar dados do setor para edição', error);
             showAlert(error.message || 'Erro ao carregar dados do setor.', 'danger');
         } finally {
             uiService.hideLoading();
@@ -312,7 +311,7 @@ class SetoresModule {
         for (const [key, value] of formData.entries()) {
             setorData[key] = value;
         }
-        
+
         uiService.showLoading();
         try {
             await apiService.put(`/setores/${setorId}`, setorData); // Use PUT for full update
@@ -320,8 +319,8 @@ class SetoresModule {
             this.modalEditarSetor.hide();
             this.renderSetoresList(); // Refresh list
         } catch (error) {
-            console.error('Erro ao atualizar setor:', error);
-            showAlert(error.message || 'Erro ao atualizar setor.', 'danger');
+            console.error('Erro ao atualizar setor', error);
+            showAlert(error.message || 'Erro ao atualizar setor.', 'danger!');
         } finally {
             uiService.hideLoading();
         }
@@ -336,7 +335,7 @@ class SetoresModule {
     async _deleteSetorConfirmed() {
         const setorId = parseInt(this.btnConfirmarDeletarSetor.dataset.id);
         if (!setorId) {
-            showAlert('ID do setor para exclusão não encontrado.', 'danger');
+            showAlert('ID do setor para exclusão não encontrado.', 'danger!');
             return;
         }
 
@@ -347,7 +346,7 @@ class SetoresModule {
             this.modalConfirmarDeleteSetor.hide();
             this.renderSetoresList(); // Refresh list
         } catch (error) {
-            console.error('Erro ao deletar setor:', error);
+            console.error('Erro ao deletar setor', error);
             showAlert(error.message || 'Erro ao deletar setor.', 'danger');
         } finally {
             uiService.hideLoading();

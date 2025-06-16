@@ -6,7 +6,6 @@
             aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="navbarMenu">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <!-- Usuários -->
@@ -17,12 +16,18 @@
                         <li><a class="dropdown-item" id="listar-usuarios-link" href="#">Listar Usuários</a></li>
                     </ul>
                 </li>
-
+                <!-- NOVO: Setores -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="setoresDropdown" data-bs-toggle="dropdown">SETORES</a>
+                    <ul class="dropdown-menu" aria-labelledby="setoresDropdown">
+                        <li><a class="dropdown-item" id="btn-open-cadastrar-setor" href="#">Cadastrar Setor</a></li>
+                        <li><a class="dropdown-item" id="listar-setores-link" href="#">Listar Setores</a></li>
+                    </ul>
+                </li>
                 <!-- Itens (apenas leitura) -->
                 <li class="nav-item">
                     <a class="nav-link" href="#" id="listar-item-link">LISTAR ITENS</a>
                 </li>
-
                 <!-- Retiradas -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="retiradasDropdown" data-bs-toggle="dropdown">RETIRADAS</a>
@@ -31,19 +36,16 @@
                         <li><a class="dropdown-item" id="listar-retiradas-link" href="#">Histórico de Retiradas</a></li>
                     </ul>
                 </li>
-
                 <!-- Relatórios -->
                 <li class="nav-item">
                     <a class="nav-link" href="#" id="open-reports-dashboard"
-                       data-bs-toggle="modal" data-bs-target="#modalReportsDashboard">RELATÓRIOS</a>
+                        data-bs-toggle="modal" data-bs-target="#modalReportsDashboard">RELATÓRIOS</a>
                 </li>
-
                 <!-- Alertas -->
-                <li class="nav-item">
+                <li class="nav-item"> 
                     <a class="nav-link" href="#" id="open-alertas-modal">HISTÓRICO DE ALERTAS</a>
                 </li>
             </ul>
-
             <div class="d-flex align-items-center">
                 <div class="dropdown">
                     <a class="nav-link position-relative me-3" href="#" id="alert-notification-bell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -56,6 +58,10 @@
                         <li><span class="dropdown-item text-muted" id="no-notifications-menu-item" style="display: block;">Sem notificações</span></li>
                         <li><a class="dropdown-item" href="#" id="new-alerts-menu-item" style="display: none;">Alerta de Estoque</a></li>
                         <li><hr class="dropdown-divider"></li>
+                        <!-- Adicione aqui o link para "Novas Solicitações de Retirada" se necessário para a direção -->
+                        <li><a class="dropdown-item" href="#" id="new-withdrawal-requests-menu-item" style="display: none;">Novas Solicitações de Retirada</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="open-all-notifications-link">Ver Todas as Notificações</a></li>
                     </ul>
                 </div>
                 <div class="dropdown">

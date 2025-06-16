@@ -1,0 +1,26 @@
+<div class="modal fade" id="modalCadastrarSetor" tabindex="-1" aria-labelledby="modalCadastrarSetorLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalCadastrarSetorLabel">Cadastrar Novo Setor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-cadastrar-setor">
+                    <div class="mb-3">
+                        <label for="cad_nome_setor" class="form-label">Nome do Setor*</label>
+                        <input type="text" class="form-control" id="cad_nome_setor" name="nome_setor" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cad_descricao_setor" class="form-label">Descrição (Opcional)</label>
+                        <textarea class="form-control" id="cad_descricao_setor" name="descricao_setor" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-salvar-cadastrar-setor">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
