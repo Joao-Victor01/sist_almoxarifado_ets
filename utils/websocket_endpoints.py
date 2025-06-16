@@ -58,7 +58,7 @@ class ConnectionManager:
                 print(f"Erro inesperado no broadcast para WebSocket geral: {e}")
                 self.general_connections.remove(connection)
         
-        # NOVO: Envia também para todas as conexões ativas de usuários específicos
+        #  Envia também para todas as conexões ativas de usuários específicos
         for user_id, connections in list(self.active_connections.items()):
             for connection in list(connections): # Iterar sobre uma cópia para permitir remoção
                 try:
@@ -104,9 +104,9 @@ manager = ConnectionManager() # Instancia o ConnectionManager globalmente
 @websocket_router.websocket("/ws/alerts")
 async def websocket_endpoint(websocket: WebSocket):
     # O user_id será passado como um query parameter do frontend
-    # Ex: ws://localhost:8082/api/almoxarifado/ws/alerts?user_id=123
+    # Exemplo: ws://localhost:8082/api/almoxarifado/ws/alerts?user_id=123
     
-    # NOVO: Obter user_id explicitamente dos query parameters
+    #  Obter user_id explicitamente dos query parameters
     user_id_str: Optional[str] = websocket.query_params.get("user_id")
     user_id: Optional[int] = None
     if user_id_str:

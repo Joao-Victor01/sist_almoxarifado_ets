@@ -28,24 +28,21 @@ const mainContent = document.getElementById('main-content');
 let defaultHTML = mainContent ? mainContent.innerHTML : ''; // Armazena o conteúdo inicial
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Determine the dashboard type once on DOMContentLoaded
     const currentPath = window.location.pathname;
-    const isDirecaoDashboard = currentPath.includes('/dashboardDirecao'); // Flag for Direcao Dashboard
+    const isDirecaoDashboard = currentPath.includes('/dashboardDirecao'); 
 
     const homeButton = document.getElementById('home-button');
     if (homeButton && mainContent) {
         homeButton.addEventListener('click', e => {
             e.preventDefault();
             mainContent.innerHTML = defaultHTML;
-            // No specific overview for Direcao like Server, so no window.loadDashboardOverview() here
-            bindDirecaoLinks(); // Use Direcao-specific binder
+            bindDirecaoLinks(); 
             bindLogoutLink();
             checkAlertsNotification();
             reinitializeBootstrapDropdowns();
         });
     }
 
-    // New binder function for Direcao specific links
     function bindDirecaoLinks() {
         // Usuários
         document.getElementById('listar-usuarios-link')?.addEventListener('click', e => {
@@ -54,13 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('btn-open-cadastrar-usuario')?.addEventListener('click', e => {
             e.preventDefault();
-            usuariosModule.modalCadastrarUsuario.show(); // Trigger modal directly
+            usuariosModule.modalCadastrarUsuario.show(); 
         });
 
         // Itens (read-only)
         document.getElementById('listar-item-link')?.addEventListener('click', e => {
             e.preventDefault();
-            // Pass true to indicate read-only view for Direcao
             if (typeof window.renderizarListItens === 'function') {
                 window.renderizarListItens(true); 
             } else {
@@ -71,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Retiradas
         document.getElementById('btn-open-solicitar-retirada')?.addEventListener('click', e => {
             e.preventDefault();
-            // Direcao is not a server, so false for the isServidorDashboard flag
             solicitarRetiradaModule.openModal(false); 
         });
         document.getElementById('listar-retiradas-link')?.addEventListener('click', e => {
@@ -95,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alertasModule.renderAlertsPage();
         });
 
-        // Event listeners for notification dropdown items (similar to main.js)
+        //  listeners para notificação dropdown items 
         const newWithdrawalRequestsMenuItem = document.getElementById('new-withdrawal-requests-menu-item');
         const newAlertsMenuItem = document.getElementById('new-alerts-menu-item');
         const openAllNotificationsLink = document.getElementById('open-all-notifications-link');
@@ -127,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setNewAlertsFlag(false);
                 setNewWithdrawalRequestsFlag(false);
                 updateNotificationBellUI();
-                alertasModule.renderAlertsPage(); // Or a combined notification view
+                alertasModule.renderAlertsPage(); 
                 hideNotificationDropdown();
             });
         }
@@ -215,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selecionarItemModule.init();
     reportsModule.init();
     alertasModule.init();
-    usuariosModule.init(); // Initialize the new module
+    usuariosModule.init(); 
 
     // Bind initial links for Direcao dashboard
     bindDirecaoLinks();

@@ -1,5 +1,5 @@
+#services/retirada_service.py
 
-# services/retirada_service.py
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
@@ -9,9 +9,12 @@ from models.retirada_item import RetiradaItem
 from repositories.retirada_repository import RetiradaRepository
 from schemas.retirada import RetiradaCreate, RetiradaUpdateStatus, RetiradaPaginated, RetiradaFilterParams
 from services.alerta_service import AlertaService
-from utils.websocket_endpoints import manager # Importar o manager
+from utils.websocket_endpoints import manager 
+from models.usuario import Usuario, RoleEnum 
+from sqlalchemy.future import select 
 
 class RetiradaService:
+
     @staticmethod
     async def get_retiradas_paginadas(
         db: AsyncSession, page: int, page_size: int
@@ -45,7 +48,7 @@ class RetiradaService:
     async def solicitar_retirada(db: AsyncSession, retirada_data: RetiradaCreate, usuario_id: int):
         """Cria uma nova solicitação de retirada e seus itens associados."""
         try:
-            # 1) cria Retirada
+            # 1) Cria Retirada
             nova_retirada = Retirada(
                 usuario_id=usuario_id,
                 setor_id=retirada_data.setor_id,
@@ -55,7 +58,7 @@ class RetiradaService:
             )
             await RetiradaRepository.criar_retirada(db, nova_retirada)
 
-            # 2) cria e adiciona itens
+            # 2) Cria e adiciona itens
             itens_retirada = [
                 RetiradaItem(
                     retirada_id=nova_retirada.retirada_id,
@@ -66,23 +69,31 @@ class RetiradaService:
             ]
             await RetiradaRepository.adicionar_itens_retirada(db, itens_retirada)
 
-            # 3) commit
+            # 3) Commit
             await db.commit()
 
-            # 4) recarrega com eager-load para serialização segura
+            # 4) Recarrega com eager-load para serialização segura
             retirada_completa = await RetiradaRepository.buscar_retirada_por_id(
                 db, nova_retirada.retirada_id
             )
 
-            #  Transmitir o evento de nova solicitação de retirada via WebSocket
-            # Esta notificação ainda vai para as conexões gerais, pois é um alerta para o almoxarifado
-            await manager.broadcast({
-                "type": "new_withdrawal_request",
-                "retirada_id": retirada_completa.retirada_id,
-                "message": f"Nova solicitação de retirada do setor {retirada_completa.setor_id} ID: {retirada_completa.retirada_id}"
-            })
+            # Transmitir o evento de nova solicitação de retirada APENAS para usuários do Almoxarifado
+            # Consulta para obter IDs de todos os usuários com o perfil de Almoxarifado
+            almoxarifados = await db.execute(
+                select(Usuario).where(Usuario.tipo_usuario == RoleEnum.USUARIO_ALMOXARIFADO.value)
+            )
+            for almoxarifado_user in almoxarifados.scalars().all():
+                await manager.send_to_user(
+                    almoxarifado_user.usuario_id,
+                    {
+                        "type": "new_withdrawal_request",
+                        "retirada_id": retirada_completa.retirada_id,
+                        "message": f"Nova solicitação de retirada do setor {retirada_completa.setor_id} (ID: {retirada_completa.retirada_id})."
+                    }
+                )
 
             return retirada_completa
+
         except Exception as e:
             await db.rollback()
             raise HTTPException(
@@ -98,6 +109,7 @@ class RetiradaService:
                 raise HTTPException(400, "Status inválido.")
 
             retirada = await RetiradaRepository.buscar_retirada_por_id(db, retirada_id)
+
             if not retirada:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, "Retirada não encontrada")
 
@@ -105,38 +117,37 @@ class RetiradaService:
             if status_data.status == StatusEnum.CONCLUIDA:
                 for ri in retirada.itens:
                     item = await RetiradaRepository.buscar_item_por_id(db, ri.item_id)
-                    
                     if item.quantidade_item < ri.quantidade_retirada:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Estoque insuficiente para item {item.nome_item_original}. Quantidade disponível: {item.quantidade_item}, Quantidade solicitada: {ri.quantidade_retirada}"
+                            detail=f"Estoque insuficiente para item {item.nome_item_original}. Quantidade disponível: {item.quantidade_item}, solicitada: {ri.quantidade_retirada}."
                         )
                     await RetiradaRepository.atualizar_quantidade_item(
                         db, item, item.quantidade_item - ri.quantidade_retirada
                     )
-                    # NOVO: Se a quantidade do item chegar a 0, marcar como inativo (soft delete)
+                    #  Se a quantidade do item chegar a 0, marcar como inativo (soft delete)
                     if item.quantidade_item == 0:
                         item.ativo = False # Marca o item como inativo
-                        await db.flush() # Garante que a mudança seja persistida antes do commit
-                    
+                    await db.flush() # Garante que a mudança seja persistida antes do commit
+
                     await AlertaService.verificar_estoque_baixo(db, ri.item_id)
 
             retirada.status = status_data.status
             retirada.detalhe_status = status_data.detalhe_status
             retirada.autorizado_por = admin_id
-
             updated_retirada = await RetiradaRepository.atualizar_retirada(db, retirada)
 
-            # NOVO: Enviar notificação específica para o usuário que solicitou a retirada
+            #  Enviar notificação específica para o usuário que solicitou a retirada
             await manager.send_to_user(
                 updated_retirada.usuario_id,
                 {
                     "type": "withdrawal_status_update",
                     "retirada_id": updated_retirada.retirada_id,
                     "status": updated_retirada.status,
-                    "message": f"Sua solicitação de retirada ID {updated_retirada.retirada_id} foi atualizada para: {StatusEnum(updated_retirada.status).name}"
+                    "message": f"Sua solicitação de retirada ID {updated_retirada.retirada_id} foi atualizada para {StatusEnum(updated_retirada.status).name}."
                 }
             )
+
             return updated_retirada
 
         except HTTPException:
@@ -213,3 +224,4 @@ class RetiradaService:
         sqlalchemy_items = await RetiradaRepository.get_retiradas_by_user_paginated(db, usuario_id, offset, page_size)
         items = [RetiradaOut.model_validate(ent) for ent in sqlalchemy_items]
         return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
+
