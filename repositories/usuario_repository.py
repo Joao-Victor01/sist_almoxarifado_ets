@@ -30,30 +30,41 @@ class UsuarioRepository:
 
     @staticmethod
     async def get_usuarios(db: AsyncSession):
-        result = await db.execute(select(Usuario))
-        usuarios = result.scalars().all()
-        return usuarios
+        result = await db.execute(
+            select(Usuario).where(Usuario.is_active == True)
+        )
+        return result.scalars().all()
 
     @staticmethod
     async def get_usuario_by_id(db: AsyncSession, usuario_id: int):
-        result = await db.execute(select(Usuario).where(Usuario.usuario_id == usuario_id))
+        result = await db.execute(
+            select(Usuario)
+            .where(Usuario.usuario_id == usuario_id, Usuario.is_active == True)
+        )
         usuario = result.scalars().first()
-
         if not usuario:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado ou inativo"
+            )
         return usuario
-
-
+    
+    #deletar usuário (soft delete)
     @staticmethod
     async def delete_usuario(db: AsyncSession, usuario_id: int):
-        result = await db.execute(select(Usuario).where(Usuario.usuario_id == usuario_id))
+        result = await db.execute(
+            select(Usuario).where(Usuario.usuario_id == usuario_id)
+        )
         usuario = result.scalars().first()
         if not usuario:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
-
-        await db.delete(usuario)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
+            )
+        # Soft delete:
+        usuario.is_active = False
         await db.commit()
-        return {"message": "Usuário deletado com sucesso"}
+        return {"message": "Usuário inativado com sucesso"}
 
     # atualizar dados do usuario 
     @staticmethod

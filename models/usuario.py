@@ -1,6 +1,6 @@
 #models\usuario.py
 
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from core.configs import settings
 from enum import IntEnum
 
@@ -21,3 +21,5 @@ class Usuario(settings.DBBaseModel):
     senha_usuario = Column(String(256), nullable=False)
     setor_id = Column(Integer, ForeignKey("setor.setor_id"), nullable=False)
     username = Column(String(100), nullable=False)
+    is_active     = Column(Boolean, nullable=False, default=True)  
+

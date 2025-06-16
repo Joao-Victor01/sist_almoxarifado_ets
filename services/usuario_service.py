@@ -53,22 +53,22 @@ class UsuarioService:
             )
         return usuario
 
+
     @staticmethod
     async def delete_usuario(db: AsyncSession, usuario_id: int, current_user: Usuario):
-        """Remove um usuário"""
         usuario = await UsuarioRepository.get_usuario_by_id(db, usuario_id)
         if not usuario:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Usuário não encontrado"
             )
-        # Permite que direcao deletar
-        if current_user.tipo_usuario != 3: 
+        if current_user.tipo_usuario != RoleEnum.USUARIO_DIRECAO.value:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Sem permissão para esta operação"
             )
-        await UsuarioRepository.delete_usuario(db, usuario_id)
+        return await UsuarioRepository.delete_usuario(db, usuario_id)
+
 
     @staticmethod
     async def update_usuario(

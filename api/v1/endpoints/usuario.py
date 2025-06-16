@@ -45,12 +45,13 @@ async def get_usuario(usuario_id: int,
 
 
 @router.delete("/{usuario_id}")
-async def delete_usuario(usuario_id: int, 
-                         db: AsyncSession = Depends(get_session),
-                         current_user=Depends(usuario_direcao)):
+async def delete_usuario(
+    usuario_id: int,
+    db: AsyncSession = Depends(get_session),
+    current_user=Depends(usuario_direcao)
+):
+    return await UsuarioService.delete_usuario(db, usuario_id, current_user)
 
-    response = await UsuarioService.delete_usuario(db, usuario_id, current_user)
-    return response
 
 @router.put("/{usuario_id}", response_model=UsuarioOut)
 async def update_usuario(
