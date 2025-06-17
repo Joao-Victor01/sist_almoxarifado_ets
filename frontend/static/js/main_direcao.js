@@ -6,15 +6,11 @@ import { selecionarItemModule } from './selecionar-item-module.js';
 import { reportsModule } from './reportsModule.js';
 import { alertasModule } from './alertasModule.js';
 import { apiService } from './apiService.js';
-import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken, formatDateTime } from './utils.js';
-import { uiService } from './uiService.js';
-import estadoGlobal from './estadoGlobal.js'; 
-import { dataService } from './dataService.js'; 
+import { setNewAlertsFlag,  updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken } from './utils.js';
 import { usuariosModule } from './usuariosModule.js';
 import { setoresModule } from './setoresModule.js'; 
 
 const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3';
-const NOTIFICATION_SOUND_PATH_RETIRADA = '/static/audio/notificacao02.mp3';
 
 // Função auxiliar para re-inicializar dropdowns do Bootstrap
 export function reinitializeBootstrapDropdowns() {
@@ -194,16 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) {
                     console.error("Não foi possível criar objeto de áudio para notificação:", e);
                 }
-            } else if (message.type === "new_withdrawal_request") {
-                setNewWithdrawalRequestsFlag(true);
-                showAlert("Nova solicitação de retirada: " + message.message, "primary", 5000);
-                try {
-                    const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
-                    audio.play().catch(e => console.error("Erro ao tocar som de notificação", e));
-                } catch (e) {
-                    console.error("Não foi possível criar objeto de áudio para notificação:", e);
-                }
-            }
+            } 
             updateNotificationBellUI();
         };
 

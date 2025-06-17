@@ -50,18 +50,6 @@ class UsuariosModule {
         });
         this.btnSalvarCadastrarUsuario?.addEventListener('click', () => this._createUsuario());
 
-        // Listar Usuários link is handled in main_direcao.js for initial render
-
-        // Search and clear buttons
-        // These elements might not exist immediately if the user list isn't rendered yet
-        // Add event listeners directly to the buttons after rendering, or use event delegation
-        // For now, attaching directly assuming they will be present after renderUsuariosList is called.
-        // If the search bar is part of the dynamic content, these listeners need to be re-bound after render.
-        // Let's add them via delegation or after rendering the main content.
-        // For simplicity with this current structure, adding them after renderUsuariosList will ensure they are bound.
-
-        // Edited: Move search bar event listeners to _bindPageEvents() for re-binding
-        
         // Confirm delete
         this.btnConfirmarDeletarUsuario?.addEventListener('click', this._deleteUsuarioConfirmed.bind(this));
 
@@ -122,7 +110,7 @@ class UsuariosModule {
                         usuario.email_usuario,
                         userRoleText,
                         usuario.setor_id, // Placeholder, ideally fetch actual sector name
-                        usuario.siape_usuario || 'N/A'
+                        usuario.siape_usuario || 'N/D'
                     ];
                 },
                 actionsHtml: (usuario) => `
@@ -318,7 +306,7 @@ class UsuariosModule {
         // Convert to appropriate types
         userData.tipo_usuario = parseInt(userData.tipo_usuario); 
         userData.setor_id = parseInt(userData.setor_id);
-        userData.siape_usuario = userData.siape_usuario ? parseInt(userData.siape_usuario) : null; 
+        userData.siape_usuario = userData.siape_usuario ? userData.siape_usuario.trim() : null;
 
         uiService.showLoading();
         try {
@@ -382,7 +370,7 @@ class UsuariosModule {
         // Ensure numbers are parsed correctly, and undefined for optional unset fields
         userData.tipo_usuario = userData.tipo_usuario ? parseInt(userData.tipo_usuario) : undefined;
         userData.setor_id = userData.setor_id ? parseInt(userData.setor_id) : undefined;
-        userData.siape_usuario = userData.siape_usuario ? parseInt(userData.siape_usuario) : undefined;
+        userData.siape_usuario = userData.siape_usuario ? userData.siape_usuario.trim() : null;
 
 
         uiService.showLoading();

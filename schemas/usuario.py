@@ -1,36 +1,36 @@
-# schemas/usuario.py
+#schemas/usuario.py
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-class UsuarioBase(BaseModel):
+class UsuarioBase (BaseModel):
     nome_usuario: str
     email_usuario: EmailStr
     tipo_usuario: int
     setor_id: int
     username: str
-    siape_usuario: int
+    siape_usuario: Optional[str] = None 
 
-class UsuarioCreate(UsuarioBase):
+class UsuarioCreate (UsuarioBase):
     nome_usuario: str
-    siape_usuario: Optional[int] = None
+    siape_usuario: Optional [str] = None
     tipo_usuario: int
     senha_usuario: str
     email_usuario: EmailStr
     setor_id: int
-    username: str 
+    username: str
 
-
-class UsuarioUpdate(BaseModel):
-    nome_usuario: Optional[str] = None
-    siape_usuario: Optional[int] = None
-    tipo_usuario: Optional[int] = None
-    senha_usuario: Optional[str] = None
-    email_usuario: Optional[EmailStr] = None
+class UsuarioUpdate (BaseModel):
+    nome_usuario: Optional [str] = None
+    siape_usuario: Optional[str] = None 
+    tipo_usuario: Optional [int] = None
+    senha_usuario: Optional [str] = None
+    email_usuario: Optional [EmailStr] = None
     setor_id: Optional [int] = None
-    username: Optional [str] = None 
+    username: Optional [str] = None
 
-class UsuarioOut(UsuarioBase):
+class UsuarioOut (UsuarioBase):
     usuario_id: int
 
     class Config:
         from_attributes = True
+

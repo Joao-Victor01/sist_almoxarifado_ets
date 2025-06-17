@@ -58,7 +58,7 @@ async def update_usuario(
     usuario_id: int, 
     usuario: UsuarioUpdate, 
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(usuario_direcao)
+    current_user=Depends(todos_usuarios)
 ):
 
 
