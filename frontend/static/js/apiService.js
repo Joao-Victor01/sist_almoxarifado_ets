@@ -130,7 +130,7 @@ class ApiService {
 
         const hasActiveFilters = Object.keys(queryParamsForApi).length > 0;
         const endpoint = hasActiveFilters ? '/retiradas/search' : '/retiradas/paginated';
-        const responseData = await this.get(endpoint, { params, ...queryParamsForApi }); // Correção aqui
+        const responseData = await this.get(endpoint, { ...params, ...queryParamsForApi });
 
         return {
             current_page: responseData.page,
