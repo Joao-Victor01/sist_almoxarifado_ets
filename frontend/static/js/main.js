@@ -174,24 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Comportamento para "Ver todas as notificações"
-        if (openAllNotificationsLink) {
-            openAllNotificationsLink.addEventListener('click', e => {
-                e.preventDefault();
-                setNewAlertsFlag(false);
-                setNewWithdrawalRequestsFlag(false);
-                updateNotificationBellUI();
-                if (isServidorDashboard) {
-                    historicoServidorModule.renderMinhasRetiradas();
-                    alertasModule.renderAlertsPage();
-                } else {
-                    // Para Almoxarifado, pode direcionar para a página de alertas ou retiradas pendentes
-                    // Decida qual comportamento é mais adequado aqui. Por agora, apenas esconde o dropdown.
-                }
-                hideNotificationDropdown();
-            });
-        }
-
         // Adiciona listener para o link "Importar Tabela"
         document.getElementById('btn-open-importar-tabela')?.addEventListener('click', e => {
             e.preventDefault();
