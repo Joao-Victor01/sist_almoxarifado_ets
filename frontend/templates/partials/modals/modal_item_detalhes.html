@@ -1,4 +1,4 @@
-<!-- frontend\templates\partials\modals\modal_item_detalhes.html -->
+<!-- frontend/templates/partials/modals/modal_item_detalhes.html -->
 <div class="modal fade" id="modalDetalheItem" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 shadow">
@@ -9,9 +9,19 @@
       <div class="modal-body">
         <ul class="list-unstyled mb-0">
           <li><strong>Nome:</strong> <span id="itemNome"></span></li>
-          <li><strong>Em Estoque:</strong> <span id="itemEstoque"></span></li>
+
+          <!-- escondido por padrão -->
+          <li id="liItemEstoque" style="display: none;">
+            <strong>Em Estoque:</strong> <span id="itemEstoque"></span>
+          </li>
+
           <li><strong>Solicitado:</strong> <span id="itemQtdRetirada"></span></li>
-          <li><strong>Estoque Mínimo:</strong> <span id="itemEstoqueMin"></span></li>
+
+          <!--  escondido por padrão -->
+          <li id="liItemEstoqueMin" style="display: none;">
+            <strong>Estoque Mínimo:</strong> <span id="itemEstoqueMin"></span>
+          </li>
+
           <li><strong>Validade:</strong> <span id="itemValidade"></span></li>
         </ul>
       </div>
