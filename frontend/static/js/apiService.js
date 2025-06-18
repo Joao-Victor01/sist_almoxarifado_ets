@@ -235,6 +235,15 @@ class ApiService {
             return { name: 'Usuário', siape: 'N/A', sectorName: 'N/A', sectorId: null }; // Adicionado sectorId: null
         }
     }
+
+    // MÉTODO: Soft delete de retiradas por período 
+    async deleteRetiradasByPeriod(startDate, endDate) {
+        // Envia as datas como query parameters para o endpoint DELETE 
+        const params = new URLSearchParams({ start_date: startDate, end_date: endDate }); 
+        return this._fetch(`/retiradas/soft-delete-by-period?${params.toString()}`, {
+            method: 'DELETE', 
+        });
+    }
 }
 
 export const apiService = new ApiService();

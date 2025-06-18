@@ -1,6 +1,6 @@
 #models\retirada.py
 
-from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Text
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Text, Boolean
 from sqlalchemy.orm import relationship
 from core.configs import settings
 from datetime import datetime
@@ -25,6 +25,8 @@ class Retirada(settings.DBBaseModel):
     detalhe_status = Column(Text, nullable=True)  # Explicação do almoxarifado para autorização/negação
     justificativa = Column(Text, nullable=True)  # Justificativa do usuário
     data_solicitacao = Column(DateTime, default=datetime.now)
+    is_active = Column(Boolean, default=True, nullable=False) # soft delete
+
 
     usuario = relationship("Usuario", foreign_keys=[usuario_id])
     admin = relationship("Usuario", foreign_keys=[autorizado_por])

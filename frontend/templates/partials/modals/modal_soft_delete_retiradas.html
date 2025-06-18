@@ -1,0 +1,29 @@
+<!-- frontend\templates\partials\modals\modal_soft_delete_retiradas.html -->
+<div class="modal fade" id="modalSoftDeleteRetiradas" tabindex="-1" aria-labelledby="modalSoftDeleteRetiradasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalSoftDeleteRetiradasLabel">Deletar Retiradas Antigas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-soft-delete-retiradas">
+                    <p>Selecione o período para deletar (inativar) as retiradas.</p>
+                    <div class="mb-3">
+                        <label for="softDeleteDataInicio" class="form-label">Data Inicial*</label>
+                        <input type="date" class="form-control" id="softDeleteDataInicio" name="data_inicio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="softDeleteDataFim" class="form-label">Data Final*</label>
+                        <input type="date" class="form-control" id="softDeleteDataFim" name="data_fim" required>
+                    </div>
+                    <p class="text-danger small"><strong>Atenção:</strong> As retiradas dentro do período serão marcadas como inativas e não aparecerão mais nas listagens. Esta ação é irreversível.</p>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-soft-delete-retiradas">Deletar Antigas</button>
+            </div>
+        </div>
+    </div>
+</div>
