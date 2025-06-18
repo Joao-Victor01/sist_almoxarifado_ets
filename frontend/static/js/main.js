@@ -21,9 +21,9 @@ export function reinitializeBootstrapDropdowns() {
     dropdownToggleList.map(function (dropdownToggleEl) {
         const dropdownInstance = bootstrap.Dropdown.getInstance(dropdownToggleEl);
         if (dropdownInstance) {
-            return new bootstrap.Dropdown(dropdownToggleEl);
+            return dropdownInstance;
         }
-        return dropdownInstance;
+        return new bootstrap.Dropdown(dropdownToggleEl);
     });
 }
 
@@ -34,15 +34,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Determine the dashboard type once on DOMContentLoaded
     const currentPath = window.location.pathname;
     const isServidorDashboard = currentPath.includes('/dashboardServidor');
+    const isAlmoxarifadoDashboard = currentPath.includes('/dashboardAlmoxarifado'); // Adicionado para Almoxarifado
 
     const homeButton = document.getElementById('home-button');
     if (homeButton && mainContent) {
         homeButton.addEventListener('click', e => {
             e.preventDefault();
             mainContent.innerHTML = defaultHTML;
-            //  Chamar loadDashboardOverview se for o dashboard do servidor após restaurar o HTML
+            // Chamar a função de overview correta se for o dashboard
             if (isServidorDashboard) {
                 window.loadDashboardOverview();
+            } else if (isAlmoxarifadoDashboard) { // Adicionado para Almoxarifado
+                loadAlmoxarifadoWelcomeSection();
             }
             bindQuickAccessLinks(); 
             bindLogoutLink();
@@ -78,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('listar-item-link')?.addEventListener('click', e => {
             e.preventDefault();
             if (typeof window.renderizarListItens === 'function') window.renderizarListItens();
-            else console.warn("Função global 'renderizarListItens' não encontrada. Verifique se listar-i");
+            else console.warn("Função global 'renderizarListItens' não encontrada. Verifique se listar-itens.js está carregado.");
         });
 
         document.getElementById('listar-item-link-quick')?.addEventListener('click', e => {
@@ -99,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('listar-categoria-link')?.addEventListener('click', e => {
             e.preventDefault();
             if (typeof window.renderizarCategorias === 'function') window.renderizarCategorias();
-            else console.warn("Função global 'renderizarCategorias' não encontrada. Verifique se listar-");
+            else console.warn("Função global 'renderizarCategorias' não encontrada. Verifique se listar-categorias.js está carregado.");
         });
 
         document.getElementById('listar-categoria-link-quick')?.addEventListener('click', e => {
@@ -119,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reportsModule.modalReportsDashboard.show();
         });
 
-        //  Listener para o link "Listar Alertas" do menu de navegação principal
+        // Listener para o link "Listar Alertas" do menu de navegação principal
         document.getElementById('open-alertas-modal')?.addEventListener('click', e => {
             e.preventDefault();
             alertasModule.renderAlertsPage();
@@ -180,19 +183,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateNotificationBellUI();
                 if (isServidorDashboard) {
                     historicoServidorModule.renderMinhasRetiradas();
-                } else {
                     alertasModule.renderAlertsPage();
+                } else {
+                    // Para Almoxarifado, pode direcionar para a página de alertas ou retiradas pendentes
+                    // Decida qual comportamento é mais adequado aqui. Por agora, apenas esconde o dropdown.
                 }
                 hideNotificationDropdown();
             });
         }
 
-        //  Adiciona listener para o link "Importar Tabela"
+        // Adiciona listener para o link "Importar Tabela"
         document.getElementById('btn-open-importar-tabela')?.addEventListener('click', e => {
             e.preventDefault();
             try {
                 console.log('uiService no click do botão', uiService);
-                const modalImportarTabela = uiService.getModalInstance('modalImportarTabelaItens');
+                const modalImportarTabela = uiService.getModalInstance('modalImportarTabelaltens');
 
                 document.getElementById('form-importar-tabela-itens').reset();
                 document.getElementById('import-feedback').style.display = 'none';
@@ -210,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // NOVO: Adiciona listener para o botão de enviar tabela
         document.getElementById('btn-enviar-tabela-itens')?.addEventListener('click', async () => {
             const form = document.getElementById('form-importar-tabela-itens');
-            const fileInput = document.getElementById('arquivoItens');
+            const fileInput = document.getElementById('arquivoltens');
             const importFeedback = document.getElementById('import-feedback');
             const importAlert = document.getElementById('import-alert');
             const importErrorsList = document.getElementById('import-errors-list');
@@ -275,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('logout-link')?.addEventListener('click', e => {
             e.preventDefault();
             if (typeof window.logout === 'function') window.logout();
-            else console.warn("Função global 'logout' não encontrada. Verifique se logout.js está carreg");
+            else console.warn("Função global 'logout' não encontrada. Verifique se logout.js está carregado.");
         });
     }
 
@@ -296,7 +301,79 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Exportar loadDashboardOverview para ser acessível globalmente
+    let ws;
+
+    function connectAlertsWebSocket() {
+        const userId = getUserIdFromToken();
+        console.log("UserID para WebSocket:", userId);
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/api/almoxarifado/ws/alerts${userId ? `?user_id=${userId}` : ''}`;
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = (event) => {
+            console.log("WebSocket para notificações conectado:", event);
+        };
+
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            console.log("Mensagem WebSocket recebida", message);
+
+            const isServidorDashboard = window.location.pathname.includes('/dashboardServidor');
+
+            if (isServidorDashboard) {
+                if (message.type === "withdrawal_status_update") {
+                    setNewWithdrawalRequestsFlag(true);
+                    const statusText = estadoGlobal.statusMap[message.status] || 'Desconhecido';
+                    showAlert(`Sua solicitação de retirada ID ${message.retirada_id} foi atualizada para: ${statusText}.`, "primary", 5000);
+                    try {
+                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
+                        audio.play().catch(e => console.error("Erro ao tocar som de notificação de retirada:", e));
+                    } catch (e) {
+                        console.error("Não foi possível criar objeto de audio para notificação:", e);
+                    }
+                    window.loadDashboardOverview(); // Chamar a função global
+                }
+            } else { // Para Almoxarifado/Direção
+                if (message.type === "new_alert") {
+                    setNewAlertsFlag(true);
+                    showAlert("Novo alerta: " + message.message, "info", 5000);
+                    try {
+                        const audio = new Audio(NOTIFICATION_SOUND_PATH);
+                        audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
+                    } catch (e) {
+                        console.error("Não foi possível criar objeto de áudio para notificação:", e);
+                    }
+                } else if (message.type === "new_withdrawal_request") {
+                    setNewWithdrawalRequestsFlag(true);
+                    showAlert("Nova solicitação de retirada: " + message.message, "primary", 5000);
+                    try {
+                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
+                        audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
+                    } catch (e) {
+                        console.error("Não foi possível criar objeto de áudio para notificação:", e);
+                    }
+                }
+            }
+            updateNotificationBellUI();
+        };
+
+        ws.onclose = (event) => {
+            console.warn("WebSocket para notificações desconectado:", event.code, event.reason);
+            setTimeout(connectAlertsWebSocket, 5000);
+        };
+
+        ws.onerror = (error) => {
+            console.error("Erro no WebSocket para notificações:", error);
+            ws.close();
+        };
+    }
+
+    connectAlertsWebSocket();
+    reinitializeBootstrapDropdowns();
+
+    // Exportar loadDashboardOverview para ser acessível globalmente (Servidor)
     window.loadDashboardOverview = async function() {
         uiService.showLoading();
         const loadingRecentWithdrawals = document.getElementById('loading-recent-withdrawals');
@@ -312,12 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (welcomeUserName && userSiape && userSector) {
                     const userDetails = await apiService.getCurrentUserDetails(userId);
                     welcomeUserName.textContent = userDetails.name;
-                    userSiape.textContent = userDetails.siape || 'N/A';
-                    userSector.textContent = userDetails.sectorName || 'N/A';
+                    userSiape.textContent = userDetails.siape || 'N/D';
+                    userSector.textContent = userDetails.sectorName || 'N/D';
                 } else {
                     console.warn("Elementos de detalhes do usuário não encontrados no DOM. Ignorando atualização.");
                 }
-
 
                 if (loadingRecentWithdrawals) loadingRecentWithdrawals.style.display = 'block';
                 if (noRecentWithdrawals) noRecentWithdrawals.style.display = 'none';
@@ -344,6 +420,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Função para carregar e exibir as informações do usuário no dashboard do Almoxarifado
+    async function loadAlmoxarifadoWelcomeSection() {
+        uiService.showLoading();
+        const welcomeUserNameAlmoxarifado = document.getElementById('welcome-user-name-almoxarifado');
+        const userSiapeAlmoxarifado = document.getElementById('user-siape-almoxarifado');
+        const userSectorAlmoxarifado = document.getElementById('user-sector-almoxarifado');
+
+        try {
+            const userId = getUserIdFromToken();
+            if (userId) {
+                if (welcomeUserNameAlmoxarifado && userSiapeAlmoxarifado && userSectorAlmoxarifado) {
+                    const userDetails = await apiService.getCurrentUserDetails(userId);
+                    welcomeUserNameAlmoxarifado.textContent = userDetails.name || 'Usuário';
+                    userSiapeAlmoxarifado.textContent = userDetails.siape || 'N/D';
+                    userSectorAlmoxarifado.textContent = userDetails.sectorName || 'N/D';
+                } else {
+                    console.warn("Elementos de detalhes do usuário para Almoxarifado não encontrados no DOM. Ignorando atualização.");
+                }
+            } else {
+                console.warn("Usuário não logado ou ID de usuário não encontrado para carregar o overview do almoxarifado.");
+                if (welcomeUserNameAlmoxarifado) welcomeUserNameAlmoxarifado.textContent = 'Usuário';
+                if (userSiapeAlmoxarifado) userSiapeAlmoxarifado.textContent = 'N/D';
+                if (userSectorAlmoxarifado) userSectorAlmoxarifado.textContent = 'N/D';
+            }
+        } catch (error) {
+            console.error("Erro ao carregar o overview do dashboard do almoxarifado:", error);
+            showAlert("Erro ao carregar informações do dashboard do almoxarifado. Tente novamente.", "danger");
+            if (welcomeUserNameAlmoxarifado) welcomeUserNameAlmoxarifado.textContent = 'Erro';
+            if (userSiapeAlmoxarifado) userSiapeAlmoxarifado.textContent = 'N/D';
+            if (userSectorAlmoxarifado) userSectorAlmoxarifado.textContent = 'N/D';
+        } finally {
+            uiService.hideLoading();
+        }
+    }
+
+
     function renderRecentWithdrawals(withdrawals) {
         const container = document.getElementById('latest-withdrawals-container');
         if (!container) {
@@ -356,13 +468,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (loadingRecentWithdrawals) loadingRecentWithdrawals.style.display = 'none';
         if (noRecentWithdrawals) noRecentWithdrawals.style.display = 'none';
-        
-        container.innerHTML = '';
+
+        container.innerHTML = ''; // Limpa o conteúdo existente
 
         if (withdrawals.length === 0) {
             if (noRecentWithdrawals) noRecentWithdrawals.style.display = 'block';
             return;
-        } 
+        }
 
         withdrawals.forEach(retirada => {
             let progress = 0;
@@ -482,79 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkAlertsNotification();
 
-    let ws;
-
-    function connectAlertsWebSocket() {
-        const userId = getUserIdFromToken();
-        console.log("UserID para WebSocket:", userId);
-
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/api/almoxarifado/ws/alerts${userId ? `?user_id=${userId}` : ''}`;
-
-        ws = new WebSocket(wsUrl);
-
-        ws.onopen = (event) => {
-            console.log("WebSocket para notificações conectado:", event);
-        };
-
-        ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            console.log("Mensagem WebSocket recebida", message);
-
-            const isServidorDashboard = window.location.pathname.includes('/dashboardServidor');
-
-            if (isServidorDashboard) {
-                if (message.type === "withdrawal_status_update") {
-                    setNewWithdrawalRequestsFlag(true);
-                    const statusText = estadoGlobal.statusMap[message.status] || 'Desconhecido';
-                    showAlert(`Sua solicitação de retirada ID ${message.retirada_id} foi atualizada para: ${statusText}.`, "primary", 5000);
-                    try {
-                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
-                        audio.play().catch(e => console.error("Erro ao tocar som de notificação de retirada:", e));
-                    } catch (e) {
-                        console.error("Não foi possível criar objeto de audio para notificação:", e);
-                    }
-                    window.loadDashboardOverview(); // Chamar a função global
-                }
-            } else {
-                if (message.type === "new_alert") {
-                    setNewAlertsFlag(true);
-                    showAlert("Novo alerta: " + message.message, "info", 5000);
-                    try {
-                        const audio = new Audio(NOTIFICATION_SOUND_PATH);
-                        audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
-                    } catch (e) {
-                        console.error("Não foi possível criar objeto de áudio para notificação:", e);
-                    }
-                } else if (message.type === "new_withdrawal_request") {
-                    setNewWithdrawalRequestsFlag(true);
-                    showAlert("Nova solicitação de retirada: " + message.message, "primary", 5000);
-                    try {
-                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
-                        audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
-                    } catch (e) {
-                        console.error("Não foi possível criar objeto de áudio para notificação:", e);
-                    }
-                }
-            }
-            updateNotificationBellUI();
-        };
-
-        ws.onclose = (event) => {
-            console.warn("WebSocket para notificações desconectado:", event.code, event.reason);
-            setTimeout(connectAlertsWebSocket, 5000);
-        };
-
-        ws.onerror = (error) => {
-            console.error("Erro no WebSocket para notificações:", error);
-            ws.close();
-        };
-    }
-
-    connectAlertsWebSocket();
-    reinitializeBootstrapDropdowns();
-
+    // Inicializa o dashboard correto ao carregar a página
     if (isServidorDashboard) {
-        window.loadDashboardOverview(); // Chamar a função global
+        window.loadDashboardOverview();
+    } else if (isAlmoxarifadoDashboard) {
+        loadAlmoxarifadoWelcomeSection();
     }
 });
