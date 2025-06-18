@@ -4,13 +4,13 @@ import { apiService } from './apiService.js';
 import { uiService } from './uiService.js';
 import { showAlert } from './utils.js';
 
-
 class UsuariosModule {
     constructor() {
         this.currentPage = 1;
-        this.pageSize = 10; 
-        this.searchNome = ''; 
-        this.totalUsers = 0; 
+        this.pageSize = 10;
+        this.searchNome = ''; // Current search term for user name
+        this.totalUsers = 0; // To store total users for pagination calculation
+        this.setorIdToNameMap = {}; // Novo mapa para armazenar ID do setor -> Nome do setor
 
         // Modals
         this.modalCadastrarUsuario = uiService.getModalInstance('modalCadastrarUsuario');
@@ -26,7 +26,7 @@ class UsuariosModule {
         this.btnSalvarEditarUsuario = document.getElementById('btn-salvar-editar-usuario');
         this.btnConfirmarDeletarUsuario = document.getElementById('btn-confirmar-deletar-usuario');
 
-        // Bindings 
+        // Bindings
         this.boundHandlePaginationClick = this._handlePaginationClick.bind(this);
         this.boundHandlePageSizeChange = this._handlePageSizeChange.bind(this);
         this.boundHandleSearchUsers = this._handleSearchUsers.bind(this);
@@ -44,7 +44,7 @@ class UsuariosModule {
         document.getElementById('btn-open-cadastrar-usuario')?.addEventListener('click', e => {
             e.preventDefault();
             this.formCadastrarUsuario.reset();
-            this._populateSetoresInForm(this.formCadastrarUsuario.querySelector('select[name="setor_id"]'));
+            this.populateSetoresInForm(this.formCadastrarUsuario.querySelector('select[name="setor_id"]'));
             this.modalCadastrarUsuario.show();
         });
         this.btnSalvarCadastrarUsuario?.addEventListener('click', () => this._createUsuario());
@@ -56,7 +56,7 @@ class UsuariosModule {
         this.btnSalvarEditarUsuario?.addEventListener('click', this.boundUpdateUsuario);
     }
 
-    async _populateSetoresInForm(selectElement, selectedSetorId = null) {
+    async populateSetoresInForm(selectElement, selectedSetorId = null) {
         selectElement.innerHTML = '<option value="" disabled selected>Carregando setores...</option>';
         try {
             const setores = await apiService.fetchAllSetores();
@@ -80,31 +80,40 @@ class UsuariosModule {
     async renderUsuariosList() {
         uiService.showLoading();
         try {
-            // lista todos os usuário, backend não está retornando com paginação. A paginação é feita aqui no JS
-            const allUsers = await apiService.get('/usuarios'); 
+            // Fetch all users. The backend endpoint /usuarios returns all users.
+            const allUsers = await apiService.get('/usuarios');
 
+            // Fetch all sectors to map IDs to names
+            const allSetores = await apiService.get('/setores');
+            this.setorIdToNameMap = {};
+            allSetores.forEach(setor => {
+                this.setorIdToNameMap[setor.setor_id] = setor.nome_setor;
+            });
+
+            // Frontend filtering and pagination for now
             const filteredUsers = this.searchNome
                 ? allUsers.filter(u => u.nome_usuario.toLowerCase().includes(this.searchNome.toLowerCase()))
                 : allUsers;
 
-            this.totalUsers = filteredUsers.length;
+            this.totalUsers = filteredUsers.length; // Update total users count
             const totalPages = Math.ceil(this.totalUsers / this.pageSize);
+
             const offset = (this.currentPage - 1) * this.pageSize;
             const usersForPage = filteredUsers.slice(offset, offset + this.pageSize);
 
-
             const tableHeaders = ['ID', 'Nome', 'Email', 'Tipo', 'Setor', 'SIAPE', 'Ações'];
             const tableHtml = uiService.renderTable(tableHeaders, usersForPage, {
-                noRecordsMessage: 'Nenhum usuário encontrado.',
+                noRecordsMessage: "Nenhum usuário encontrado.",
                 rowMapper: (usuario) => {
-
+                    // Use the map to get the sector name
+                    const sectorName = this.setorIdToNameMap[usuario.setor_id] || 'N/D';
                     const userRoleText = this._getRoleText(usuario.tipo_usuario);
                     return [
                         usuario.usuario_id,
                         usuario.nome_usuario,
                         usuario.email_usuario,
                         userRoleText,
-                        usuario.setor_id, //ajustar para imprimir nome do setor ao invés do ID 
+                        sectorName, // Exibe o nome do setor
                         usuario.siape_usuario || 'N/D'
                     ];
                 },
@@ -123,8 +132,8 @@ class UsuariosModule {
             const paginationHtml = uiService.renderPagination(
                 this.currentPage,
                 totalPages,
-                'usuarios', 
-                'usuariosPageSizeSelect', 
+                'usuarios', // type for pagination links
+                'usuariosPageSizeSelect', // id for pageSize select element
                 this.pageSize
             );
 
@@ -146,25 +155,25 @@ class UsuariosModule {
                 </div>
             `;
 
-            uiService.renderPage('Gerenciamento de Usuários', `
-                ${searchBarHtml}
-                ${tableHtml}
-                ${paginationHtml}
-            `);
+            uiService.renderPage(
+                'Gerenciamento de Usuários',
+                `${searchBarHtml}${tableHtml}${paginationHtml}`
+            );
 
-            this._bindPageEvents(); 
-            this._bindTableActions(); 
+            this._bindPageEvents(); // Corrigido: Chamada do método interno
+            this._bindTableActions(); // Corrigido: Chamada do método interno
+
         } catch (error) {
             console.error('Erro ao renderizar lista de usuários:', error);
             showAlert(error.message || 'Erro ao carregar usuários.', 'danger');
-            uiService.renderPage('Gerenciamento de Usuários', `<div class="alert alert-warning">Erro ao carregar usuários: ${error.message || 'Verifique a conexão.'}</div>`);
+            uiService.renderPage('Gerenciamento de Usuários', `<div class="alert alert-warning">Erro ao carregar usuários: ${error.message || 'Verifique sua conexão.'}</div>`);
         } finally {
             uiService.hideLoading();
         }
     }
 
     _getRoleText(roleValue) {
-        // Tipos de usuário: 1: Geral, 2: Almoxarifado, 3: Direcao
+        // Based on RoleEnum from backend: 1: Geral, 2: Almoxarifado, 3: Direcao
         switch (roleValue) {
             case 1: return '<span class="badge bg-secondary">Geral</span>';
             case 2: return '<span class="badge bg-info">Almoxarifado</span>';
@@ -174,6 +183,7 @@ class UsuariosModule {
     }
 
     _bindPageEvents() {
+        // Select elements by ID. If they are part of dynamic content, ensure they exist.
         const paginationNav = document.getElementById('usuarios-pagination-nav');
         const pageSizeSelect = document.getElementById('usuariosPageSizeSelect');
         const btnSearch = document.getElementById('btn-search-usuario');
@@ -216,7 +226,7 @@ class UsuariosModule {
         if (clickedPageLink) {
             const pageValue = clickedPageLink.dataset.page.split('-')[1];
             const newPage = parseInt(pageValue);
-            const totalPages = Math.ceil(this.totalUsers / this.pageSize); // Cálculo de quantidade de páginas baseado no totalUsers atual
+            const totalPages = Math.ceil(this.totalUsers / this.pageSize); // Cálculo de totalPages
             if (!isNaN(newPage) && newPage !== this.currentPage && newPage >= 1 && newPage <= totalPages) {
                 this.currentPage = newPage;
                 this.renderUsuariosList();
@@ -227,17 +237,19 @@ class UsuariosModule {
         if (clickedActionButton) {
             const action = clickedActionButton.dataset.action;
             let newPage = this.currentPage;
-            const totalPages = Math.ceil(this.totalUsers / this.pageSize); // Cálculo de quantidade de páginas baseado no totalUsers atual
+            const totalPages = Math.ceil(this.totalUsers / this.pageSize); // Cálculo de totalPages
 
             if (action === 'usuarios-prev' && newPage > 1) {
                 newPage--;
             } else if (action === 'usuarios-next' && newPage < totalPages) {
                 newPage++;
             }
+
             if (newPage !== this.currentPage) {
                 this.currentPage = newPage;
                 this.renderUsuariosList();
             }
+            return;
         }
     }
 
@@ -263,10 +275,11 @@ class UsuariosModule {
     }
 
     _bindTableActions() {
+        // Event delegation on main-content for buttons that are dynamically rendered
         const mainContent = document.getElementById('main-content');
         if (mainContent) {
             mainContent.removeEventListener('click', this.boundHandleTableActions); // Remove listener antigo
-            mainContent.addEventListener('click', this.boundHandleTableActions); // Adiciona listener novo
+            mainContent.addEventListener('click', this.boundHandleTableActions); // Adiciona listener no elemento pai
         }
     }
 
@@ -296,8 +309,9 @@ class UsuariosModule {
                 userData[key] = value;
             }
         }
+
         // Convertendo tipos
-        userData.tipo_usuario = parseInt(userData.tipo_usuario); 
+        userData.tipo_usuario = parseInt(userData.tipo_usuario);
         userData.setor_id = parseInt(userData.setor_id);
         userData.siape_usuario = userData.siape_usuario ? userData.siape_usuario.trim() : null;
 
@@ -323,18 +337,17 @@ class UsuariosModule {
             this.formEditarUsuario.querySelector('input[name="email_usuario"]').value = user.email_usuario;
             this.formEditarUsuario.querySelector('select[name="tipo_usuario"]').value = user.tipo_usuario;
             this.formEditarUsuario.querySelector('input[name="username"]').value = user.username;
-            this.formEditarUsuario.querySelector('input[name="siape_usuario"]').value = user.siape_usuario || '';
-            
+            this.formEditarUsuario.querySelector('input[name="siape_usuario"]').value = user.siape_usuario;
+
             // Popular e selecionar setor atual
             const setorSelect = this.formEditarUsuario.querySelector('select[name="setor_id"]');
-            await this._populateSetoresInForm(setorSelect, user.setor_id);
+            await this.populateSetoresInForm(setorSelect, user.setor_id);
 
             // Armazenar user ID com clique no botão de salvar
             this.btnSalvarEditarUsuario.dataset.id = userId;
-
             this.modalEditarUsuario.show();
         } catch (error) {
-            console.error('Erro ao carregar dados do usuário para edição:', error);
+            console.error('Erro ao carregar dados do usuário para edição', error);
             showAlert(error.message || 'Erro ao carregar dados do usuário.', 'danger');
         } finally {
             uiService.hideLoading();
@@ -347,6 +360,7 @@ class UsuariosModule {
             showAlert('ID do usuário para edição não encontrado.', 'danger');
             return;
         }
+
         if (!this.formEditarUsuario.checkValidity()) {
             this.formEditarUsuario.reportValidity();
             return;
@@ -355,23 +369,23 @@ class UsuariosModule {
         const formData = new FormData(this.formEditarUsuario);
         const userData = {};
         for (const [key, value] of formData.entries()) {
-            //  inclue apenas campos que tem valor (para opcionais como senha, por ex.)
-            if (value !== '') { 
+            // Only include fields that have a value (for optional fields like password)
+            if (value !== '') {
                 userData[key] = value;
             }
         }
-        // garante que os numeros sejam passados corretamente, e undefined/null para campos opcionais
+
+        // Ensure numbers are parsed correctly, and undefined for optional unset fields
         userData.tipo_usuario = userData.tipo_usuario ? parseInt(userData.tipo_usuario) : undefined;
         userData.setor_id = userData.setor_id ? parseInt(userData.setor_id) : undefined;
         userData.siape_usuario = userData.siape_usuario ? userData.siape_usuario.trim() : null;
 
-
         uiService.showLoading();
         try {
-            await apiService.put(`/usuarios/${userId}`, userData); 
+            await apiService.put(`/usuarios/${userId}`, userData); // Use PUT for full update
             showAlert('Usuário atualizado com sucesso!', 'success');
             this.modalEditarUsuario.hide();
-            this.renderUsuariosList(); //atualizar lista
+            this.renderUsuariosList(); // Refresh list
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
             showAlert(error.message || 'Erro ao atualizar usuário.', 'danger');
@@ -382,7 +396,7 @@ class UsuariosModule {
 
     _openDeleteConfirmModal(userId) {
         document.getElementById('confirm-delete-user-id').textContent = userId;
-        this.btnConfirmarDeletarUsuario.dataset.id = userId;
+        this.btnConfirmarDeletarUsuario.dataset.id = userId; // Store ID for confirmation
         this.modalConfirmarDeleteUsuario.show();
     }
 
@@ -400,7 +414,7 @@ class UsuariosModule {
             this.modalConfirmarDeleteUsuario.hide();
             this.renderUsuariosList(); // Refresh list
         } catch (error) {
-            console.error('Erro ao deletar usuário:', error);
+            console.error('Erro ao deletar usuário', error);
             showAlert(error.message || 'Erro ao deletar usuário.', 'danger');
         } finally {
             uiService.hideLoading();
@@ -409,3 +423,4 @@ class UsuariosModule {
 }
 
 export const usuariosModule = new UsuariosModule();
+
