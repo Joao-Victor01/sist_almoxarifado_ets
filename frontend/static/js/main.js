@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await apiService.uploadBulkItems(file);
 
                 importAlert.classList.add('alert-success');
-                importAlert.textContent = `Processamento concluído: ${result.total_items_processed} itens processados.`;
+                importAlert.textContent = `Processamento concluído: ${result.total_items_processed} itens processados. Clique em 'cancelar' para sair.`;
 
                 if (result.errors && result.errors.length > 0) {
                     importAlert.classList.remove('alert-success');
