@@ -137,7 +137,7 @@ class UiService {
         const liItemEstoqueMin = document.getElementById('liItemEstoqueMin');
         const itemEstoqueElement = document.getElementById('itemEstoque');
         const itemEstoqueMinElement = document.getElementById('itemEstoqueMin');
-        if (userRole === 2) {
+        if (userRole === 2 || userRole == 3) {
             if (liItemEstoque) {
                 liItemEstoque.style.display = 'block';
                 if (itemEstoqueElement) itemEstoqueElement.textContent = item.quantidade_item;
