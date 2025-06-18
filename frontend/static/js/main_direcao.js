@@ -6,9 +6,10 @@ import { selecionarItemModule } from './selecionar-item-module.js';
 import { reportsModule } from './reportsModule.js';
 import { alertasModule } from './alertasModule.js';
 import { apiService } from './apiService.js';
-import { setNewAlertsFlag,  updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken } from './utils.js';
+import { setNewAlertsFlag, updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken } from './utils.js';
 import { usuariosModule } from './usuariosModule.js';
 import { setoresModule } from './setoresModule.js'; 
+import { uiService } from './uiService.js';
 
 const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3';
 
@@ -25,7 +26,9 @@ export function reinitializeBootstrapDropdowns() {
 }
 
 const mainContent = document.getElementById('main-content');
-let defaultHTML = mainContent ? mainContent.innerHTML : ''; // Armazena o conteúdo inicial
+// defaultHTML deve ser capturado no DOMContentLoaded, mas apenas o HTML inicial do container
+// e não o que pode ser injetado dinamicamente após
+let defaultHTML = mainContent ? mainContent.innerHTML : ''; 
 
 document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
@@ -35,11 +38,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (homeButton && mainContent) {
         homeButton.addEventListener('click', e => {
             e.preventDefault();
-            mainContent.innerHTML = defaultHTML;
+            // Restaura o HTML padrão do mainContent antes de qualquer outra operação
+            // É importante que 'defaultHTML' contenha o estado original do div#main-content
+            // para que todos os elementos sejam recriados e possam ter os listeners vinculados.
+            mainContent.innerHTML = defaultHTML; 
+            
+            // Rebind dos links e funções após restaurar o HTML
             bindDirecaoLinks(); 
             bindLogoutLink();
             checkAlertsNotification();
             reinitializeBootstrapDropdowns();
+
+            // Chama a função de boas-vindas apenas se for o dashboard da Direção
+            if (isDirecaoDashboard) { 
+                window.loadDirecaoWelcomeSection(); // Chama a função global
+            }
         });
     }
 
@@ -49,13 +62,24 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             usuariosModule.renderUsuariosList();
         });
+        // Adicionado para o quick access card
+        document.getElementById('listar-usuarios-link-quick')?.addEventListener('click', e => {
+            e.preventDefault();
+            usuariosModule.renderUsuariosList();
+        });
+
         document.getElementById('btn-open-cadastrar-usuario')?.addEventListener('click', e => {
             e.preventDefault();
             usuariosModule.modalCadastrarUsuario.show(); // Trigger modal directly
         });
 
-        //  Setores
+        // Setores
         document.getElementById('listar-setores-link')?.addEventListener('click', e => {
+            e.preventDefault();
+            setoresModule.renderSetoresList();
+        });
+        // Adicionado para o quick access card
+        document.getElementById('listar-setores-link-quick')?.addEventListener('click', e => {
             e.preventDefault();
             setoresModule.renderSetoresList();
         });
@@ -94,9 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             reportsModule.modalReportsDashboard.show();
         });
+        // Adicionado para o quick access card
+        document.getElementById('open-reports-dashboard-quick')?.addEventListener('click', e => {
+            e.preventDefault();
+            reportsModule.modalReportsDashboard.show();
+        });
 
         // Alertas
         document.getElementById('open-alertas-modal')?.addEventListener('click', e => {
+            e.preventDefault();
+            alertasModule.renderAlertsPage();
+        });
+        // Adicionado para o quick access card
+        document.getElementById('open-alertas-modal-quick')?.addEventListener('click', e => {
             e.preventDefault();
             alertasModule.renderAlertsPage();
         });
@@ -155,7 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 setNewAlertsFlag(false);
             }
             updateNotificationBellUI();
-        } catch (error) {
+        }
+        catch (error) {
             console.error('checkAlertsNotification: Erro ao verificar notificações', error);
             setNewAlertsFlag(false);
             setNewWithdrawalRequestsFlag(false);
@@ -181,16 +216,41 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = JSON.parse(event.data);
             console.log("Mensagem WebSocket recebida", message);
 
-            if (message.type === "new_alert") {
-                setNewAlertsFlag(true);
-                showAlert("Novo alerta: " + message.message, "info", 5000);
-                try {
-                    const audio = new Audio(NOTIFICATION_SOUND_PATH);
-                    audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
-                } catch (e) {
-                    console.error("Não foi possível criar objeto de áudio para notificação:", e);
+            const isServidorDashboard = window.location.pathname.includes('/dashboardServidor');
+            if (isServidorDashboard) {
+                if (message.type === "withdrawal_status_update") {
+                    setNewWithdrawalRequestsFlag(true);
+                    const statusText = estadoGlobal.statusMap[message.status] || 'Desconhecido';
+                    showAlert(`Sua solicitação de retirada ID ${message.retirada_id} foi atualizada para ${statusText}!`, 'info');
+                    try {
+                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
+                        audio.play().catch(e => console.error("Erro ao tocar som de notificação de retirada:", e));
+                    } catch (e) {
+                        console.error("Não foi possível criar objeto de audio para notificação:", e);
+                    }
+                    window.loadDashboardOverview(); // Chamar a função global
                 }
-            } 
+            } else { // Para Almoxarifado/Direção
+                if (message.type === "new_alert") {
+                    setNewAlertsFlag(true);
+                    showAlert("Novo alerta: " + message.message, "info", 5000);
+                    try {
+                        const audio = new Audio(NOTIFICATION_SOUND_PATH);
+                        audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
+                    } catch (e) {
+                        console.error("Não foi possível criar objeto de áudio para notificação:", e);
+                    }
+                } else if (message.type === "new_withdrawal_request") {
+                    setNewWithdrawalRequestsFlag(true);
+                    showAlert("Nova solicitação de retirada: " + message.message, "primary", 5000);
+                    try {
+                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
+                        audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
+                    } catch (e) {
+                        console.error("Não foi possível criar objeto de áudio para notificação:", e);
+                    }
+                }
+            }
             updateNotificationBellUI();
         };
 
@@ -205,6 +265,45 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // Função para carregar e exibir as informações do usuário no dashboard da Direção
+    // Esta função será exportada globalmente
+    window.loadDirecaoWelcomeSection = async function() { // Tornada global
+        uiService.showLoading();
+        const welcomeUserNameDirecao = document.getElementById('welcome-user-name-direcao');
+        const userSiapeDirecao = document.getElementById('user-siape-direcao');
+        const userSectorDirecao = document.getElementById('user-sector-direcao');
+
+        // Inicializa com texto padrão imediatamente para evitar "Carregando..." persistente
+        if (welcomeUserNameDirecao) welcomeUserNameDirecao.textContent = 'Direção'; 
+        if (userSiapeDirecao) userSiapeDirecao.textContent = 'N/D';
+        if (userSectorDirecao) userSectorDirecao.textContent = 'N/D';
+
+        try {
+            const userId = getUserIdFromToken();
+            if (userId) {
+                if (welcomeUserNameDirecao && userSiapeDirecao && userSectorDirecao) {
+                    const userDetails = await apiService.getCurrentUserDetails(userId);
+                    welcomeUserNameDirecao.textContent = userDetails.name || 'Direção';
+                    userSiapeDirecao.textContent = userDetails.siape || 'N/D';
+                    userSectorDirecao.textContent = userDetails.sectorName || 'N/D';
+                } else {
+                    console.warn("Elementos de detalhes do usuário para Direção não encontrados no DOM. Ignorando atualização com dados da API.");
+                }
+            } else {
+                console.warn("Usuário não logado ou ID de usuário não encontrado para carregar o overview da Direção. Exibindo valores padrão.");
+            }
+        } catch (error) {
+            console.error("Erro ao carregar o overview do dashboard da Direção:", error);
+            showAlert("Erro ao carregar informações do dashboard da Direção. Tente novamente.", "danger");
+            if (welcomeUserNameDirecao) welcomeUserNameDirecao.textContent = 'Erro';
+            if (userSiapeDirecao) userSiapeDirecao.textContent = 'N/D';
+            if (userSectorDirecao) userSectorDirecao.textContent = 'N/D';
+        } finally {
+            uiService.hideLoading();
+        }
+    }
+
+
     // Initializar modules
     solicitarRetiradaModule.init();
     selecionarItemModule.init();
@@ -213,8 +312,16 @@ document.addEventListener('DOMContentLoaded', () => {
     usuariosModule.init(); 
     setoresModule.init(); 
 
+    // Os links de acesso rápido da direção e a seção de boas-vindas
+    // são inicializados no final do DOMContentLoaded para garantir que o HTML esteja pronto.
     bindDirecaoLinks();
     checkAlertsNotification();
     connectAlertsWebSocket();
     reinitializeBootstrapDropdowns();
+
+    // Chama a função de boas-vindas ao carregar o dashboard da Direção, mas apenas UMA VEZ
+    // na carga inicial da página. Se o botão "Home" for clicado, ele chamará a função global.
+    if (isDirecaoDashboard) {
+        window.loadDirecaoWelcomeSection();
+    }
 });
