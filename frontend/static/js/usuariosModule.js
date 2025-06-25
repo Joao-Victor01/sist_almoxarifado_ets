@@ -3,14 +3,16 @@
 import { apiService } from './apiService.js';
 import { uiService } from './uiService.js';
 import { showAlert } from './utils.js';
+import { getUserTypeFromToken, getUserIdFromToken } from './utils.js';
+
 
 class UsuariosModule {
     constructor() {
         this.currentPage = 1;
         this.pageSize = 10;
-        this.searchNome = ''; // Current search term for user name
-        this.totalUsers = 0; // To store total users for pagination calculation
-        this.setorIdToNameMap = {}; // Novo mapa para armazenar ID do setor -> Nome do setor
+        this.searchNome = ''; 
+        this.totalUsers = 0; 
+        this.setorIdToNameMap = {}; // mapa para armazenar ID do setor -> Nome do setor
 
         // Modals
         this.modalCadastrarUsuario = uiService.getModalInstance('modalCadastrarUsuario');
@@ -32,9 +34,11 @@ class UsuariosModule {
         this.boundHandleSearchUsers = this._handleSearchUsers.bind(this);
         this.boundHandleClearSearch = this._handleClearSearch.bind(this);
         this.boundHandleTableActions = this._handleTableActions.bind(this);
-        this.boundUpdateUsuario = this._updateUsuario.bind(this); // Bind update method
-    }
+        this.boundUpdateUsuario = this._updateUsuario.bind(this); 
 
+        this.isProfileMode = false;
+    }
+    
     init() {
         this.bindEvents();
     }
@@ -55,6 +59,51 @@ class UsuariosModule {
         // Salvar Editar Usuario
         this.btnSalvarEditarUsuario?.addEventListener('click', this.boundUpdateUsuario);
     }
+
+    /**
+ * Abre o modal de edição do próprio perfil,
+ * buscando o ID do token e usando GET /usuarios/{id}.
+ */
+    async openEditProfileModal() {
+        uiService.showLoading();
+        try {
+            const userId = getUserIdFromToken();
+            if (!userId) throw new Error('Usuário não autenticado');
+
+            const user = await apiService.get(`/usuarios/${userId}`);
+
+            const form = this.formEditarUsuario;
+            form.querySelector('input[name="nome_usuario"]').value   = user.nome_usuario;
+            form.querySelector('input[name="email_usuario"]').value  = user.email_usuario;
+            form.querySelector('input[name="username"]').value       = user.username;
+            form.querySelector('input[name="siape_usuario"]').value  = user.siape_usuario || '';
+            form.querySelector('select[name="tipo_usuario"]').value  = user.tipo_usuario;
+            await this.populateSetoresInForm(
+            form.querySelector('select[name="setor_id"]'),
+            user.setor_id
+            );
+
+            // desabilita campos extras para quem não é da direção
+            const role = parseInt(getUserTypeFromToken(), 10);
+            const disable = role !== 3;
+            form.querySelector('select[name="tipo_usuario"]').disabled = disable;
+            form.querySelector('select[name="setor_id"]').disabled     = disable;
+            form.querySelector('input[name="siape_usuario"]').disabled = disable;
+
+            // perfil mode vale SÓ para usuários que NÃO são Direção:
+            this.isProfileMode = (role !== 3);            
+            this.btnSalvarEditarUsuario.dataset.id = userId;
+            this.modalEditarUsuario.show();
+
+        } catch (err) {
+            console.error('Erro abrindo edição de perfil', err);
+            showAlert(err.message || 'Não foi possível carregar seus dados.', 'danger');
+        } finally {
+            uiService.hideLoading();
+        }
+    }
+
+
 
     async populateSetoresInForm(selectElement, selectedSetorId = null) {
         selectElement.innerHTML = '<option value="" disabled selected>Carregando setores...</option>';
@@ -368,12 +417,32 @@ class UsuariosModule {
 
         const formData = new FormData(this.formEditarUsuario);
         const userData = {};
-        for (const [key, value] of formData.entries()) {
-            // Only include fields that have a value (for optional fields like password)
-            if (value !== '') {
-                userData[key] = value;
+        if (this.isProfileMode) {
+
+            // PERFIL: campos editáveis + manter obrigatórios
+            ['nome_usuario','email_usuario','username','password'].forEach(key => {
+                const v = formData.get(key);
+                if (v && v.trim()) userData[key] = v.trim();
+            });
+            // garanta incluir tipo, setor e siape atuais (os selects/inputs estão desabilitados,
+            // então não entram no formData automaticamente):
+            const role   = parseInt(getUserTypeFromToken(), 10);
+            const setor  = this.formEditarUsuario.querySelector('select[name="setor_id"]').value;
+            const siape  = this.formEditarUsuario.querySelector('input[name="siape_usuario"]').value;
+
+            userData.tipo_usuario  = role;
+            userData.setor_id      = setor  ? parseInt(setor, 10) : undefined;
+            userData.siape_usuario = siape  ? siape.trim()   : null;
+        } else {
+            // edição normal de qualquer usuário
+            for (const [key, value] of formData.entries()) {
+                if (value !== '') userData[key] = value;
             }
+            userData.tipo_usuario  = userData.tipo_usuario ? parseInt(userData.tipo_usuario) : undefined;
+            userData.setor_id      = userData.setor_id     ? parseInt(userData.setor_id)     : undefined;
+            userData.siape_usuario = userData.siape_usuario ? userData.siape_usuario.trim() : null;
         }
+
 
         // Ensure numbers are parsed correctly, and undefined for optional unset fields
         userData.tipo_usuario = userData.tipo_usuario ? parseInt(userData.tipo_usuario) : undefined;
@@ -384,8 +453,17 @@ class UsuariosModule {
         try {
             await apiService.put(`/usuarios/${userId}`, userData); // Use PUT for full update
             showAlert('Usuário atualizado com sucesso!', 'success');
+            const role = parseInt(getUserTypeFromToken(), 10);
+
             this.modalEditarUsuario.hide();
-            this.renderUsuariosList(); // Refresh list
+            this.isProfileMode = false;
+            
+            if(role == 3){
+                this.renderUsuariosList();
+            } else if (role === 2 || role === 1) {
+            // Recarrega página para atualizar os dados exibidos no dashboard
+            window.location.reload();
+            }
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
             showAlert(error.message || 'Erro ao atualizar usuário.', 'danger');

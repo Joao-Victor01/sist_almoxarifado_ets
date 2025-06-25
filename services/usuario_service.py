@@ -199,7 +199,7 @@ class UsuarioService:
             campos_atualizados = True
         
         if usuario_data.username is not None:
-            usuario.username = usuario_data.username.lower()
+            usuario.username = usuario_data.username
             campos_atualizados = True
 
         if usuario_data.tipo_usuario is not None:

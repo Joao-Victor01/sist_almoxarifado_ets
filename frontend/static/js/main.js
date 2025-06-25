@@ -6,11 +6,12 @@ import { selecionarItemModule } from './selecionar-item-module.js';
 import { reportsModule } from './reportsModule.js';
 import { alertasModule } from './alertasModule.js';
 import { apiService } from './apiService.js';
-import { setNewAlertsFlag, getNewAlertsFlag, updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken, formatDateTime } from './utils.js'; // Importar getUserIdFromToken e formatDateTime
-import { uiService } from './uiService.js';
+import { setNewAlertsFlag,  updateNotificationBellUI, showAlert, setNewWithdrawalRequestsFlag, getUserIdFromToken, formatDateTime } from './utils.js'; 
 import estadoGlobal from './estadoGlobal.js'; 
 import { dataService } from './dataService.js'; 
 import { historicoServidorModule } from './historicoServidorModule.js';
+import { usuariosModule } from './usuariosModule.js';
+import { uiService } from './uiService.js';
 
 const NOTIFICATION_SOUND_PATH = '/static/audio/notificacao01.mp3';
 const NOTIFICATION_SOUND_PATH_RETIRADA = '/static/audio/notificacao02.mp3';
@@ -129,11 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Clique no sino de notificação
-        const alertBell = document.getElementById('alert-notification-bell');
-        if (alertBell) {
-            // O sino é um dropdown toggle, seu comportamento é gerido pelo Bootstrap
-            // Os itens do dropdown terão seus próprios listeners
-        }
+
+        //Editar perfil próprio
+        document.getElementById('edit-profile-link')?.addEventListener('click', async e => {
+            e.preventDefault();
+            await usuariosModule.openEditProfileModal();
+        });
 
         const newWithdrawalRequestsMenuItem = document.getElementById('new-withdrawal-requests-menu-item');
         const newAlertsMenuItem = document.getElementById('new-alerts-menu-item');
@@ -571,6 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
     reportsModule.init();
     alertasModule.init();
     historicoServidorModule.init();
+    usuariosModule.init()
 
     bindQuickAccessLinks();
 

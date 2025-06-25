@@ -27,15 +27,18 @@
 <!-- Partial: global_overlays.html -->
 {% include 'partials/global_overlays.html' %}
 
+{% include 'partials/modals/modal_editar_usuario.html' %}
+
+
 <!-- Incluindo modais de Itens -->
 {% include 'partials/modals/modal_cadastrar_item.html' %}
 {% include 'partials/modals/modal_editar_item.html' %}
 
-<!-- Incluindo modais de Categorias -->
+<!-- modais de Categorias -->
 {% include 'partials/modals/modal_cadastrar_categoria.html' %}
 {% include 'partials/modals/modal_editar_categoria.html' %}
 
-<!-- Incluindo modais de Retiradas -->
+<!-- modais de Retiradas -->
 {% include 'partials/modals/modal_ver_detalhes_retirada.html' %}
 {% include 'partials/modals/modal_autorizar_retirada.html' %}
 {% include 'partials/modals/modal_item_detalhes.html' %}
@@ -43,13 +46,13 @@
 {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
 {% include 'partials/modals/modal_concluir_retirada.html' %}
 
-<!-- Incluindo modais de Relatórios -->
+<!-- modais de Relatórios -->
 {% include 'partials/modals/modal_reports_dashboard.html' %}
 {% include 'partials/modals/modal_report_quantidade_itens.html' %}
 {% include 'partials/modals/modal_report_entrada_itens.html' %}
 {% include 'partials/modals/modal_report_retiradas_setor.html' %}
 {% include 'partials/modals/modal_report_retiradas_usuario.html' %}
-{% include 'partials/modals/modal_soft_delete_retiradas.html' %} {# NOVO MODAL AQUI #}
+{% include 'partials/modals/modal_soft_delete_retiradas.html' %}
 
 
 <div class="modal fade" id="modalImportarTabelaltens" tabindex="-1" aria-labelledby="modalImportarTabelaltensLabel" aria-hidden="true">

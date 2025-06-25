@@ -135,6 +135,12 @@ document.addEventListener('DOMContentLoaded', () => {
             alertasModule.renderAlertsPage();
         });
 
+        //Editar perfil próprio
+        document.getElementById('edit-profile-link')?.addEventListener('click', async e => {
+            e.preventDefault();
+            await usuariosModule.openEditProfileModal();
+        });
+
         const newWithdrawalRequestsMenuItem = document.getElementById('new-withdrawal-requests-menu-item');
         const newAlertsMenuItem = document.getElementById('new-alerts-menu-item');
         const openAllNotificationsLink = document.getElementById('open-all-notifications-link');
