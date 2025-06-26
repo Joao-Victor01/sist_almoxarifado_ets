@@ -19,43 +19,7 @@
         <p class="mb-1"><strong>SIAPE:</strong> <span id="user-siape-direcao">Carregando...</span></p>
         <p class="mb-0"><strong>Setor:</strong> <span id="user-sector-direcao">Carregando...</span></p>
     </div>
-
-    <h3 class="mb-3 mt-5">Acesso Rápido</h3>
-    <div class="row g-3">
-        {# Cartões de acesso rápido específicos para a Direção #}
-        <div class="col-6 col-md-3">
-            <a href="#" id="listar-usuarios-link-quick" class="text-decoration-none">
-                <div class="quick-access-card">
-                    <i class="bi bi-person-fill-gear"></i>
-                    <p>Lista de Usuários</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-md-3">
-            <a href="#" id="listar-setores-link-quick" class="text-decoration-none">
-                <div class="quick-access-card">
-                    <i class="bi bi-building-fill"></i>
-                    <p>Lista de Setores</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-md-3">
-            <a href="#" id="open-alertas-modal-quick" class="text-decoration-none">
-                <div class="quick-access-card">
-                    <i class="bi bi-exclamation-octagon-fill"></i>
-                    <p>Histórico de Alertas</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-md-3">
-            <a href="#" id="open-reports-dashboard-quick" data-bs-toggle="modal" data-bs-target="#modalReportsDashboard" class="text-decoration-none"> 
-                <div class="quick-access-card">
-                    <i class="bi bi-bar-chart-line-fill"></i>
-                    <p>Modal de Relatórios</p>
-                </div>
-            </a>
-        </div>
-    </div>
+    {% include 'partials/quick_access_direcao.html' %}
 </div>
 
 <!-- Partial: global_overlays.html -->

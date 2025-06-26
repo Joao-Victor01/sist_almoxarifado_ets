@@ -1,33 +1,37 @@
 <!-- frontend\templates\partials\quick_cards.html -->
-<div class="col-6 col-md-3">
-  <a href="#" id="listar-usuarios-link" class="text-decoration-none">
-    <div class="quick-access-card">
-      <i class="bi bi-person-fill-gear"></i>
-      <p>Gerenciar Usuários</p>
-    </div>
-  </a>
-</div>
-<div class="col-6 col-md-3">
-  <a href="#" id="listar-setores-link" class="text-decoration-none">
-    <div class="quick-access-card">
-      <i class="bi bi-building-fill"></i>
-      <p>Gerenciar Setores</p>
-    </div>
-  </a>
-</div>
-<div class="col-6 col-md-3">
-  <a href="#" id="open-alertas-modal" class="text-decoration-none">
-    <div class="quick-access-card">
-      <i class="bi bi-exclamation-octagon-fill"></i>
-      <p>Alertas de Estoque</p>
-    </div>
-  </a>
-</div>
-<div class="col-6 col-md-3">
-  <a href="#" id="open-reports-dashboard" data-bs-toggle="modal" data-bs-target="#modalReportsDashboard" class="text-decoration-none">    
-    <div class="quick-access-card">
-      <i class="bi bi-bar-chart-line-fill"></i>
-      <p>Relatórios</p>
-    </div>
-  </a>
+<div class="row g-3">
+  {# Cartões de acesso rápido específicos para a Direção #}
+  <div class="col-6 col-md-3">
+    <a href="#" id="listar-usuarios-link-quick" class="text-decoration-none">
+      <div class="quick-access-card">
+        <i class="bi bi-person-fill-gear"></i>
+        <p>Lista de Usuários</p>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="#" id="listar-setores-link-quick" class="text-decoration-none">
+      <div class="quick-access-card">
+        <i class="bi bi-building-fill"></i>
+        <p>Lista de Setores</p>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="#" id="open-alertas-modal-quick" class="text-decoration-none">
+      <div class="quick-access-card">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <p>Histórico de Alertas</p>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="#" id="open-reports-dashboard-quick" data-bs-toggle="modal" data-bs-target="#modalReportsDashboard"
+      class="text-decoration-none">
+      <div class="quick-access-card">
+        <i class="bi bi-bar-chart-line-fill"></i>
+        <p>Relatórios</p>
+      </div>
+    </a>
+  </div>
 </div>
