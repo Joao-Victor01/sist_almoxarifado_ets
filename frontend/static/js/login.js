@@ -1,4 +1,4 @@
-//frontend\static\js\login.js
+// frontend/static/js/login.js
 
 window.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('login-form');
@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const body = new URLSearchParams({ username, password });
 
     try {
-      const resp = await fetch('api/almoxarifado/usuarios/token', {
+      const resp = await fetch('/api/almoxarifado/usuarios/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         credentials: 'include',
@@ -27,7 +27,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
       const { access_token } = await resp.json();
 
-      // ─── AQUI: grava o JWT no localStorage para uso futuro ───
+     // ── Grava o JWT como cookie para o backend ler ──
+     document.cookie = [
+       `access_token=${access_token}`,
+       'path=/',
+       'max-age=' + 60 * 60 * 24,       // 1 dia
+       'SameSite=Lax'                   // ou 'None; Secure' se for cross-site
+     ].join('; ');
+
+      // opcional: continua guardando no localStorage
       localStorage.setItem('token', access_token);
 
       const payload = JSON.parse(atob(access_token.split('.')[1]));
