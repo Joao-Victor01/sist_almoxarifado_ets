@@ -34,3 +34,8 @@ class UsuarioOut (UsuarioBase):
     class Config:
         from_attributes = True
 
+# SCHEMA PARA REDEFINIÇÃO DE SENHA SIMPLES
+class UsuarioResetPasswordSimple(BaseModel):
+    username_or_email: str
+    new_password: str
+

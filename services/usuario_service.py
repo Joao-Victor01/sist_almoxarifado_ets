@@ -123,6 +123,40 @@ class UsuarioService:
             "tipo_usuario": user.tipo_usuario, 
             "usuario_id": user.usuario_id 
         }
+    
+     # MÉTODO PARA REDEFINIÇÃO DE SENHA SIMPLES
+    @staticmethod
+    async def reset_password_simple(db: AsyncSession, username_or_email: str, new_password: str):
+        """
+        Busca um usuário por username ou email e redefine sua senha.
+        LEMBRETE: Esta lógica é insegura para produção.
+        """
+        # Tenta encontrar por username
+        user = await db.scalar(
+            select(Usuario).where(Usuario.username == username_or_email)
+        )
+        
+        # Se não encontrou por username, tenta por email
+        if not user:
+            user = await db.scalar(
+                select(Usuario).where(Usuario.email_usuario == username_or_email.lower())
+            )
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado."
+            )
+        
+        # Atualiza a senha
+        user.senha_usuario = get_password_hash(new_password)
+        await db.commit()
+        await db.refresh(user)
+        
+        return user
+    
+
+    #----------- MÉTODOS AUXILIXARES ABAIXO ---------------------------
 
     @staticmethod
     async def _validate_user_data(

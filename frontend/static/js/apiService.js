@@ -244,6 +244,14 @@ class ApiService {
             method: 'DELETE', 
         });
     }
+
+    // MÉTODO PARA REDEFINIR SENHA SIMPLES
+    async resetPasswordSimple(usernameOrEmail, newPassword) {
+        return this.post('/usuarios/reset-password-simple', {
+            username_or_email: usernameOrEmail,
+            new_password: newPassword
+        });
+    }
 }
 
 export const apiService = new ApiService();

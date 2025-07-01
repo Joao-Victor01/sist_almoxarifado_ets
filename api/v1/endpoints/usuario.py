@@ -1,9 +1,9 @@
 #api\v1\endpoints\usuario.py
 
-from fastapi import APIRouter, Depends, status, Response
+from fastapi import APIRouter, Depends, status, Response, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
-from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate
+from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate, UsuarioResetPasswordSimple
 from services.usuario_service import UsuarioService
 from core.security import usuario_direcao, direcao_ou_almoxarifado, todos_usuarios
 from typing import List
@@ -86,3 +86,26 @@ def logout(response: Response):
     # Se estivesse usando cookie HttpOnly:
     # response.delete_cookie(key="access_token")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+# ENDPOINT PARA REDEFINIÇÃO DE SENHA SIMPLES
+@router.post("/reset-password-simple", status_code=status.HTTP_200_OK)
+async def reset_password_simple(
+    data: UsuarioResetPasswordSimple, # Usar o novo schema
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Redefine a senha de um usuário.
+     --> lógica SIMPLES e INSEGURA, apenas para desenvolvimento.
+    Em produção, avaliar método mais seguro como dois fatores com token por e-mail.
+    """
+    try:
+        await UsuarioService.reset_password_simple(db, data.username_or_email, data.new_password)
+        return {"message": "Senha redefinida com sucesso!"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao redefinir senha: {str(e)}"
+        )
+
