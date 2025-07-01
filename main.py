@@ -19,7 +19,7 @@ import mimetypes
 # Importar o roteador WebSocket e o manager
 from utils.websocket_endpoints import websocket_router, manager
 
-# Forçar o tipo MIME para arquivos .js. Isso deve ser feito ANTES de StaticFiles ser montado.
+# Forçar o tipo MIME para arquivos .js (ANTES de StaticFiles ser montado)
 mimetypes.add_type('application/javascript','.js')
 mimetypes.add_type('application/javascript', 'mjs') # Para módulos ES6 com extensão .mjs
 
@@ -27,8 +27,8 @@ mimetypes.add_type('application/javascript', 'mjs') # Para módulos ES6 com exte
 async def lifespan(app: FastAPI):
     # Executado antes do app iniciar
     try:
-        scheduler.add_job(tarefa_diaria, 'cron', hour=8, minute=1) # verificar validade dos produtos 
-        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=11,  minute=8) # limpar relatórios todo
+        scheduler.add_job(tarefa_diaria, 'cron', hour=9, minute=52) # verificar validade dos produtos 
+        scheduler.add_job(tarefa_limpar_relatorios, 'cron', hour=11,  minute=8) # limpar relatórios antigos
         scheduler.start()
         print("Scheduler iniciado com sucesso via lifespan.")
     except Exception as e:

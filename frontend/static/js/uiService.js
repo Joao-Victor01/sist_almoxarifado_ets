@@ -1,6 +1,6 @@
 // frontend/static/js/uiService.js
 
-import { formatDate, formatDateTime, getStatusText, showAlert, getUserTypeFromToken } from './utils.js';
+import { formatDate, formatDateTime, getStatusText,  getUserTypeFromToken } from './utils.js';
 import estadoGlobal from './estadoGlobal.js';
 
 class UiService {

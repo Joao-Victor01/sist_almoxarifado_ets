@@ -207,36 +207,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function connectAlertsWebSocket() {
         const userId = getUserIdFromToken();
-        console.log("UserID para WebSocket:", userId);
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/api/almoxarifado/ws/alerts${userId ? `?user_id=${userId}` : ''}`;
 
         ws = new WebSocket(wsUrl);
 
-        ws.onopen = (event) => {
-            console.log("WebSocket para notificações conectado:", event);
-        };
 
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
-            console.log("Mensagem WebSocket recebida", message);
 
-            const isServidorDashboard = window.location.pathname.includes('/dashboardServidor');
-            if (isServidorDashboard) {
-                if (message.type === "withdrawal_status_update") {
-                    setNewWithdrawalRequestsFlag(true);
-                    const statusText = estadoGlobal.statusMap[message.status] || 'Desconhecido';
-                    showAlert(`Sua solicitação de retirada ID ${message.retirada_id} foi atualizada para ${statusText}!`, 'info');
-                    try {
-                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
-                        audio.play().catch(e => console.error("Erro ao tocar som de notificação de retirada:", e));
-                    } catch (e) {
-                        console.error("Não foi possível criar objeto de audio para notificação:", e);
-                    }
-                    window.loadDashboardOverview(); // Chamar a função global
-                }
-            } else { // Para Almoxarifado/Direção
+            const isDirecaoDashboard = window.location.pathname.includes('/dashboardDirecao');
+            if (isDirecaoDashboard) {              
                 if (message.type === "new_alert") {
                     setNewAlertsFlag(true);
                     showAlert("Novo alerta: " + message.message, "info", 5000);
@@ -246,16 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (e) {
                         console.error("Não foi possível criar objeto de áudio para notificação:", e);
                     }
-                } else if (message.type === "new_withdrawal_request") {
-                    setNewWithdrawalRequestsFlag(true);
-                    showAlert("Nova solicitação de retirada: " + message.message, "primary", 5000);
-                    try {
-                        const audio = new Audio(NOTIFICATION_SOUND_PATH_RETIRADA);
-                        audio.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
-                    } catch (e) {
-                        console.error("Não foi possível criar objeto de áudio para notificação:", e);
-                    }
-                }
+                } 
             }
             updateNotificationBellUI();
         };
@@ -272,14 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Função para carregar e exibir as informações do usuário no dashboard da Direção
-    // Esta função será exportada globalmente
+    // exportada globalmente
     window.loadDirecaoWelcomeSection = async function() { // Tornada global
         uiService.showLoading();
         const welcomeUserNameDirecao = document.getElementById('welcome-user-name-direcao');
         const userSiapeDirecao = document.getElementById('user-siape-direcao');
         const userSectorDirecao = document.getElementById('user-sector-direcao');
 
-        // Inicializa com texto padrão imediatamente para evitar "Carregando..." persistente
+        // Inicializa com texto padrão imediatamente (evitar "Carregando..." )
         if (welcomeUserNameDirecao) welcomeUserNameDirecao.textContent = 'Direção'; 
         if (userSiapeDirecao) userSiapeDirecao.textContent = 'N/D';
         if (userSectorDirecao) userSectorDirecao.textContent = 'N/D';

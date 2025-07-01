@@ -289,16 +289,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function connectAlertsWebSocket() {
         const userId = getUserIdFromToken();
-        console.log("UserID para WebSocket:", userId);
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/api/almoxarifado/ws/alerts${userId ? `?user_id=${userId}` : ''}`;
 
         ws = new WebSocket(wsUrl);
 
-        ws.onopen = (event) => {
-            console.log("WebSocket para notificações conectado:", event);
-        };
 
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
