@@ -152,3 +152,5 @@ export function getUserTypeFromToken() {
         return null;
     }
 }
+
+window.showAlert = showAlert;

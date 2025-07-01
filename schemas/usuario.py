@@ -39,3 +39,6 @@ class UsuarioResetPasswordSimple(BaseModel):
     username_or_email: str
     new_password: str
 
+# SCHEMA PARA CHECAGEM DE USUÁRIO PARA REDEFINIÇÃO DE SENHA
+class UsuarioCheckForReset(BaseModel):
+    username_or_email: str

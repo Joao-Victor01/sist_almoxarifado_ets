@@ -19,12 +19,10 @@ class ForgotPasswordModule {
         this.btnReset = document.getElementById('btnResetPassword');
         this.btnBack = document.getElementById('btnForgotPasswordBack');
 
-        // Armazenar o username/email para a segunda etapa
-        this.usernameOrEmail = '';
+        this.usernameOrEmail = ''; // Armazenar o username/email para a segunda etapa
     }
 
     init() {
-        // Captura o clique no link "Cadastrar/Recuperação de conta"
         document.getElementById('recover-link')?.addEventListener('click', (e) => {
             e.preventDefault();
             this.openModal();
@@ -34,12 +32,11 @@ class ForgotPasswordModule {
         this.btnReset.addEventListener('click', () => this.handleResetPassword());
         this.btnBack.addEventListener('click', () => this.showStep1());
 
-        // Limpa o formulário e reseta para a etapa 1 ao esconder o modal
         this.modalEl.addEventListener('hidden.bs.modal', () => this.resetModal());
     }
 
     openModal() {
-        this.resetModal(); // Garante que o modal esteja limpo e na primeira etapa
+        this.resetModal();
         this.modal.show();
     }
 
@@ -63,6 +60,8 @@ class ForgotPasswordModule {
         this.newPasswordInput.focus();
     }
 
+// frontend/static/js/forgotPasswordModule.js
+
     async handleNextStep() {
         const userEmail = this.userEmailInput.value.trim();
 
@@ -71,30 +70,23 @@ class ForgotPasswordModule {
             return;
         }
 
-        // Simula a "busca no banco de dados" para ver se o usuário existe.
-        // Como o backend não tem um endpoint específico para "buscar usuário para redefinição"
-        // sem expor IDs ou exigir autenticação, vamos diretamente para a etapa 2
-        // assumindo que o usuário existe. A validação real de existência
-        // e a mensagem de erro ocorrerão apenas na etapa de redefinição de senha.
-        // ESTA É A PARTE INSEGURA DA LÓGICA SIMPLES.
-        this.usernameOrEmail = userEmail;
-        this.showStep2();
-        
-        // Em uma implementação segura, aqui teria uma chamada à API
-        // para verificar a existência do usuário e, se existisse,
-        // retornaria um token temporário para a próxima etapa.
-        // Por ex.:
-        /*
         try {
-            // Supondo um endpoint backend: POST /usuarios/check-user-for-reset
-            await apiService.checkUserForPasswordReset(userEmail); 
-            this.usernameOrEmail = userEmail;
+            const exists = await apiService.checkUserForPasswordReset(userEmail);
+
+            if (exists) {
+            this.usernameOrEmail = userEmail; // armazena para a segunda etapa
+            showAlert('Usuário encontrado. Por favor, digite sua nova senha.', 'info');
             this.showStep2();
+            } else {
+            // usuário não localizado
+            showAlert('Usuário não encontrado. Verifique o nome de usuário ou e-mail.', 'danger');
+            }
         } catch (error) {
-            showAlert(error.message || 'Usuário não encontrado.', 'danger');
+            console.error('Erro inesperado ao verificar usuário para redefinição:', error);
+            showAlert(error.message || 'Erro ao verificar usuário. Tente novamente mais tarde.', 'danger');
         }
-        */
     }
+
 
     async handleResetPassword() {
         const newPassword = this.newPasswordInput.value;
@@ -110,23 +102,22 @@ class ForgotPasswordModule {
             return;
         }
 
-        if (newPassword.length < 6) { // Exemplo de validação de senha mínima
-            showAlert('A nova senha deve ter pelo menos 6 caracteres.', 'warning');
-            return;
-        }
+        // if (newPassword.length < 6) { // Exemplo de validação de senha mínima
+        //     showAlert('A nova senha deve ter pelo menos 6 caracteres.', 'warning');
+        //     return;
+        // }
 
         try {
-            // Chama o novo endpoint do backend para redefinir a senha
             await apiService.resetPasswordSimple(this.usernameOrEmail, newPassword);
             showAlert('Sua senha foi redefinida com sucesso! Você já pode fazer login.', 'success');
-            this.modal.hide(); // Fecha o modal
+            this.modal.hide();
         } catch (error) {
             console.error('Erro ao redefinir senha:', error);
-            showAlert(error.message || 'Erro ao redefinir a senha. Verifique o nome de usuário/e-mail e tente novamente.', 'danger');
+            // Exibe a mensagem de erro vinda da API, ou uma mensagem genérica
+            showAlert(error.message || 'Erro ao redefinir a senha. Tente novamente mais tarde.', 'danger');
         }
     }
 }
 
-// Instancia e inicializa o módulo
 const forgotPasswordModule = new ForgotPasswordModule();
 forgotPasswordModule.init();

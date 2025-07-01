@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, status, Response, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
-from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate, UsuarioResetPasswordSimple
+from schemas.usuario import UsuarioOut, UsuarioCreate, UsuarioUpdate, UsuarioResetPasswordSimple, UsuarioCheckForReset
 from services.usuario_service import UsuarioService
 from core.security import usuario_direcao, direcao_ou_almoxarifado, todos_usuarios
 from typing import List
@@ -108,4 +108,26 @@ async def reset_password_simple(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao redefinir senha: {str(e)}"
         )
+    
+# ENDPOINT PARA CHECAR A EXISTÊNCIA DO USUÁRIO NA PRIMEIRA ETAPA DE ESQUECI SENHA
+@router.post("/check-user-for-reset", status_code=status.HTTP_200_OK)
+async def check_user_for_reset(
+    data: UsuarioCheckForReset, # Usar o novo schema
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Verifica se o username ou email fornecido existe no sistema para a redefinição de senha.
+    Não retorna dados do usuário, apenas confirma a existência para avançar à próxima etapa.
+    PONTO DE SEGURANÇA: Este endpoint não deveria ser exposto sem CAPTCHA ou limites de taxa em produção.
+    """
+    user_exists = await UsuarioService.check_user_exists_for_reset(db, data.username_or_email)
+    
+    if not user_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado. Verifique o nome de usuário ou e-mail."
+        )
+    
+    return {"message": "Usuário encontrado. Prossiga para a redefinição de senha."}
+
 

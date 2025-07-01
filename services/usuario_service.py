@@ -153,7 +153,27 @@ class UsuarioService:
         await db.commit()
         await db.refresh(user)
         
-        return user
+        return user    
+
+    # MÉTODO PARA CHECAR SE O USUÁRIO EXISTE PARA REDEFINIÇÃO DE SENHA
+    @staticmethod
+    async def check_user_exists_for_reset(db: AsyncSession, username_or_email: str) -> bool:
+        """
+        Verifica se um usuário existe com o username ou email fornecido.
+        Retorna True se existe, False caso contrário.
+        """
+        # Tenta encontrar por username
+        user = await db.scalar(
+            select(Usuario).where(Usuario.username == username_or_email)
+        )
+        
+        # Se não encontrou por username, tenta por email
+        if not user:
+            user = await db.scalar(
+                select(Usuario).where(Usuario.email_usuario == username_or_email.lower())
+            )
+        
+        return user is not None
     
 
     #----------- MÉTODOS AUXILIXARES ABAIXO ---------------------------

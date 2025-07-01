@@ -252,6 +252,39 @@ class ApiService {
             new_password: newPassword
         });
     }
+
+// MÉTODO PARA CHECAR EXISTÊNCIA DE USUÁRIO NA PRIMEIRA ETAPA DE ESQUECI SENHA
+    async checkUserForPasswordReset(usernameOrEmail) {
+        const url = `${this.baseUrl}/usuarios/check-user-for-reset`;
+        const headers = {
+            'Content-Type': 'application/json',
+            ...this._getHeaders()
+        };
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ username_or_email: usernameOrEmail })
+        });
+
+        if (response.status === 200) {
+            // encontrou usuário
+            return true;
+        }
+
+        if (response.status === 404) {
+            // não encontrou usuário
+            return false;
+        }
+
+        // qualquer outro erro, tenta extrair mensagem e lançar
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch {
+            errorData = { detail: 'Erro desconhecido na resposta da API.' };
+        }
+        throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
+    }
 }
 
 export const apiService = new ApiService();
