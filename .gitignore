@@ -29,8 +29,8 @@ ets/
 *.log
 
 # Ignorar diretórios específicos (adicione os diretórios que deseja ignorar)
-/diretorio_ignorado1/
-/diretorio_ignorado2/
+/logs
+/relatorios
 
 # Ignorar todos os arquivos em um diretório específico (mas manter o diretório)
 /diretorio_com_arquivos_ignorados/*
