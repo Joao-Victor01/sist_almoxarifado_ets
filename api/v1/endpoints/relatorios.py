@@ -31,7 +31,11 @@ async def gerar_relatorio_quantidade(
             logger.warning("Arquivo de relatório quantidade-itens não encontrado após geração")
             raise HTTPException(status_code=404, detail="Relatório não gerado")
         logger.info(f"Relatório quantidade-itens gerado em: {caminho}")
-        return FileResponse(path=str(caminho), filename=os.path.basename(str(caminho)), media_type="application/octet-stream")
+        return FileResponse(
+            path=str(caminho),
+            filename=os.path.basename(str(caminho)),
+            media_type="application/octet-stream"
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -52,17 +56,24 @@ async def gerar_relatorio_entrada(
             f"Usuário {current_user.usuario_id} solicitou relatório entrada-itens "
             f"(de={data_inicio.date()}, até={data_fim.date()}, formato={formato})"
         )
-        caminho = await RelatorioService.gerar_relatorio_entrada_itens(db, data_inicio, data_fim, formato)
+        caminho = await RelatorioService.gerar_relatorio_entrada_itens(
+            db, data_inicio, data_fim, formato
+        )
         if not caminho or not os.path.exists(str(caminho)):
             logger.warning("Arquivo de relatório entrada-itens não encontrado após geração")
             raise HTTPException(status_code=404, detail="Relatório não gerado")
         logger.info(f"Relatório entrada-itens gerado em: {caminho}")
-        return FileResponse(path=str(caminho), filename=os.path.basename(str(caminho)), media_type="application/octet-stream")
+        return FileResponse(
+            path=str(caminho),
+            filename=os.path.basename(str(caminho)),
+            media_type="application/octet-stream"
+        )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Erro ao gerar relatório entrada-itens: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao gerar relatório")
+
 
 
 @router.get("/relatorios/retiradas-setor/")

@@ -6,13 +6,14 @@ from models.retirada import StatusEnum
 from core.configs import Settings
 from services.export_strategy import CSVExportStrategy, XLSXExportStrategy
 from services.categoria_service import CategoriaService
-from services.item_service import ItemService # Manter para outros usos se houver, mas não para get_itens_filtrados
-from repositories.item_repository import ItemRepository # NOVO: Importar ItemRepository
+from repositories.item_repository import ItemRepository 
 from services.retirada_service import RetiradaService
 from utils.relatorio_itens import formatar_dados_relatorio
 from fastapi import HTTPException
 from datetime import datetime
 import os
+import unicodedata
+from utils.normalizar_texto import normalize_name
 
 PASTA_RELATORIOS = Settings.PASTA_RELATORIOS
 os.makedirs(PASTA_RELATORIOS, exist_ok=True)
@@ -27,39 +28,50 @@ class RelatorioService:
         formato: str = "csv"
     ):
         try:
-            # 1. Buscar categorias (se aplicável)
+            # 1. Tratar filtro de categoria: ID numérico ou texto
             categoria_ids = []
             if filtro_categoria:
-                categorias = await CategoriaService.get_categorias_like(session, filtro_categoria)
-                categoria_ids = [c.categoria_id for c in categorias]
+                if filtro_categoria.isdigit():
+                    cat = await CategoriaService.get_categoria_by_id(session, int(filtro_categoria))
+                    if not cat:
+                        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+                    categoria_ids = [cat.categoria_id]
+                else:
+                    cats = await CategoriaService.get_categorias_like(session, filtro_categoria)
+                    if not cats:
+                        raise HTTPException(status_code=404, detail="Nenhuma categoria encontrada com o termo fornecido")
+                    categoria_ids = [c.categoria_id for c in cats]
 
-            # 2. Buscar itens com filtros usando o ItemRepository.find_filtered
-            # NOVO: Usar ItemRepository.find_filtered
+            # 2. Normalizar e tratar filtro de produto
+            filtro_normalizado = None
+            if filtro_produto:
+                filtro_normalizado = normalize_name(filtro_produto)
+
+            # 3. Buscar itens
             itens = await ItemRepository.find_filtered(
                 session,
-                categoria_ids=categoria_ids if categoria_ids else None, # Passar None se a lista estiver vazia
-                nome_produto_normalizado=filtro_produto # O ItemRepository.find_filtered já espera o nome normalizado
+                categoria_ids=categoria_ids or None,
+                nome_produto_normalizado=filtro_normalizado
             )
 
-            # 3. Formatar dados
+            # 4. Formatar e exportar
             dados = formatar_dados_relatorio(itens)
             df = pd.DataFrame(dados)
 
-            # 4. Exportar
-            caminho_arquivo = os.path.join(PASTA_RELATORIOS, f"relatorio_quantidade_itens.{formato}")
+            caminho_arquivo = os.path.join(
+                PASTA_RELATORIOS,
+                f"relatorio_quantidade_itens.{formato}"
+            )
             export_strategy = CSVExportStrategy() if formato == "csv" else XLSXExportStrategy()
             export_strategy.export(df, caminho_arquivo)
 
             return caminho_arquivo
 
         except HTTPException:
-            raise # Repassa exceções HTTP específicas
+            raise
         except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Erro ao gerar relatório: {str(e)}"
-            )
-
+            raise HTTPException(status_code=500, detail=f"Erro ao gerar relatório: {e}")
+        
     @staticmethod
     async def gerar_relatorio_entrada_itens(
         session: AsyncSession,

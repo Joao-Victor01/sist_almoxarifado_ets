@@ -101,7 +101,7 @@ def formatar_dados_relatorio(itens: list[tuple]):
     return [{
         "ID_Categoria": item.categoria_id,
         "Nome_Categoria": nome_categoria,  
-        "Produto": item.nome_item.title(),
+        "Produto": item.nome_item_original.title(),
         "Quantidade": item.quantidade_item,
         "Data_Validade": item.data_validade_item.strftime('%d/%m/%Y') if item.data_validade_item else None
     } for item, nome_categoria in itens]  
