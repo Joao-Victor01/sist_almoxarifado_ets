@@ -141,7 +141,22 @@ async def get_access_token(
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(response: Response):
+    """
+    Realiza o logout do usuário, removendo o token de acesso do cookie.
+    """
     logger.info("Logout realizado com sucesso")
+    
+    # IMPORTANTE: Deleta o cookie 'access_token' explicitamente
+    # Certifique-se de que 'path' e 'samesite' correspondam aos valores
+    # usados quando o cookie foi definido em login.js.
+    response.delete_cookie(
+        "access_token",
+        path="/",        # Deve corresponder ao path usado ao definir o cookie
+        samesite="lax"   # Deve corresponder ao samesite usado ao definir o cookie
+        # domain=None,   # Se você definiu um domínio específico ao criar o cookie,
+                         # deve especificá-lo aqui também. Caso contrário, deixe None
+                         # para o domínio atual (padrão).
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
