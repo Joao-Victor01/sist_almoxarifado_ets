@@ -15,9 +15,13 @@ from api.v1.endpoints.alerta import router as alerta_router
 from fastapi.staticfiles import StaticFiles
 from frontend.routes.home import router as frontend_router
 import mimetypes
+from utils.logger import logger
 
-# Importar o roteador WebSocket e o manager
-from utils.websocket_endpoints import websocket_router, manager
+# roteador WebSocket e o manager
+from utils.websocket_endpoints import websocket_router
+
+logger.info("Iniciando aplicação Almoxarifado…")
+
 
 # Forçar o tipo MIME para arquivos .js (ANTES de StaticFiles ser montado)
 mimetypes.add_type('application/javascript','.js')
