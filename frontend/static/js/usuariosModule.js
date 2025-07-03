@@ -209,8 +209,8 @@ class UsuariosModule {
                 `${searchBarHtml}${tableHtml}${paginationHtml}`
             );
 
-            this._bindPageEvents(); // Corrigido: Chamada do método interno
-            this._bindTableActions(); // Corrigido: Chamada do método interno
+            this._bindPageEvents(); 
+            this._bindTableActions(); 
 
         } catch (error) {
             console.error('Erro ao renderizar lista de usuários:', error);

@@ -116,7 +116,7 @@ export function updateNotificationBellUI() {
 
     //  Lógica para exibir/ocultar "Sem notificações"
     if (noNotificationsMenuItem) {
-        if (!newAlerts && !newWithdrawalRequests) { // Corrigido para verificar ambos os flags
+        if (!newAlerts && !newWithdrawalRequests) { // verificar ambos os flags
             noNotificationsMenuItem.style.display = 'block'; // Exibe "Sem notificações"
         } else {
             noNotificationsMenuItem.style.display = 'none'; // Oculta "Sem notificações"
