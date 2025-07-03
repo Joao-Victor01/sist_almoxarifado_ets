@@ -35,7 +35,7 @@ class AlertaService:
                     item_id=item.item_id,
                     data_alerta=datetime.now()
                 ))
-                # NOVO: Transmitir o evento de novo alerta via WebSocket (para conexões gerais)
+                #  Transmitir o evento de novo alerta via WebSocket (para conexões gerais)
                 await manager.broadcast({"type": "new_alert", "alert_id": novo_alerta.alerta_id, "message": novo_alerta.mensagem_alerta})
 
     @staticmethod
@@ -67,7 +67,7 @@ class AlertaService:
                     item_id=item.item_id,
                     data_alerta=datetime.now()
                 ))
-                # NOVO: Transmitir o evento de novo alerta via WebSocket (para conexões gerais)
+                # Transmitir o evento de novo alerta via WebSocket (para conexões gerais)
                 await manager.broadcast({"type": "new_alert", "alert_id": novo_alerta.alerta_id, "message": novo_alerta.mensagem_alerta})
 
     @staticmethod

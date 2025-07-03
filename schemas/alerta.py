@@ -17,7 +17,7 @@ class AlertaOut (AlertaBase):
     class Config:
         from_attributes = True
 
-# Novo schema para paginação
+# schema para paginação
 class PaginatedAlertas(BaseModel):
     page: int
     size: int

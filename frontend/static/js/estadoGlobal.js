@@ -12,7 +12,7 @@ const estadoGlobal = {
     totalPendentesPages: 1,
     currentPendentesPageSize: 10,
 
-    // NOVO: Estado para o histórico de retiradas do servidor
+    // Estado para o histórico de retiradas do servidor
     currentMinhasRetiradasPage: 1,
     totalMinhasRetiradasPages: 1,
     currentMinhasRetiradasPageSize: 10,

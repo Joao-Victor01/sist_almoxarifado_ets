@@ -18,7 +18,7 @@ class RetiradasModule {
         this.concluirDetalheStatusInput = document.getElementById('concluirDetalheStatus');
         this.btnConfirmarConcluirRetirada = document.getElementById('btn-confirmar-concluir-retirada');
 
-        // NOVAS Referências ao modal de soft delete
+        // Referências ao modal de soft delete
         this.modalSoftDeleteRetiradas = uiService.getModalInstance('modalSoftDeleteRetiradas');
         this.softDeleteDataInicioInput = document.getElementById('softDeleteDataInicio');
         this.softDeleteDataFimInput = document.getElementById('softDeleteDataFim');
@@ -35,19 +35,17 @@ class RetiradasModule {
         this._boundHandleAutorizarRetiradaClick = this._handleAutorizarRetiradaClick.bind(this); // Refactor
         this._boundHandleConcluirRetirada = this._handleConcluirRetirada.bind(this); // Refactor
 
-        // NOVO: Binding para o botão de soft delete
+        // Binding para o botão de soft delete
         this._boundHandleSoftDeleteRetiradas = this._handleSoftDeleteRetiradas.bind(this);
     }
 
     init() {
         // Vincula os eventos apenas uma vez, no DOMContentLoaded principal
-        // O botão na navbar (se você o colocou lá com o ID 'btn-open-soft-delete-retiradas')
-        // já está sendo vinculado aqui.
+
         document.getElementById('btn-open-soft-delete-retiradas')?.addEventListener('click', () => this._openSoftDeleteModal());
         
         // Os demais bindings são feitos após a renderização das tabelas.
-        // O bind do btnConfirmarSoftDeleteRetiradas é feito dentro de _openSoftDeleteModal()
-        // para garantir que o elemento exista.
+
     }
 
     async renderHistoricoRetiradas(page = 1, filters = estadoGlobal.currentHistoricoFilters, pageSize = estadoGlobal.currentHistoricoPageSize) {
@@ -118,7 +116,7 @@ class RetiradasModule {
             // Ajustando a chamada para os métodos da classe
             this.bindHistoricoEvents();
             this.bindCommonRetiradaActions(); // Agora é um método público
-            this.bindConcluirRetiradaEvents(); // Novo binding para o botão de concluir
+            this.bindConcluirRetiradaEvents(); // binding para o botão de concluir
 
             // Vincula o evento do botão de deletar antigas que foi renderizado dentro de renderHistoricoRetiradas
             // Isso garante que o botão recém-criado tenha o listener.
@@ -420,13 +418,6 @@ class RetiradasModule {
         }
     }
     
-    // Mova os listeners para os botões "Confirmar Autorizar" e "Confirmar Negar"
-    // para fora do _bindCommonRetiradaActions ou bindPendentesEvents,
-    // e para um local onde eles sejam vinculados uma única vez,
-    // por exemplo, no `init` do `main.js` ou em um `init` do próprio `retiradasModule.js`
-    // se ele tiver uma inicialização global.
-    // Como eles já estão no `main.js`, não os removeremos daqui.
-    
     _handleAuthorizeDeny = async (action, e) => {
         const id = parseInt(e.currentTarget.dataset.id);
         const detalheInput = document.getElementById('autorizarDetalheStatus');
@@ -473,7 +464,7 @@ class RetiradasModule {
         }
     }
 
-    // NOVO MÉTODO: Abrir o modal de soft delete
+    // Abrir o modal de soft delete
     _openSoftDeleteModal() {
         this.softDeleteDataInicioInput.value = ''; // Limpa campos
         this.softDeleteDataFimInput.value = '';
@@ -486,7 +477,7 @@ class RetiradasModule {
         this.btnConfirmarSoftDeleteRetiradas.addEventListener('click', this._boundHandleSoftDeleteRetiradas);
     }
 
-    // NOVO MÉTODO: Lidar com a confirmação do soft delete
+    // Lidar com a confirmação do soft delete
     _handleSoftDeleteRetiradas = async () => {
         const dataInicio = this.softDeleteDataInicioInput.value;
         const dataFim = this.softDeleteDataFimInput.value;

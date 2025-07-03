@@ -15,10 +15,10 @@ class SelecionarItemModule {
     this.itensPaginationContainer = document.getElementById('itens-pagination-container');
     
     this.currentPage = 1;
-    this.pageSize = 10; // Default page size
+    this.pageSize = 10; // page size padrão
     this.currentSearchTerm = '';
     this.callerEventName = 'itemSelectedForRetirada';
-    this.currentTotalPages = 1; // Novo atributo para armazenar o total de páginas
+    this.currentTotalPages = 1; 
   }
 
   init() {

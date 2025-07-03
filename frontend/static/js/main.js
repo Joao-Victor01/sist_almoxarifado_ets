@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // NOVO: Adiciona listener para o botão de enviar tabela
+        //  Adiciona listener para o botão de enviar tabela
         document.getElementById('btn-enviar-tabela-itens')?.addEventListener('click', async () => {
             const form = document.getElementById('form-importar-tabela-itens');
             const fileInput = document.getElementById('arquivoltens');

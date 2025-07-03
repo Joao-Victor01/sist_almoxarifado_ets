@@ -1,7 +1,6 @@
 /* frontend\static\css\custom.css */
 
 /* === Header superior === */
-
 .custom-header {
     background-color: #0052cc;
     color: #fff;
@@ -17,31 +16,27 @@
 }
 
 /* === Navbar === */
-
 .custom-navbar {
     background-color: #0052cc;
 }
 
 /* Dropdown menus */
-
 .navbar-nav .dropdown-menu {
     border-radius: 0.25rem;
     box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
 }
 
 /* Itens do dropdown */
-
-.navbar-nav .dropdown-item { /* Corrigido de .navbar-nav.dropdown-item */
+.navbar-nav .dropdown-item { 
     padding: 0.5rem 1rem;
     font-size: 0.95rem;
 }
 
-.navbar-nav .dropdown-item:hover { /* Corrigido de .navbar-nav.dropdown-item:hover */
+.navbar-nav .dropdown-item:hover { 
     background-color: #f8f9fa;
 }
 
 /* Links do navbar */
-
 .nav-link {
     padding: 0.5rem 1rem;
 }
@@ -52,7 +47,6 @@
 }
 
 /* Ícones */
-
 .navbar-nav .bi {
     font-size: 1.3rem;
     margin: 0 0.3rem;
@@ -60,7 +54,6 @@
 }
 
 /* Ajuste responsivo: evitar que o ícone de dropdown quebre linha */
-
 .nav-item.dropdown {
     white-space: nowrap;
 }
@@ -147,12 +140,12 @@
 
 /* Garante que ambos os botões (Editar/Deletar) tenham a mesma largura */
 .btn-acoes {
-  min-width: 5rem;         /* ou qualquer valor que você julgar ideal */
+  min-width: 5rem;         
   text-align: center;      /* centraliza o ícone/texto dentro do botão */
 }
 
-/* Em telas muito estreitas, eles se empilham (graças ao flex-wrap).
-   Para espaçamento vertical maior, garantimos margem inferior quando empilhados. */
+/* Em telas muito estreitas, eles se empilham (flex-wrap).
+   Para espaçamento vertical maior, garante margem inferior quando empilhados. */
 @media (max-width: 576px) {
   .btn-acoes {
     width: 100%;           /* ocupam toda a largura da célula */
