@@ -22,7 +22,7 @@ async def create_item(item: ItemCreate, db: AsyncSession = Depends(get_session),
         logger.info(f"Usuário {current_user.usuario_id} criando item: {item.nome_item}")
         return await ItemService.create_item(db, item, current_user)
     except Exception as e:
-        logger.error(f"Erro ao criar item '{item.nome_item}': {e}", exc_info=True)
+        logger.error(f"Erro ao criar item '{item.nome_item}': {e}")
         raise HTTPException(status_code=500, detail="Erro ao criar item")
 
 
@@ -39,7 +39,7 @@ async def search_items(
         logger.info(f"Usuário {current_user.usuario_id} buscando itens (nome={nome}, categoria={categoria}, page={page})")
         return await ItemService.search_items_paginated(db, nome_produto=nome, nome_categoria=categoria, page=page, size=size)
     except Exception as e:
-        logger.error(f"Erro ao buscar itens: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar itens: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar itens")
 
 
@@ -53,7 +53,7 @@ async def get_items_paginated(
         logger.info(f"Listando itens paginados (page={page}, size={size})")
         return await ItemService.get_items_paginated(db, page, size)
     except Exception as e:
-        logger.error(f"Erro ao listar itens paginados: {e}", exc_info=True)
+        logger.error(f"Erro ao listar itens paginados: {e}")
         raise HTTPException(status_code=500, detail="Erro ao listar itens")
 
 
@@ -63,7 +63,7 @@ async def get_itens(db: AsyncSession = Depends(get_session), current_user=Depend
         logger.info(f"Usuário {current_user.usuario_id} listando todos os itens")
         return await ItemService.get_itens(db)
     except Exception as e:
-        logger.error(f"Erro ao listar itens: {e}", exc_info=True)
+        logger.error(f"Erro ao listar itens: {e}")
         raise HTTPException(status_code=500, detail="Erro ao listar itens")
 
 
@@ -73,7 +73,7 @@ async def get_item(item_id: int, db: AsyncSession = Depends(get_session), curren
         logger.info(f"Usuário {current_user.usuario_id} consultando item ID {item_id}")
         return await ItemService.get_item_by_id(db, item_id)
     except Exception as e:
-        logger.error(f"Erro ao buscar item ID {item_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar item ID {item_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar item")
 
 
@@ -83,7 +83,7 @@ async def delete_item(item_id: int, db: AsyncSession = Depends(get_session), cur
         logger.info(f"Usuário {current_user.usuario_id} deletando item ID {item_id}")
         return await ItemService.delete_item(db, item_id)
     except Exception as e:
-        logger.error(f"Erro ao deletar item ID {item_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao deletar item ID {item_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao deletar item")
 
 
@@ -93,7 +93,7 @@ async def update_item(item_id: int, item: ItemUpdate, db: AsyncSession = Depends
         logger.info(f"Usuário {current_user.usuario_id} atualizando item ID {item_id} para: {item.nome_item}")
         return await ItemService.update_item(db, item_id, item, current_user)
     except Exception as e:
-        logger.error(f"Erro ao atualizar item ID {item_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao atualizar item ID {item_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao atualizar item")
 
 
@@ -103,5 +103,5 @@ async def upload_items_bulk(file: UploadFile = File(...), db: AsyncSession = Dep
         logger.info(f"Usuário {current_user.usuario_id} fez upload de arquivo de itens: {file.filename}")
         return await ItemService.process_bulk_upload(db, file, current_user.usuario_id)
     except Exception as e:
-        logger.error(f"Erro no upload em massa de itens: {e}", exc_info=True)
+        logger.error(f"Erro no upload em massa de itens: {e}")
         raise HTTPException(status_code=500, detail="Erro ao processar upload de itens")

@@ -1,7 +1,7 @@
 #api/v1/endpoints/retirada.py
 
 from datetime import datetime
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
@@ -11,6 +11,7 @@ from schemas.retirada import (
 )
 from services.retirada_service import RetiradaService
 from core.security import todos_usuarios, usuario_almoxarifado, direcao_ou_almoxarifado
+from utils.logger import logger
 
 router = APIRouter(prefix="/retiradas")
 
@@ -21,7 +22,14 @@ async def solicitar_retirada(
     current_user=Depends(todos_usuarios)
 ):
     """Endpoint para um usuário solicitar uma nova retirada de itens."""
-    return await RetiradaService.solicitar_retirada(db, retirada, current_user.usuario_id)
+    try:
+        logger.info(f"Usuário {current_user.username} solicitou uma retirada de itens")
+        return await RetiradaService.solicitar_retirada(db, retirada, current_user.usuario_id)
+    except Exception as e:
+        logger.error(f"Erro ao solicitar retirada: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao solicitar retirada")
+
+
 
 @router.put("/{retirada_id}", response_model=RetiradaOut)
 async def atualizar_status_retirada(
@@ -31,7 +39,12 @@ async def atualizar_status_retirada(
     current_user=Depends(usuario_almoxarifado)
 ):
     """Endpoint para um usuário do almoxarifado atualizar o status de uma retirada."""
-    return await RetiradaService.atualizar_status(db, retirada_id, status_data, current_user.usuario_id)
+    try:
+        logger.info(f"Usuário {current_user.usuario_id} atualizou status da retirada {retirada_id}")
+        return await RetiradaService.atualizar_status(db, retirada_id, status_data, current_user.usuario_id)
+    except Exception as e:
+        logger.error(f"Erro ao atualizar status da retirada {retirada_id}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao atualizar status da retirada")
 
 # Listagem paginada de todas as retiradas (para almoxarifado)
 @router.get(

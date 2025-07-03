@@ -20,7 +20,7 @@ async def create_categoria(
         logger.info(f"Usuário {current_user.usuario_id} criando categoria: {categoria.nome_categoria}")
         return await CategoriaService.create_categoria(db, categoria)
     except Exception as e:
-        logger.error(f"Erro ao criar categoria: {categoria.nome_categoria} | {e}", exc_info=True)
+        logger.error(f"Erro ao criar categoria: {categoria.nome_categoria} | {e}")
         raise HTTPException(status_code=500, detail="Erro ao criar categoria")
 
 
@@ -36,7 +36,7 @@ async def search_categorias(
         logger.info(f"Usuário {current_user.usuario_id} buscando categorias (nome={nome}, page={page}, size={size})")
         return await CategoriaService.search_categorias_paginated(db, nome_categoria=nome, page=page, size=size)
     except Exception as e:
-        logger.error(f"Erro ao buscar categorias: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar categorias: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar categorias")
 
 
@@ -50,7 +50,7 @@ async def get_items_paginated(
         logger.info(f"Listando categorias paginadas (page={page}, size={size})")
         return await CategoriaService.get_categorias_paginated(db, page, size)
     except Exception as e:
-        logger.error(f"Erro ao listar categorias paginadas: {e}", exc_info=True)
+        logger.error(f"Erro ao listar categorias paginadas: {e}")
         raise HTTPException(status_code=500, detail="Erro ao listar categorias")
 
 
@@ -60,7 +60,7 @@ async def get_categorias(db: AsyncSession = Depends(get_session), current_user=D
         logger.info(f"Usuário {current_user.usuario_id} listando todas as categorias")
         return await CategoriaService.get_categorias(db)
     except Exception as e:
-        logger.error(f"Erro ao listar categorias: {e}", exc_info=True)
+        logger.error(f"Erro ao listar categorias: {e}")
         raise HTTPException(status_code=500, detail="Erro ao listar categorias")
 
 
@@ -70,7 +70,7 @@ async def get_categoria_by_id(categoria_id: int, db: AsyncSession = Depends(get_
         logger.info(f"Usuário {current_user.usuario_id} consultando categoria por ID: {categoria_id}")
         return await CategoriaService.get_categoria_by_id(db, categoria_id)
     except Exception as e:
-        logger.error(f"Erro ao buscar categoria ID {categoria_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar categoria ID {categoria_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar categoria")
 
 
@@ -80,7 +80,7 @@ async def get_categoria_by_name(categoria_name: str, db: AsyncSession = Depends(
         logger.info(f"Usuário {current_user.usuario_id} consultando categoria por nome: {categoria_name}")
         return await CategoriaService.get_categoria_by_name(db, categoria_name)
     except Exception as e:
-        logger.error(f"Erro ao buscar categoria '{categoria_name}': {e}", exc_info=True)
+        logger.error(f"Erro ao buscar categoria '{categoria_name}': {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar categoria")
 
 
@@ -95,7 +95,7 @@ async def update_categoria(
         logger.info(f"Usuário {current_user.usuario_id} atualizando categoria ID {categoria_id} para: {categoria.nome_categoria}")
         return await CategoriaService.update_categoria(db, categoria_id, categoria)
     except Exception as e:
-        logger.error(f"Erro ao atualizar categoria ID {categoria_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao atualizar categoria ID {categoria_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao atualizar categoria")
 
 
@@ -105,5 +105,5 @@ async def delete_categoria(categoria_id: int, db: AsyncSession = Depends(get_ses
         logger.info(f"Usuário {current_user.usuario_id} deletando categoria ID {categoria_id}")
         return await CategoriaService.delete_categoria(db, categoria_id)
     except Exception as e:
-        logger.error(f"Erro ao deletar categoria ID {categoria_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao deletar categoria ID {categoria_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao deletar categoria")

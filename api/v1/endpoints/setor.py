@@ -20,7 +20,7 @@ async def create_setor(
         logger.info(f"Usuário {current_user.usuario_id} criando setor: {setor.nome_setor}")
         return await SetorService.create_setor(db, setor)
     except Exception as e:
-        logger.error(f"Erro ao criar setor '{setor.nome_setor}': {e}", exc_info=True)
+        logger.error(f"Erro ao criar setor '{setor.nome_setor}': {e}")
         raise HTTPException(status_code=500, detail="Erro ao criar setor")
 
 
@@ -33,7 +33,7 @@ async def get_setores(
         logger.info(f"Usuário {current_user.usuario_id} listando todos os setores")
         return await SetorService.get_setores(db)
     except Exception as e:
-        logger.error(f"Erro ao listar setores: {e}", exc_info=True)
+        logger.error(f"Erro ao listar setores: {e}")
         raise HTTPException(status_code=500, detail="Erro ao listar setores")
 
 
@@ -53,7 +53,7 @@ async def get_setor_by_id(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao buscar setor ID {setor_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar setor ID {setor_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar setor")
 
 
@@ -74,7 +74,7 @@ async def update_setor(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao atualizar setor ID {setor_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao atualizar setor ID {setor_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao atualizar setor")
 
 
@@ -94,5 +94,5 @@ async def delete_setor(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao deletar setor ID {setor_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao deletar setor ID {setor_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao deletar setor")

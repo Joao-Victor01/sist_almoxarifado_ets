@@ -39,7 +39,7 @@ async def gerar_relatorio_quantidade(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao gerar relatório quantidade-itens: {e}", exc_info=True)
+        logger.error(f"Erro ao gerar relatório quantidade-itens: {e}")
         raise HTTPException(status_code=500, detail="Erro ao gerar relatório")
 
 
@@ -71,7 +71,7 @@ async def gerar_relatorio_entrada(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao gerar relatório entrada-itens: {e}", exc_info=True)
+        logger.error(f"Erro ao gerar relatório entrada-itens: {e}")
         raise HTTPException(status_code=500, detail="Erro ao gerar relatório")
 
 
@@ -101,7 +101,7 @@ async def gerar_relatorio_retiradas_setor(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao gerar relatório retiradas-setor: {e}", exc_info=True)
+        logger.error(f"Erro ao gerar relatório retiradas-setor: {e}")
         raise HTTPException(status_code=500, detail="Erro ao gerar relatório")
 
 
@@ -130,5 +130,5 @@ async def gerar_relatorio_retiradas_usuario(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao gerar relatório retiradas-usuario: {e}", exc_info=True)
+        logger.error(f"Erro ao gerar relatório retiradas-usuario: {e}")
         raise HTTPException(status_code=500, detail="Erro ao gerar relatório")

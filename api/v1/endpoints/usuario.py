@@ -29,7 +29,7 @@ async def criar_primeiro_usuario(
         logger.info("Criando primeiro usuário")
         return await UsuarioService.create_first_user(db, usuario_data)
     except Exception as e:
-        logger.error(f"Erro ao criar primeiro usuário: {e}", exc_info=True)
+        logger.error(f"Erro ao criar primeiro usuário: {e}")
         raise HTTPException(status_code=500, detail="Erro ao criar primeiro usuário")
 
 
@@ -43,7 +43,7 @@ async def create_user(
         logger.info(f"Usuário {current_user.usuario_id} criando novo usuário: {user.username}")
         return await UsuarioService.create_usuario(db, user)
     except Exception as e:
-        logger.error(f"Erro ao criar usuário '{user.username}': {e}", exc_info=True)
+        logger.error(f"Erro ao criar usuário '{user.username}': {e}")
         raise HTTPException(status_code=500, detail="Erro ao criar usuário")
 
 
@@ -56,7 +56,7 @@ async def get_usuarios(
         logger.info(f"Usuário {current_user.usuario_id} listando todos os usuários")
         return await UsuarioService.get_usuarios(db)
     except Exception as e:
-        logger.error(f"Erro ao listar usuários: {e}", exc_info=True)
+        logger.error(f"Erro ao listar usuários: {e}")
         raise HTTPException(status_code=500, detail="Erro ao listar usuários")
 
 
@@ -76,7 +76,7 @@ async def get_usuario(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao buscar usuário ID {usuario_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar usuário ID {usuario_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar usuário")
 
 
@@ -96,7 +96,7 @@ async def delete_usuario(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao deletar usuário ID {usuario_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao deletar usuário ID {usuario_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao deletar usuário")
 
 
@@ -117,7 +117,7 @@ async def update_usuario(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao atualizar usuário ID {usuario_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao atualizar usuário ID {usuario_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao atualizar usuário")
 
 
@@ -132,10 +132,10 @@ async def get_access_token(
         logger.info(f"Login bem‑sucedido para username={form_data.username}")
         return token
     except HTTPException as e:
-        logger.warning(f"Falha no login para username={form_data.username}: {e.detail}", exc_info=True)
+        logger.warning(f"Falha no login para username={form_data.username}: {e.detail}")
         raise
     except Exception as e:
-        logger.error(f"Erro inesperado no login de username={form_data.username}: {e}", exc_info=True)
+        logger.error(f"Erro inesperado no login de username={form_data.username}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao efetuar login")
 
 
@@ -173,7 +173,7 @@ async def reset_password_simple(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao redefinir senha para {data.username_or_email}: {e}", exc_info=True)
+        logger.error(f"Erro ao redefinir senha para {data.username_or_email}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao redefinir senha")
 
 
@@ -192,5 +192,5 @@ async def check_user_for_reset(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao verificar usuário para reset: {e}", exc_info=True)
+        logger.error(f"Erro ao verificar usuário para reset: {e}")
         raise HTTPException(status_code=500, detail="Erro ao verificar usuário")
