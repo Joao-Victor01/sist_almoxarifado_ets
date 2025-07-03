@@ -1,5 +1,6 @@
+<link rel="stylesheet" href="/static/css/custom-navbar.css">
 <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="itensDropdown" data-bs-toggle="dropdown">ITENS</a>
+    <a class="nav-link dropdown-toggle styled-dropdown" href="#" id="itensDropdown" data-bs-toggle="dropdown">ITENS</a>
     <ul class="dropdown-menu" aria-labelledby="itensDropdown">
         <li><a class="dropdown-item" id="btn-open-cadastrar-item" href="#">Cadastrar Item</a></li>
         <li><a class="dropdown-item" id="listar-item-link" href="#">Listar Itens</a></li>
@@ -9,7 +10,7 @@
 </li>
 
 <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="categoriasDropdown" data-bs-toggle="dropdown">CATEGORIAS</a>
+    <a class="nav-link dropdown-toggle styled-dropdown" href="#" id="categoriasDropdown" data-bs-toggle="dropdown">CATEGORIAS</a>
     <ul class="dropdown-menu" aria-labelledby="categoriasDropdown">
         <li><a class="dropdown-item" id="btn-open-cadastrar-categoria" href="#">Cadastrar Categoria</a></li>
         <li><a class="dropdown-item" id="listar-categoria-link-quick" href="#">Listar Categoria</a></li>
@@ -17,7 +18,7 @@
 </li>
 
 <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="retiradasDropdown" data-bs-toggle="dropdown">RETIRADAS</a>
+    <a class="nav-link dropdown-toggle styled-dropdown" href="#" id="retiradasDropdown" data-bs-toggle="dropdown">RETIRADAS</a>
     <ul class="dropdown-menu" aria-labelledby="retiradasDropdown">
         <li><a class="dropdown-item" id="btn-open-solicitar-retirada" href="#">Solicitar Retirada</a></li>
         <li><a class="dropdown-item" id="listar-retiradas-link" href="#">Histórico de Retiradas</a></li>
@@ -25,14 +26,15 @@
     </ul>
 </li>
 
-<li class="nav-item">
-    <a class="nav-link" href="#" id="open-reports-dashboard"
-        data-bs-toggle="modal" data-bs-target="#modalReportsDashboard" >
+<li class="nav-item dropdown">
+    <a class="nav-link styled-dropdown" href="#" id="open-reports-dashboard"
+       data-bs-toggle="modal" data-bs-target="#modalReportsDashboard">
         RELATÓRIOS
     </a>
 </li>
 
 <li class="nav-item dropdown">
-    <a class="nav-link" href="#" id="open-alertas-modal" >HISTÓRICO DE ALERTAS</a>
-
+    <a class="nav-link styled-dropdown" href="#" id="open-alertas-modal">
+        HISTÓRICO DE ALERTAS
+    </a>
 </li>

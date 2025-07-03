@@ -1,4 +1,5 @@
 <!-- frontend/templates/partials/navbar_direcao.html -->
+<link rel="stylesheet" href="/static/css/custom-navbar.css">
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
     <div class="container-fluid">
         <button class="btn btn-outline-light me-3" id="home-button"><i class="bi bi-house-fill"></i></button>
@@ -9,30 +10,30 @@
         <div class="collapse navbar-collapse" id="navbarMenu">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <!-- Usuários -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="usuariosDropdown"
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown-toggle styled-dropdown" href="#" id="usuariosDropdown"
                         data-bs-toggle="dropdown">USUÁRIOS</a>
                     <ul class="dropdown-menu" aria-labelledby="usuariosDropdown">
                         <li><a class="dropdown-item" id="btn-open-cadastrar-usuario" href="#">Cadastrar Usuário</a></li>
                         <li><a class="dropdown-item" id="listar-usuarios-link" href="#">Listar Usuários</a></li>
                     </ul>
                 </li>
-                <!-- NOVO: Setores -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="setoresDropdown"
+                <!--  Setores -->
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown-toggle styled-dropdown" href="#" id="setoresDropdown"
                         data-bs-toggle="dropdown">SETORES</a>
                     <ul class="dropdown-menu" aria-labelledby="setoresDropdown">
                         <li><a class="dropdown-item" id="btn-open-cadastrar-setor" href="#">Cadastrar Setor</a></li>
                         <li><a class="dropdown-item" id="listar-setores-link" href="#">Listar Setores</a></li>
                     </ul>
                 </li>
-                <!-- Itens (apenas leitura) -->
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="listar-item-link">LISTAR ITENS</a>
+                <!-- Itens  -->
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown styled-dropdown" href="#" id="listar-item-link">LISTAR ITENS</a>
                 </li>
                 <!-- Retiradas -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="retiradasDropdown"
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown-toggle styled-dropdown" href="#" id="retiradasDropdown"
                         data-bs-toggle="dropdown">RETIRADAS</a>
                     <ul class="dropdown-menu" aria-labelledby="retiradasDropdown">
                         <li><a class="dropdown-item" id="btn-open-solicitar-retirada" href="#">Solicitar Retirada</a>
@@ -41,13 +42,13 @@
                     </ul>
                 </li>
                 <!-- Relatórios -->
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="open-reports-dashboard" data-bs-toggle="modal"
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown styled-dropdown" href="#" id="open-reports-dashboard" data-bs-toggle="modal"
                         data-bs-target="#modalReportsDashboard">RELATÓRIOS</a>
                 </li>
                 <!-- Alertas -->
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="open-alertas-modal">HISTÓRICO DE ALERTAS</a>
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown styled-dropdown" href="#" id="open-alertas-modal">HISTÓRICO DE ALERTAS</a>
                 </li>
             </ul>
             <div class="d-flex align-items-center">
