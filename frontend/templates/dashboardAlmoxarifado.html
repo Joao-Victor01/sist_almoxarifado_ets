@@ -4,82 +4,91 @@
 <link rel="stylesheet" href="/static/css/custom.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 </head>
+
 <body>
 
-{% include 'partials/topbar.html' %}
-{% include 'partials/navbar.html' %}
+    {% include 'partials/topbar.html' %}
+    {% include 'partials/navbar.html' %}
 
-<!-- Conteúdo principal dinâmico -->
-<div class="container mt-5" id="main-content">
-    <!-- Seção de Boas-Vindas Personalizada para Almoxarifado -->
-    <h3 class="mb-3">Olá, <span id="welcome-user-name-almoxarifado">Almoxarifado</span>!</h3>
-    <p class="text-muted">Bem-vindo(a) ao Sistema de Controle de Almoxarifado do CPT.</p>
+    <!-- Conteúdo principal dinâmico -->
+    <div class="container mt-5" id="main-content">
+        <!-- Seção de Boas-Vindas Personalizada para Almoxarifado -->
+        <h3 class="mb-3">Olá, <span id="welcome-user-name-almoxarifado">Almoxarifado</span>!</h3>
+        <p class="text-muted">Bem-vindo(a) ao Sistema de Controle de Almoxarifado do CPT.</p>
 
-    <div class="card bg-white rounded-lg shadow-sm p-4 mb-4">
-        <p class="mb-1"><strong>SIAPE:</strong> <span id="user-siape-almoxarifado">Carregando...</span></p>
-        <p class="mb-0"><strong>Setor:</strong> <span id="user-sector-almoxarifado">Carregando...</span></p>
+        <div class="card bg-white rounded-lg shadow-sm p-4 mb-4">
+            <p class="mb-1"><strong>SIAPE:</strong> <span id="user-siape-almoxarifado">Carregando...</span></p>
+            <p class="mb-0"><strong>Setor:</strong> <span id="user-sector-almoxarifado">Carregando...</span></p>
+        </div>
+
+        {% include 'partials/quick_access.html' %}
     </div>
 
-    {% include 'partials/quick_access.html' %}
-</div>
+    <!-- Partial: global_overlays.html -->
+    {% include 'partials/global_overlays.html' %}
 
-<!-- Partial: global_overlays.html -->
-{% include 'partials/global_overlays.html' %}
-
-{% include 'partials/modals/modal_editar_usuario.html' %}
+    {% include 'partials/modals/modal_editar_usuario.html' %}
 
 
-<!-- Incluindo modais de Itens -->
-{% include 'partials/modals/modal_cadastrar_item.html' %}
-{% include 'partials/modals/modal_editar_item.html' %}
+    <!-- Incluindo modais de Itens -->
+    {% include 'partials/modals/modal_cadastrar_item.html' %}
+    {% include 'partials/modals/modal_editar_item.html' %}
 
-<!-- modais de Categorias -->
-{% include 'partials/modals/modal_cadastrar_categoria.html' %}
-{% include 'partials/modals/modal_editar_categoria.html' %}
+    <!-- modais de Categorias -->
+    {% include 'partials/modals/modal_cadastrar_categoria.html' %}
+    {% include 'partials/modals/modal_editar_categoria.html' %}
 
-<!-- modais de Retiradas -->
-{% include 'partials/modals/modal_ver_detalhes_retirada.html' %}
-{% include 'partials/modals/modal_autorizar_retirada.html' %}
-{% include 'partials/modals/modal_item_detalhes.html' %}
-{% include 'partials/modals/modal_solicitar_retirada.html' %}
-{% include 'partials/modals/modal_selecionar_item_retirada.html' %}
-{% include 'partials/modals/modal_concluir_retirada.html' %}
+    <!-- modais de Retiradas -->
+    {% include 'partials/modals/modal_ver_detalhes_retirada.html' %}
+    {% include 'partials/modals/modal_autorizar_retirada.html' %}
+    {% include 'partials/modals/modal_item_detalhes.html' %}
+    {% include 'partials/modals/modal_solicitar_retirada.html' %}
+    {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
+    {% include 'partials/modals/modal_concluir_retirada.html' %}
 
-<!-- modais de Relatórios -->
-{% include 'partials/modals/modal_reports_dashboard.html' %}
-{% include 'partials/modals/modal_report_quantidade_itens.html' %}
-{% include 'partials/modals/modal_report_entrada_itens.html' %}
-{% include 'partials/modals/modal_report_retiradas_setor.html' %}
-{% include 'partials/modals/modal_report_retiradas_usuario.html' %}
-{% include 'partials/modals/modal_soft_delete_retiradas.html' %}
+    <!-- modais de Relatórios -->
+    {% include 'partials/modals/modal_reports_dashboard.html' %}
+    {% include 'partials/modals/modal_report_quantidade_itens.html' %}
+    {% include 'partials/modals/modal_report_entrada_itens.html' %}
+    {% include 'partials/modals/modal_report_retiradas_setor.html' %}
+    {% include 'partials/modals/modal_report_retiradas_usuario.html' %}
+    {% include 'partials/modals/modal_soft_delete_retiradas.html' %}
+
+    <!-- Apenas para evitar erros no console. Modais associados ao uiService.js mas não usados no dashboardAlmoxarifado -->
+    {% include 'partials/modals/modal_cadastrar_usuario.html' %}
+    {% include 'partials/modals/modal_confirmar_deletar_usuario.html' %}
+    {% include 'partials/modals/modal_forgot_password.html' %}
 
 
-<div class="modal fade" id="modalImportarTabelaltens" tabindex="-1" aria-labelledby="modalImportarTabelaltensLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 shadow">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="modalImportarTabelaltensLabel">Importar Tabela de Itens</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <form id="form-importar-tabela-itens">
-                    <div class="mb-3">
-                        <label for="arquivoltens" class="form-label">Selecione o arquivo (.xlsx ou .csv)*</label>
-                        <input class="form-control" type="file" id="arquivoltens" name="file" accept=".xlsx,.csv" required>
-                    </div>
-                </form>
-                <div id="import-feedback" class="mt-3" style="display:none;">
-                    <div class="alert" role="alert" id="import-alert"></div>
-                    <ul id="import-errors-list" class="list-group list-group-flush"></ul>
+
+
+    <div class="modal fade" id="modalImportarTabelaltens" tabindex="-1" aria-labelledby="modalImportarTabelaltensLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="modalImportarTabelaltensLabel">Importar Tabela de Itens</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-            </div>
-            <div class="modal-footer border-0 justify-content-center">
-                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button> 
-                <button type="button" class="btn btn-primary" id="btn-enviar-tabela-itens">Enviar</button>
+                <div class="modal-body">
+                    <form id="form-importar-tabela-itens">
+                        <div class="mb-3">
+                            <label for="arquivoltens" class="form-label">Selecione o arquivo (.xlsx ou .csv)*</label>
+                            <input class="form-control" type="file" id="arquivoltens" name="file" accept=".xlsx,.csv"
+                                required>
+                        </div>
+                    </form>
+                    <div id="import-feedback" class="mt-3" style="display:none;">
+                        <div class="alert" role="alert" id="import-alert"></div>
+                        <ul id="import-errors-list" class="list-group list-group-flush"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-enviar-tabela-itens">Enviar</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-{% include 'partials/scripts.html' %}
-
+    {% include 'partials/scripts.html' %}
