@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<link rel="icon" href="static/img/favicon.ico" type="image/x-icon">
+
 
 <head>
     <meta charset="UTF-8">
@@ -56,6 +58,17 @@
     {% include 'partials/modals/modal_selecionar_item_retirada.html' %}
     {% include 'partials/modals/modal_editar_usuario.html' %}
 
+    <!-- Apenas para evitar erros no console. Modais associados ao uiService.js mas não usados no dashboardAlmoxarifado -->
+    <!-- correção "gambiarra" o ideal seria refatorar o uiService.js para separar o de cada dashboard específico. Fazer isso posteriormente -->
+    {% include 'partials/modals/modal_concluir_retirada.html' %}
+    {% include 'partials/modals/modal_soft_delete_retiradas.html' %}
+    {% include 'partials/modals/modal_reports_dashboard.html' %}
+    {% include 'partials/modals/modal_report_quantidade_itens.html' %}
+    {% include 'partials/modals/modal_report_entrada_itens.html' %}
+    {% include 'partials/modals/modal_report_retiradas_setor.html' %}
+    {% include 'partials/modals/modal_report_retiradas_usuario.html' %}
+    {% include 'partials/modals/modal_cadastrar_usuario.html' %}
+    {% include 'partials/modals/modal_confirmar_deletar_usuario.html' %}
 
     <!-- Partial: scripts.html -->
     <script src="/static/js/bootstrap.bundle.min.js"></script>
