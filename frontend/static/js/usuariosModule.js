@@ -10,8 +10,8 @@ class UsuariosModule {
     constructor() {
         this.currentPage = 1;
         this.pageSize = 10;
-        this.searchNome = ''; 
-        this.totalUsers = 0; 
+        this.searchNome = '';
+        this.totalUsers = 0;
         this.setorIdToNameMap = {}; // mapa para armazenar ID do setor -> Nome do setor
 
         // Modals
@@ -34,11 +34,11 @@ class UsuariosModule {
         this.boundHandleSearchUsers = this._handleSearchUsers.bind(this);
         this.boundHandleClearSearch = this._handleClearSearch.bind(this);
         this.boundHandleTableActions = this._handleTableActions.bind(this);
-        this.boundUpdateUsuario = this._updateUsuario.bind(this); 
+        this.boundUpdateUsuario = this._updateUsuario.bind(this);
 
         this.isProfileMode = false;
     }
-    
+
     init() {
         this.bindEvents();
     }
@@ -51,11 +51,11 @@ class UsuariosModule {
             this.populateSetoresInForm(this.formCadastrarUsuario.querySelector('select[name="setor_id"]'));
             this.modalCadastrarUsuario.show();
         });
-        this.btnSalvarCadastrarUsuario?.addEventListener('click', () => this._createUsuario());
 
-        // Confirmar delete
-        this.btnConfirmarDeletarUsuario?.addEventListener('click', this._deleteUsuarioConfirmed.bind(this));
-
+        this.btnSalvarCadastrarUsuario.onclick = (e) => {
+            e.preventDefault();
+            this._createUsuario();
+        };
         // Salvar Editar Usuario
         this.btnSalvarEditarUsuario?.addEventListener('click', this.boundUpdateUsuario);
     }
@@ -73,25 +73,25 @@ class UsuariosModule {
             const user = await apiService.get(`/usuarios/${userId}`);
 
             const form = this.formEditarUsuario;
-            form.querySelector('input[name="nome_usuario"]').value   = user.nome_usuario;
-            form.querySelector('input[name="email_usuario"]').value  = user.email_usuario;
-            form.querySelector('input[name="username"]').value       = user.username;
-            form.querySelector('input[name="siape_usuario"]').value  = user.siape_usuario || '';
-            form.querySelector('select[name="tipo_usuario"]').value  = user.tipo_usuario;
+            form.querySelector('input[name="nome_usuario"]').value = user.nome_usuario;
+            form.querySelector('input[name="email_usuario"]').value = user.email_usuario;
+            form.querySelector('input[name="username"]').value = user.username;
+            form.querySelector('input[name="siape_usuario"]').value = user.siape_usuario || '';
+            form.querySelector('select[name="tipo_usuario"]').value = user.tipo_usuario;
             await this.populateSetoresInForm(
-            form.querySelector('select[name="setor_id"]'),
-            user.setor_id
+                form.querySelector('select[name="setor_id"]'),
+                user.setor_id
             );
 
             // desabilita campos extras para quem não é da direção
             const role = parseInt(getUserTypeFromToken(), 10);
             const disable = role !== 3;
             form.querySelector('select[name="tipo_usuario"]').disabled = disable;
-            form.querySelector('select[name="setor_id"]').disabled     = disable;
+            form.querySelector('select[name="setor_id"]').disabled = disable;
             form.querySelector('input[name="siape_usuario"]').disabled = disable;
 
             // perfil mode vale SÓ para usuários que NÃO são Direção:
-            this.isProfileMode = (role !== 3);            
+            this.isProfileMode = (role !== 3);
             this.btnSalvarEditarUsuario.dataset.id = userId;
             this.modalEditarUsuario.show();
 
@@ -209,8 +209,8 @@ class UsuariosModule {
                 `${searchBarHtml}${tableHtml}${paginationHtml}`
             );
 
-            this._bindPageEvents(); 
-            this._bindTableActions(); 
+            this._bindPageEvents();
+            this._bindTableActions();
 
         } catch (error) {
             console.error('Erro ao renderizar lista de usuários:', error);
@@ -350,6 +350,8 @@ class UsuariosModule {
             this.formCadastrarUsuario.reportValidity();
             return;
         }
+        uiService.showLoading();
+        this.btnSalvarCadastrarUsuario.disabled = true;
 
         const formData = new FormData(this.formCadastrarUsuario);
         const userData = {};
@@ -365,16 +367,18 @@ class UsuariosModule {
         userData.siape_usuario = userData.siape_usuario ? userData.siape_usuario.trim() : null;
 
         uiService.showLoading();
+
         try {
             await apiService.post('/usuarios/', userData);
             showAlert('Usuário cadastrado com sucesso!', 'success');
             this.modalCadastrarUsuario.hide();
-            this.renderUsuariosList(); // atualizar lista
+            this.renderUsuariosList();
         } catch (error) {
-            console.error('Erro ao cadastrar usuário:', error);
+            console.error(error);
             showAlert(error.message || 'Erro ao cadastrar usuário.', 'danger');
         } finally {
             uiService.hideLoading();
+            this.btnSalvarCadastrarUsuario.disabled = false;
         }
     }
 
@@ -420,26 +424,26 @@ class UsuariosModule {
         if (this.isProfileMode) {
 
             // PERFIL: campos editáveis + manter obrigatórios
-            ['nome_usuario','email_usuario','username','password'].forEach(key => {
+            ['nome_usuario', 'email_usuario', 'username', 'password'].forEach(key => {
                 const v = formData.get(key);
                 if (v && v.trim()) userData[key] = v.trim();
             });
             // garanta incluir tipo, setor e siape atuais (os selects/inputs estão desabilitados,
             // então não entram no formData automaticamente):
-            const role   = parseInt(getUserTypeFromToken(), 10);
-            const setor  = this.formEditarUsuario.querySelector('select[name="setor_id"]').value;
-            const siape  = this.formEditarUsuario.querySelector('input[name="siape_usuario"]').value;
+            const role = parseInt(getUserTypeFromToken(), 10);
+            const setor = this.formEditarUsuario.querySelector('select[name="setor_id"]').value;
+            const siape = this.formEditarUsuario.querySelector('input[name="siape_usuario"]').value;
 
-            userData.tipo_usuario  = role;
-            userData.setor_id      = setor  ? parseInt(setor, 10) : undefined;
-            userData.siape_usuario = siape  ? siape.trim()   : null;
+            userData.tipo_usuario = role;
+            userData.setor_id = setor ? parseInt(setor, 10) : undefined;
+            userData.siape_usuario = siape ? siape.trim() : null;
         } else {
             // edição normal de qualquer usuário
             for (const [key, value] of formData.entries()) {
                 if (value !== '') userData[key] = value;
             }
-            userData.tipo_usuario  = userData.tipo_usuario ? parseInt(userData.tipo_usuario) : undefined;
-            userData.setor_id      = userData.setor_id     ? parseInt(userData.setor_id)     : undefined;
+            userData.tipo_usuario = userData.tipo_usuario ? parseInt(userData.tipo_usuario) : undefined;
+            userData.setor_id = userData.setor_id ? parseInt(userData.setor_id) : undefined;
             userData.siape_usuario = userData.siape_usuario ? userData.siape_usuario.trim() : null;
         }
 
@@ -457,12 +461,12 @@ class UsuariosModule {
 
             this.modalEditarUsuario.hide();
             this.isProfileMode = false;
-            
-            if(role == 3){
+
+            if (role == 3) {
                 this.renderUsuariosList();
             } else if (role === 2 || role === 1) {
-            // Recarrega página para atualizar os dados exibidos no dashboard
-            window.location.reload();
+                // Recarrega página para atualizar os dados exibidos no dashboard
+                window.location.reload();
             }
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
@@ -474,30 +478,35 @@ class UsuariosModule {
 
     _openDeleteConfirmModal(userId) {
         document.getElementById('confirm-delete-user-id').textContent = userId;
-        this.btnConfirmarDeletarUsuario.dataset.id = userId; // Store ID for confirmation
+        this.btnConfirmarDeletarUsuario.dataset.id = userId;
         this.modalConfirmarDeleteUsuario.show();
+
+        // Substitui qualquer handler anterior por este:
+        this.btnConfirmarDeletarUsuario.onclick = () => {
+            this._deleteUsuarioConfirmed();
+        };
     }
 
     async _deleteUsuarioConfirmed() {
-        const userId = parseInt(this.btnConfirmarDeletarUsuario.dataset.id);
-        if (!userId) {
-            showAlert('ID do usuário para exclusão não encontrado.', 'danger');
-            return;
-        }
-
+        const btn = this.btnConfirmarDeletarUsuario;
+        btn.disabled = true;
         uiService.showLoading();
         try {
+            const userId = parseInt(btn.dataset.id, 10);
             await apiService.delete(`/usuarios/${userId}`);
             showAlert('Usuário deletado com sucesso!', 'success');
             this.modalConfirmarDeleteUsuario.hide();
-            this.renderUsuariosList(); // Refresh list
+            this.renderUsuariosList();
         } catch (error) {
             console.error('Erro ao deletar usuário', error);
             showAlert(error.message || 'Erro ao deletar usuário.', 'danger');
         } finally {
             uiService.hideLoading();
+            btn.disabled = false;
         }
     }
+
+
 }
 
 export const usuariosModule = new UsuariosModule();

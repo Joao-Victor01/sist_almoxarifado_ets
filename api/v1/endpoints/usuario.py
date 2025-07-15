@@ -1,6 +1,6 @@
 # api/v1/endpoints/usuario.py
 
-from fastapi import APIRouter, Depends, status, Response, HTTPException
+from fastapi import APIRouter, Depends, status, Response, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -16,6 +16,8 @@ from schemas.usuario import (
 from schemas.auth_schemas import TokenSchema
 from services.usuario_service import UsuarioService
 from utils.logger import logger
+from utils.limiter import check_user_creation_cooldown 
+
 
 router = APIRouter(prefix="/usuarios")
 
@@ -36,14 +38,24 @@ async def criar_primeiro_usuario(
 @router.post("/", response_model=UsuarioOut, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user: UsuarioCreate,
+    request: Request,
     db: AsyncSession = Depends(get_session),
-    current_user=Depends(usuario_direcao),
+    current_user=Depends(usuario_direcao), 
 ):
     try:
+        # Usar o ID do usuário logado para o cooldown
+        requester_identifier = current_user.usuario_id
+
+        check_user_creation_cooldown(requester_identifier) 
+
         logger.info(f"Usuário {current_user.usuario_id} criando novo usuário: {user.username}")
         return await UsuarioService.create_usuario(db, user)
+    except HTTPException as http_exc:
+        logger.warning(f"Falha na validação ao criar usuário '{user.username}': {http_exc.detail}")
+        raise http_exc
     except Exception as e:
-        logger.error(f"Erro ao criar usuário '{user.username}': {e}")
+        logger.error(f"Erro inesperado ao criar usuário '{user.username}': {e}", exc_info=True)
+        # O exc_info=True é crucial para ver o traceback completo.
         raise HTTPException(status_code=500, detail="Erro ao criar usuário")
 
 

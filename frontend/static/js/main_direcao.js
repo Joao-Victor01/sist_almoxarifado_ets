@@ -68,10 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
             usuariosModule.renderUsuariosList();
         });
 
-        document.getElementById('btn-open-cadastrar-usuario')?.addEventListener('click', e => {
-            e.preventDefault();
-            usuariosModule.modalCadastrarUsuario.show(); // Trigger modal directly
-        });
+        // document.getElementById('btn-open-cadastrar-usuario')?.addEventListener('click', e => {
+        //     e.preventDefault();
+        //     usuariosModule.modalCadastrarUsuario.show(); // Trigger modal directly
+        // });
 
         // Setores
         document.getElementById('listar-setores-link')?.addEventListener('click', e => {
