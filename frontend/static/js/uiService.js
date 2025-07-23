@@ -1,6 +1,6 @@
 // frontend/static/js/uiService.js
 
-import { formatDate, formatDateTime, getStatusText,  getUserTypeFromToken } from './utils.js';
+import { formatDate, formatDateTime, getStatusText, getUserTypeFromToken } from './utils.js';
 import estadoGlobal from './estadoGlobal.js';
 
 class UiService {
@@ -132,12 +132,12 @@ class UiService {
         document.getElementById('itemNome').textContent = item.nome_item_original;
         document.getElementById('itemValidade').textContent = item.data_validade_item ? formatDate(item.data_validade_item) : '-';
 
-        // Controle de exibição de estoque (somente para almoxarifado)
+        // Controle de exibição de estoque (somente para almoxarifado ou direção)
         const liItemEstoque = document.getElementById('liItemEstoque');
         const liItemEstoqueMin = document.getElementById('liItemEstoqueMin');
         const itemEstoqueElement = document.getElementById('itemEstoque');
         const itemEstoqueMinElement = document.getElementById('itemEstoqueMin');
-        if (userRole === 2 || userRole == 3) {
+        if (userRole === 2 || userRole == 3) { // 2 para USUARIO_ALMOXARIFADO, 3 para USUARIO_DIRECAO
             if (liItemEstoque) {
                 liItemEstoque.style.display = 'block';
                 if (itemEstoqueElement) itemEstoqueElement.textContent = item.quantidade_item;

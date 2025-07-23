@@ -14,10 +14,19 @@
                                 <option value="" disabled selected>Selecione um setor</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6" id="local-solicitation-section">
                             <label for="solicitado_localmente_por" class="form-label">Solicitado Localmente Por (Opcional)</label>
-                            <input type="text" class="form-control" id="solicitado_localmente_por" name="solicitado_localmente_por" placeholder="Nome do solicitante (se não for usuário logado)">
-                            <small class="form-text text-muted">Preencha se a solicitação for feita por alguém presencialmente em seu nome.</small>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="solicitado_localmente_por" name="solicitado_localmente_por" placeholder="Nome do solicitante (se não for usuário logado)">
+                                <button type="button" class="btn btn-outline-secondary" id="btn-open-search-user-modal" title="Vincular a um usuário existente">
+                                    <i class="bi bi-person-fill-add"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted" id="solicitado-localmente-help-text">Preencha se a solicitação for feita por alguém presencialmente em seu nome.</small>
+                            <div id="linked-user-display" class="mt-2" style="display: none;">
+                                <p class="mb-0">Usuário Vinculado: <strong id="linked-user-name"></strong> <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="btn-unlink-user"><i class="bi bi-x-circle"></i> Desvincular</button></p>
+                                <input type="hidden" id="linked_usuario_id" name="linked_usuario_id">
+                            </div>
                         </div>
                         <div class="col-12">
                             <label for="solicitar_justificativa" class="form-label">Justificativa da Retirada</label>
@@ -51,6 +60,42 @@
             <div class="modal-footer border-0 justify-content-center">
                 <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btn-salvar-solicitacao-retirada">Solicitar Retirada</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Novo Modal para Buscar Usuários -->
+<div class="modal fade" id="modalSearchUser" tabindex="-1" aria-labelledby="modalSearchUserLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalSearchUserLabel">Buscar Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="search-user-input" placeholder="Buscar por nome ou SIApe">
+                    <button class="btn btn-primary" type="button" id="btn-search-user"><i class="bi bi-search"></i> Buscar</button>
+                </div>
+                <div id="user-search-results-container" class="table-responsive">
+                    <table class="table table-bordered table-striped" id="user-search-results-table">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>SIApe</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-search-results-tbody">
+                            <tr><td colspan="4" class="text-center">Nenhum usuário encontrado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>

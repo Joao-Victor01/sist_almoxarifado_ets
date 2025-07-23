@@ -1,6 +1,6 @@
 # api/v1/endpoints/usuario.py
 
-from fastapi import APIRouter, Depends, status, Response, HTTPException, Request
+from fastapi import APIRouter, Depends, status, Response, HTTPException, Request, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -16,7 +16,7 @@ from schemas.usuario import (
 from schemas.auth_schemas import TokenSchema
 from services.usuario_service import UsuarioService
 from utils.logger import logger
-from utils.limiter import check_user_creation_cooldown 
+from utils.limiter import check_user_creation_cooldown
 
 
 router = APIRouter(prefix="/usuarios")
@@ -71,6 +71,20 @@ async def get_usuarios(
         logger.error(f"Erro ao listar usuários: {e}")
         raise HTTPException(status_code=500, detail="Erro ao listar usuários")
 
+@router.get("/search", response_model=List[UsuarioOut], status_code=status.HTTP_200_OK)
+async def search_usuarios(
+    query: str = Query(..., min_length=1, description="Termo de busca para nome de usuário ou SIApe"),
+    db: AsyncSession = Depends(get_session),
+    current_user=Depends(direcao_ou_almoxarifado),
+):
+    """Busca usuários por nome de usuário ou SIApe."""
+    try:
+        logger.info(f"Usuário {current_user.usuario_id} buscando usuários com termo: {query}")
+        users = await UsuarioService.search_usuarios(db, query)
+        return [UsuarioOut.model_validate(user) for user in users]
+    except Exception as e:
+        logger.error(f"Erro ao buscar usuários: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar usuários")
 
 @router.get("/{usuario_id}", response_model=UsuarioOut, status_code=status.HTTP_200_OK)
 async def get_usuario(
@@ -90,6 +104,7 @@ async def get_usuario(
     except Exception as e:
         logger.error(f"Erro ao buscar usuário ID {usuario_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar usuário")
+    
 
 
 @router.delete("/{usuario_id}", status_code=status.HTTP_200_OK)

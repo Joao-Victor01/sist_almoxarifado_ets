@@ -21,14 +21,15 @@ async def solicitar_retirada(
     db: AsyncSession = Depends(get_session),
     current_user=Depends(todos_usuarios)
 ):
-    """Endpoint para um usuário solicitar uma nova retirada de itens."""
+    """Endpoint para um usuário solicitar uma nova retirada de itens.
+    Pode ser usada por um servidor comum ou por um almoxarifado para registrar uma retirada local."""
     try:
         logger.info(f"Usuário {current_user.username} solicitou uma retirada de itens")
-        return await RetiradaService.solicitar_retirada(db, retirada, current_user.usuario_id)
+        # Passa o ID e o tipo de usuário logado para o serviço
+        return await RetiradaService.solicitar_retirada(db, retirada, current_user.usuario_id, current_user.tipo_usuario)
     except Exception as e:
         logger.error(f"Erro ao solicitar retirada: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao solicitar retirada")
-
 
 
 @router.put("/{retirada_id}", response_model=RetiradaOut)

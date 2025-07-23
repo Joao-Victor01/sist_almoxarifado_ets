@@ -1,5 +1,3 @@
-#services/retirada_service.py
-
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
@@ -48,21 +46,55 @@ class RetiradaService:
         return RetiradaPaginated(total=total, page=page, pages=pages, items=items)
 
     @staticmethod
-    async def solicitar_retirada(db: AsyncSession, retirada_data: RetiradaCreate, usuario_id: int):
-        """Cria uma nova solicitação de retirada e seus itens associados."""
+    async def solicitar_retirada(
+        db: AsyncSession,
+        retirada_data: RetiradaCreate,
+        current_user_id: int, # ID do usuário logado (almoxarifado ou servidor)
+        current_user_role: RoleEnum # Papel do usuário logado
+    ):
+        """Cria uma nova solicitação de retirada e seus itens associados,
+        com lógica para retiradas locais diretas."""
         try:
-            #1) Cria Retirada
+            # Determina o ID do usuário para o registro da retirada
+            # Se for uma retirada local e um usuário for vinculado, usa o ID do usuário vinculado
+            # Caso contrário, usa o ID do usuário logado (o almoxarife ou o servidor)
+            usuario_id_for_record = current_user_id
+            if retirada_data.is_local_withdrawal and retirada_data.linked_usuario_id is not None:
+                usuario_id_for_record = retirada_data.linked_usuario_id
+            
+            # Determina o status inicial e quem autorizou
+            initial_status = StatusEnum.PENDENTE
+            authorized_by_id = None
+            solicitado_localmente_por_value = retirada_data.solicitado_localmente_por
+
+            # Lógica para retirada local
+            if retirada_data.is_local_withdrawal:
+                # Apenas almoxarifado ou direção podem fazer retirada local
+                if current_user_role not in [RoleEnum.USUARIO_ALMOXARIFADO.value, RoleEnum.USUARIO_DIRECAO.value]:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Apenas usuários de Almoxarifado ou Direção podem registrar retiradas locais."
+                    )
+                initial_status = StatusEnum.CONCLUIDA
+                authorized_by_id = current_user_id # Almoxarife/Direção autoriza imediatamente
+                # Se um usuário for vinculado, limpa o campo 'solicitado_localmente_por'
+                if retirada_data.linked_usuario_id is not None:
+                    solicitado_localmente_por_value = None
+            
+            # 1) Cria Retirada
             nova_retirada = Retirada(
-                usuario_id=usuario_id,
+                usuario_id=usuario_id_for_record,
                 setor_id=retirada_data.setor_id,
-                status=StatusEnum.PENDENTE,
-                solicitado_localmente_por=retirada_data.solicitado_localmente_por,
+                status=initial_status,
+                solicitado_localmente_por=solicitado_localmente_por_value,
                 justificativa=retirada_data.justificativa,
-                is_active=True # Garante que a nova retirada é criada como ativa
+                autorizado_por=authorized_by_id, # Define quem autorizou para retiradas locais
+                data_solicitacao=datetime.now(),
+                is_active=True
             )
             await RetiradaRepository.criar_retirada(db, nova_retirada)
 
-            #2) Cria e adiciona itens
+            # 2) Cria e adiciona itens
             itens_retirada = [
                 RetiradaItem(
                     retirada_id=nova_retirada.retirada_id,
@@ -73,28 +105,54 @@ class RetiradaService:
             ]
             await RetiradaRepository.adicionar_itens_retirada(db, itens_retirada)
 
-            #3) Commit
+            # 3) Commit (para a criação da retirada e seus itens)
             await db.commit()
 
-            #4) Recarrega com eager-load para serialização segura
+            # 4) Recarrega com eager-load para serialização segura
             retirada_completa = await RetiradaRepository.buscar_retirada_por_id(
                 db, nova_retirada.retirada_id
             )
             
+            # Se for uma retirada local e concluída, decrementa o estoque imediatamente
+            if retirada_data.is_local_withdrawal and initial_status == StatusEnum.CONCLUIDA:
+                for ri in retirada_completa.itens:
+                    item = await RetiradaRepository.buscar_item_por_id(db, ri.item_id)
+                    if not item:
+                        raise HTTPException(
+                            status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Item com ID {ri.item_id} não encontrado."
+                        )
+                    if item.quantidade_item < ri.quantidade_retirada:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Estoque insuficiente para item {item.nome_item_original}. Quantidade disponível: {item.quantidade_item}, solicitada: {ri.quantidade_retirada}"
+                        )
+                    await RetiradaRepository.atualizar_quantidade_item(
+                        db, item, item.quantidade_item - ri.quantidade_retirada
+                    )
+                    # Se a quantidade do item chegar a 0, marcar como inativo (soft delete)
+                    if item.quantidade_item == 0:
+                        item.ativo = False # Marca o item como inativo (soft delete para item)
+                        await db.flush() # Garante que a mudança seja persistida antes do commit
+
+                    await AlertaService.verificar_estoque_baixo(db, ri.item_id)
+                await db.commit() # Commit das alterações de estoque
+
             # Transmitir o evento de nova solicitação de retirada APENAS para usuários do Almoxarifado
-            # Consulta para obter IDs de todos os usuários com o perfil de Almoxarifado
-            almoxarifados = await db.execute(
-                select(Usuario).where(Usuario.tipo_usuario == RoleEnum.USUARIO_ALMOXARIFADO.value)
-            )
-            for almoxarifado_user in almoxarifados.scalars().all():
-                await manager.send_to_user(
-                    almoxarifado_user.usuario_id,
-                    {
-                        "type": "new_withdrawal_request",
-                        "retirada_id": retirada_completa.retirada_id,
-                        "message": f"Nova solicitação de retirada do setor {retirada_completa.setor_id}"
-                    }
+            # e APENAS se o status for PENDENTE (ou seja, não é uma retirada local concluída)
+            if initial_status == StatusEnum.PENDENTE:
+                almoxarifados = await db.execute(
+                    select(Usuario).where(Usuario.tipo_usuario == RoleEnum.USUARIO_ALMOXARIFADO.value)
                 )
+                for almoxarifado_user in almoxarifados.scalars().all():
+                    await manager.send_to_user(
+                        almoxarifado_user.usuario_id,
+                        {
+                            "type": "new_withdrawal_request",
+                            "retirada_id": retirada_completa.retirada_id,
+                            "message": f"Nova solicitação de retirada do setor {retirada_completa.setor_id}"
+                        }
+                    )
 
             return retirada_completa
         except Exception as e:

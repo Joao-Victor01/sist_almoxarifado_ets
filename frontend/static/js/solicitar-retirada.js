@@ -2,7 +2,7 @@
 
 import { apiService } from './apiService.js';
 import { uiService } from './uiService.js';
-import { showAlert, getUserIdFromToken } from './utils.js'; // Import getUserIdFromToken
+import { showAlert, getUserIdFromToken, getUserTypeFromToken } from './utils.js'; // Import getUserIdFromToken e getUserTypeFromToken
 import { selecionarItemModule } from './selecionar-item-module.js';
 
 class SolicitarRetiradaModule {
@@ -23,9 +23,25 @@ class SolicitarRetiradaModule {
         this.selectedItemDisplay = document.getElementById('selected-item-display');
         this.selectedItemName = document.getElementById('selected-item-name');
 
+        // NOVAS REFERÊNCIAS PARA MODAL DE BUSCA DE USUÁRIO
+        this.modalSearchUser = uiService.getModalInstance('modalSearchUser');
+        this.searchInputUser = document.getElementById('search-user-input');
+        this.btnSearchUser = document.getElementById('btn-search-user');
+        this.userSearchResultsTbody = document.getElementById('user-search-results-tbody');
+        this.btnOpenSearchUserModal = document.getElementById('btn-open-search-user-modal');
+        this.linkedUserDisplay = document.getElementById('linked-user-display');
+        this.linkedUserName = document.getElementById('linked-user-name');
+        this.linkedUsuarioIdInput = document.getElementById('linked_usuario_id');
+        this.btnUnlinkUser = document.getElementById('btn-unlink-user');
+        this.solicitadoLocalmentePorInput = document.getElementById('solicitado_localmente_por');
+        this.solicitadoLocalmenteHelpText = document.getElementById('solicitado-localmente-help-text');
+        this.localSolicitationSection = document.getElementById('local-solicitation-section');
+
+
         this.itensSelecionados = [];
         this.todosItensDisponiveis = [];
         this.currentItemToAddToCart = null;
+        this.linkedUser = null; // Para armazenar o objeto do usuário selecionado
     }
 
     init() {
@@ -37,7 +53,10 @@ class SolicitarRetiradaModule {
         // O evento para o dashboard do servidor é tratado em main.js
         document.getElementById('btn-open-solicitar-retirada')?.addEventListener('click', e => {
             e.preventDefault();
-            this.openModal(false); // Explicitamente false para dashboards que não são de servidor
+            // Verifica o tipo de usuário logado para determinar se é um dashboard de servidor
+            const userType = getUserTypeFromToken();
+            const isServidor = userType === 1; // 1 é o valor para USUARIO_SERVIDOR
+            this.openModal(isServidor);
         });
 
         this.btnAbrirSelecionarItemModal?.addEventListener('click', () => {
@@ -48,12 +67,23 @@ class SolicitarRetiradaModule {
         this.btnAdicionarItemRetirada?.addEventListener('click', () => this._adicionarItemParaRetirada());
 
         document.getElementById('modalSolicitarRetirada').addEventListener('hidden.bs.modal', () => {
-            this.resetForm(); // Resetar formulário ao fechar o modal
+            this._resetForm(); // Resetar formulário ao fechar o modal
         });
 
         document.addEventListener('itemSelectedForRetirada', (event) => {
             this.handleItemSelected(event.detail.item);
         });
+
+        // Eventos para o novo modal de busca de usuário
+        this.btnOpenSearchUserModal?.addEventListener('click', () => this.openSearchUserModal());
+        this.btnSearchUser?.addEventListener('click', () => this.searchUsers());
+        this.searchInputUser?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.searchUsers();
+            }
+        });
+        this.btnUnlinkUser?.addEventListener('click', () => this.unlinkUser());
     }
 
     // MODIFICADO: Adicionado parâmetro isServidorDashboard
@@ -65,6 +95,24 @@ class SolicitarRetiradaModule {
 
             // Limpa as opções anteriores do select
             this.selectSetor.innerHTML = '';
+
+            // Lógica para esconder/mostrar o campo "Solicitado localmente por" e a seção de vinculação de usuário
+            if (this.localSolicitationSection) {
+                if (isServidorDashboard) {
+                    // Para usuários comuns, esconde a seção de solicitação local
+                    this.localSolicitationSection.style.display = 'none';
+                } else {
+                    // Para almoxarifado/direção, mostra a seção
+                    this.localSolicitationSection.style.display = 'block';
+                    // Garante que o campo 'solicitado_localmente_por' seja visível por padrão se nenhum usuário estiver vinculado
+                    this.solicitadoLocalmentePorInput.closest('.col-md-6').style.display = 'block';
+                    this.solicitadoLocalmenteHelpText.style.display = 'block';
+                    this.linkedUserDisplay.style.display = 'none'; // Esconde a exibição do usuário vinculado
+                    this.linkedUser = null; // Reseta o usuário vinculado
+                    this.linkedUsuarioIdInput.value = ''; // Limpa o input hidden
+                    this.solicitadoLocalmentePorInput.value = ''; // Limpa o input de nome local
+                }
+            }
 
             if (isServidorDashboard) {
                 const userId = getUserIdFromToken();
@@ -129,17 +177,6 @@ class SolicitarRetiradaModule {
                 });
                 this.selectSetor.disabled = false; // Garante que esteja habilitado para não-servidores
             }
-
-            // Lógica para esconder/mostrar o campo "Solicitado localmente por"
-            const solicitadoLocalmentePorContainer = this.inputSolicitadoLocalmentePor.closest('.col-md-6');
-            if (solicitadoLocalmentePorContainer) {
-                if (isServidorDashboard) {
-                    solicitadoLocalmentePorContainer.style.display = 'none';
-                } else {
-                    solicitadoLocalmentePorContainer.style.display = 'block'; // Ou 'flex' dependendo do layout
-                }
-            }
-
 
             this.itensSelecionados = [];
             this._renderItensParaRetirada();
@@ -252,54 +289,156 @@ class SolicitarRetiradaModule {
         this._renderItensParaRetirada();
     }
 
-    async _enviarSolicitacao() {
-        // Se o campo de setor estiver desabilitado (para servidor),
-        // ele já estará pré-selecionado com o setor do usuário logado.
-        const setorId = parseInt(this.selectSetor.value);
-        const justificativa = this.inputJustificativa.value.trim();
-        // O campo 'solicitado_localmente_por' só será pego se estiver visível/habilitado.
-        const solicitadoLocalmentePor = this.inputSolicitadoLocalmentePor.value.trim();
+    // NOVO: Métodos para busca e vinculação de usuário
+    openSearchUserModal() {
+        this.searchInputUser.value = '';
+        this.userSearchResultsTbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum usuário encontrado.</td></tr>';
+        this.modalSearchUser.show();
+    }
 
-        if (isNaN(setorId)) {
-            showAlert('Por favor, selecione um setor.', 'warning');
-            return;
-        }
-
-        if (this.itensSelecionados.length === 0) {
-            showAlert('Por favor, adicione pelo menos um item para solicitar a retirada.', 'warning');
+    async searchUsers() {
+        const query = this.searchInputUser.value.trim();
+        if (query.length < 1) {
+            showAlert('Por favor, digite pelo menos 1 caractere para buscar.', 'warning', 2000);
             return;
         }
 
         uiService.showLoading();
         try {
-            const retiradaData = {
-                setor_id: setorId,
-                justificativa: justificativa || null,
-                // Inclui solicitado_localmente_por apenas se o campo estiver visível (e, portanto, preenchível)
-                solicitado_localmente_por: solicitadoLocalmentePor || null,
-                itens: this.itensSelecionados.map(item => ({
-                    item_id: item.item_id,
-                    quantidade_retirada: item.quantidade_retirada
-                }))
-            };
-            
+            const users = await apiService.searchUsers(query);
+            this.renderUserSearchResults(users);
+        } catch (error) {
+            console.error("Erro ao buscar usuários:", error);
+            showAlert(error.message || 'Erro ao buscar usuários.', 'danger');
+        } finally {
+            uiService.hideLoading();
+        }
+    }
+
+    renderUserSearchResults(users) {
+        this.userSearchResultsTbody.innerHTML = '';
+        if (users.length === 0) {
+            this.userSearchResultsTbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum usuário encontrado.</td></tr>';
+            return;
+        }
+
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${user.nome_usuario}</td>
+                <td>${user.email_usuario}</td>
+                <td>${user.siape_usuario || '-'}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-primary btn-link-user" data-user-id="${user.usuario_id}" data-user-name="${user.nome_usuario}">
+                        Vincular
+                    </button>
+                </td>
+            `;
+            this.userSearchResultsTbody.appendChild(row);
+        });
+
+        this.userSearchResultsTbody.querySelectorAll('.btn-link-user').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const userId = parseInt(e.currentTarget.dataset.userId);
+                const userName = e.currentTarget.dataset.userName;
+                this.linkUser(userId, userName);
+            });
+        });
+    }
+
+    linkUser(userId, userName) {
+        this.linkedUser = { id: userId, name: userName };
+        this.linkedUserName.textContent = userName;
+        this.linkedUsuarioIdInput.value = userId;
+        this.linkedUserDisplay.style.display = 'block';
+
+        // Em vez de esconder, deixa o campo preenchido e readonly
+        this.solicitadoLocalmentePorInput.value = userName;
+        this.solicitadoLocalmentePorInput.readOnly = true;
+        this.solicitadoLocalmentePorInput.closest('.col-md-6').classList.add('disabled');
+        this.solicitadoLocalmenteHelpText.textContent = 'Este nome foi vinculado a um usuário cadastrado.';
+
+        this.modalSearchUser.hide();
+        showAlert(`Usuário ${userName} vinculado à retirada local.`, 'success');
+    }
+
+    unlinkUser() {
+        this.linkedUser = null;
+        this.linkedUserName.textContent = '';
+        this.linkedUsuarioIdInput.value = '';
+        this.linkedUserDisplay.style.display = 'none';
+
+        // Reativa o input para edição manual
+        this.solicitadoLocalmentePorInput.value = '';
+        this.solicitadoLocalmentePorInput.readOnly = false;
+        this.solicitadoLocalmentePorInput.closest('.col-md-6').classList.remove('disabled');
+        this.solicitadoLocalmenteHelpText.textContent = 'Preencha se a solicitação for feita por alguém presencialmente em seu nome.';
+
+        showAlert('Usuário desvinculado.', 'info');
+    }
+
+    async _enviarSolicitacao() {
+        // 1) Captura valores
+        const setorId = parseInt(this.selectSetor.value, 10);
+        const solicitadoLocalmentePor = this.inputSolicitadoLocalmentePor.value.trim();
+        const justificativa = this.inputJustificativa.value.trim();
+        const linkedUsuarioId = this.linkedUsuarioIdInput.value
+            ? parseInt(this.linkedUsuarioIdInput.value, 10)
+            : null;
+
+        // 2) Define como local somente se houver vinculação ou nome manual
+        const isLocalWithdrawal = Boolean(linkedUsuarioId || solicitadoLocalmentePor);
+
+        // 3) Validações
+        if (isNaN(setorId)) {
+            showAlert('Por favor, selecione um setor.', 'warning');
+            return;
+        }
+        if (this.itensSelecionados.length === 0) {
+            showAlert('Adicione pelo menos um item para solicitar a retirada.', 'warning');
+            return;
+        }
+        // Se for local, exige pelo menos um dos dois
+        if (isLocalWithdrawal && !linkedUsuarioId && !solicitadoLocalmentePor) {
+            showAlert('Para retirada local, vincule um usuário ou preencha "Solicitado Localmente Por".', 'warning');
+            return;
+        }
+
+        // 4) Monta o payload
+        const retiradaData = {
+            setor_id: setorId,
+            is_local_withdrawal: isLocalWithdrawal,
+            solicitado_localmente_por: solicitadoLocalmentePor || null,
+            justificativa: justificativa || null,
+            linked_usuario_id: linkedUsuarioId,
+            itens: this.itensSelecionados.map(item => ({
+                item_id: item.item_id,
+                quantidade_retirada: item.quantidade_retirada
+            })),
+            // Se vinculou usuário, marca concluída
+            ...(linkedUsuarioId && { status: 'concluída' })
+        };
+
+        // 5) Envio
+        try {
+            uiService.showLoading();
             await apiService.solicitarRetirada(retiradaData);
             showAlert('Solicitação de retirada enviada com sucesso!', 'success');
+
             this.modalSolicitarRetirada.hide();
             this._resetForm();
 
-            // Recarregar dashboard após envio bem-sucedido
             if (typeof window.loadDashboardOverview === 'function') {
                 window.loadDashboardOverview();
             }
-
         } catch (error) {
-            console.error("Erro ao enviar solicitação de retirada", error);
+            console.error('Erro ao enviar solicitação:', error);
             showAlert(error.message || 'Erro ao enviar a solicitação de retirada.', 'danger');
         } finally {
             uiService.hideLoading();
         }
     }
+
 
     _resetForm() {
         this.form.reset();
@@ -311,11 +450,8 @@ class SolicitarRetiradaModule {
         this._clearSelectedItemDisplay();
         this.selectSetor.disabled = false; // Garante que o select não fique desabilitado permanentemente ao resetar
 
-        // Garante que o campo "Solicitado localmente por" seja reexibido
-        const solicitadoLocalmentePorContainer = this.inputSolicitadoLocalmentePor.closest('.col-md-6');
-        if (solicitadoLocalmentePorContainer) {
-            solicitadoLocalmentePorContainer.style.display = 'block';
-        }
+        // Reseta o usuário vinculado e mostra o input de solicitação local
+        this.unlinkUser(); // Isso vai resetar linkedUser e mostrar o input
     }
 
     _clearSelectedItemDisplay() {

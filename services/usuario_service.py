@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-
+from sqlalchemy import and_, or_
 from models.usuario import Usuario
 from models.setor import Setor
 from schemas.usuario import UsuarioCreate, UsuarioUpdate
@@ -57,6 +57,22 @@ class UsuarioService:
                 detail="Usuário não encontrado"
             )
         return usuario
+    
+    @staticmethod
+    async def search_usuarios(db: AsyncSession, query: str):
+        """Busca usuários ativos por nome ou SIApe."""
+        result = await db.execute(
+            select(Usuario).where(
+                and_(
+                    Usuario.is_active == True, # Filtra apenas usuários ativos
+                    or_(
+                        Usuario.nome_usuario.ilike(f"%{query}%"),
+                        Usuario.siape_usuario.ilike(f"%{query}%")
+                    )
+                )
+            )
+        )
+        return result.scalars().all()
 
     @staticmethod
     async def delete_usuario(db: AsyncSession, usuario_id: int, current_user: Usuario):

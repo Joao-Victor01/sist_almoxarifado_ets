@@ -5,8 +5,10 @@ class ApiService {
         this.baseUrl = baseUrl;
     }
 
+    // ========== MÉTODOS AUXILIARES INTERNOS ==========
+
     _getHeaders() {
-        const token = localStorage.getItem('token'); // Obter o token mais recente
+        const token = localStorage.getItem('token');
         const headers = {};
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
@@ -20,36 +22,48 @@ class ApiService {
         const url = `${this.baseUrl}${endpoint}`;
         const requestHeaders = {
             ...this._getHeaders(),
-            ...options.headers // Mescla com quaisquer headers específicos da requisição
+            ...options.headers
         };
-        options.headers = requestHeaders; // Atribui os headers mesclados de volta às opções
+        options.headers = requestHeaders;
 
         if (options.body instanceof FormData) {
-            delete options.headers['Content-Type']; 
-        } else if (!options.headers['Content-Type']) { 
+            delete options.headers['Content-Type'];
+        } else if (!options.headers['Content-Type']) {
             options.headers['Content-Type'] = 'application/json';
         }
 
         try {
             const response = await fetch(url, {
                 ...options,
-                headers: options.headers // Use the prepared headers
+                headers: options.headers
             });
 
             if (!response.ok) {
-                // Se a resposta for 204 No Content, não tente parsear JSON
-                if (response.status === 204) {
-                    return {}; // Retorna um objeto vazio para 204
-                }
+                if (response.status === 204) return {};
+                
                 const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido na resposta da API.' }));
-                throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
+                
+                let errorMessage = 'Erro desconhecido na API.';
+                // Verifica se o erro é um erro de validação do FastAPI (detail é uma lista de objetos)
+                if (errorData && Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+                    errorMessage = errorData.detail.map(err => {
+                        // Tenta extrair a localização e a mensagem do erro
+                        const loc = err.loc ? err.loc.join('.') : 'unknown_location';
+                        const msg = err.msg || 'Erro de validação';
+                        return `${loc}: ${msg}`;
+                    }).join('; ');
+                } else if (errorData && errorData.detail) {
+                    // Para erros que têm a propriedade 'detail' como uma string
+                    errorMessage = errorData.detail;
+                } else if (response.statusText) {
+                    // Fallback para o statusText se não houver um 'detail' claro
+                    errorMessage = `Erro na API: ${response.status} ${response.statusText}`;
+                }
+
+                throw new Error(errorMessage);
             }
 
-            // Se a resposta for 204 No Content, não tente parsear JSON
-            if (response.status === 204) {
-                return {};
-            }
-
+            if (response.status === 204) return {};
             return response.json();
 
         } catch (error) {
@@ -57,6 +71,8 @@ class ApiService {
             throw error;
         }
     }
+
+    // ========== MÉTODOS HTTP GENÉRICOS ==========
 
     async get(endpoint, params = {}) {
         const queryString = new URLSearchParams(params).toString();
@@ -91,7 +107,7 @@ class ApiService {
         });
     }
 
-    // Métodos específicos
+    // ========== USUÁRIOS ==========
 
     async getUsuarioById(id) {
         try {
@@ -102,6 +118,59 @@ class ApiService {
         }
     }
 
+    async getCurrentUserDetails(userId) {
+        try {
+            const user = await this.get(`/usuarios/${userId}`);
+            const sectorName = await this.getSetorById(user.setor_id);
+            return {
+                name: user.nome_usuario,
+                siape: user.siape_usuario,
+                sectorName: sectorName,
+                sectorId: user.setor_id
+            };
+        } catch (error) {
+            console.error("Erro ao carregar detalhes do usuário ou setor:", error);
+            return { name: 'Usuário', siape: 'N/A', sectorName: 'N/A', sectorId: null };
+        }
+    }
+
+    async searchUsers(query) {
+        return this.get('/usuarios/search', { query });
+    }
+
+    async resetPasswordSimple(usernameOrEmail, newPassword) {
+        return this.post('/usuarios/reset-password-simple', {
+            username_or_email: usernameOrEmail,
+            new_password: newPassword
+        });
+    }
+
+    async checkUserForPasswordReset(usernameOrEmail) {
+        const url = `${this.baseUrl}/usuarios/check-user-for-reset`;
+        const headers = {
+            'Content-Type': 'application/json',
+            ...this._getHeaders()
+        };
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ username_or_email: usernameOrEmail })
+        });
+
+        if (response.status === 200) return true;
+        if (response.status === 404) return false;
+
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch {
+            errorData = { detail: 'Erro desconhecido na resposta da API.' };
+        }
+        throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
+    }
+
+    // ========== SETORES ==========
+
     async getSetorById(id) {
         try {
             const setor = await this.get(`/setores/${id}`);
@@ -111,22 +180,46 @@ class ApiService {
         }
     }
 
+    async fetchAllSetores() {
+        return this.get('/setores');
+    }
+
+    // ========== ITENS ==========
+
+    async fetchAllItens() {
+        return this.get('/itens');
+    }
+
+    async getItemById(itemId) {
+        return this.get(`/itens/${itemId}`);
+    }
+
+    async searchItems(nome = null, categoria = null, page = 1, size = 10) {
+        const params = { page, size };
+        if (nome) params.nome = nome;
+        if (categoria) params.categoria = categoria;
+        return this.get('/itens/buscar', params);
+    }
+
+    async uploadBulkItems(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this._fetch('/itens/upload-bulk/', {
+            method: 'POST',
+            body: formData,
+        });
+    }
+
+    // ========== RETIRADAS ==========
+
     async fetchAllRetiradas(page, pageSize, filters = {}) {
         const params = { page, page_size: pageSize };
         const queryParamsForApi = {};
 
-        if (filters.status !== null && filters.status !== undefined && filters.status !== '') {
-            queryParamsForApi.status = filters.status;
-        }
-        if (filters.solicitante) {
-            queryParamsForApi.solicitante = filters.solicitante;
-        }
-        if (filters.start_date) {
-            queryParamsForApi.start_date = filters.start_date;
-        }
-        if (filters.end_date) {
-            queryParamsForApi.end_date = filters.end_date;
-        }
+        if (filters.status) queryParamsForApi.status = filters.status;
+        if (filters.solicitante) queryParamsForApi.solicitante = filters.solicitante;
+        if (filters.start_date) queryParamsForApi.start_date = filters.start_date;
+        if (filters.end_date) queryParamsForApi.end_date = filters.end_date;
 
         const hasActiveFilters = Object.keys(queryParamsForApi).length > 0;
         const endpoint = hasActiveFilters ? '/retiradas/search' : '/retiradas/paginated';
@@ -150,36 +243,32 @@ class ApiService {
         };
     }
 
-    async updateRetiradaStatus(id, status, detail) {
-        return this.put(`/retiradas/${id}`, { status, detalhe_status: detail });
-    }
-
-    async fetchAllItens() {
-        return this.get('/itens');
-    }
-
-    async fetchAllSetores() {
-        return this.get('/setores');
+    async fetchUserRetiradasPaginated(page, pageSize) {
+        const responseData = await this.get('/retiradas/minhas-retiradas/paginated', { page, page_size: pageSize });
+        return {
+            current_page: responseData.page,
+            total_pages: responseData.pages,
+            total_items: responseData.total,
+            items: responseData.items
+        };
     }
 
     async solicitarRetirada(data) {
         return this.post('/retiradas/', data);
     }
 
-    async searchItems(nome = null, categoria = null, page = 1, size = 10) {
-        const params = { page, size };
-        if (nome) {
-            params.nome = nome;
-        }
-        if (categoria) {
-            params.categoria = categoria;
-        }
-        return this.get('/itens/buscar', params);
+    async updateRetiradaStatus(id, status, detail) {
+        return this.put(`/retiradas/${id}`, { status, detalhe_status: detail });
     }
 
-    async getItemById(itemId) {
-        return this.get(`/itens/${itemId}`);
+    async deleteRetiradasByPeriod(startDate, endDate) {
+        const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+        return this._fetch(`/retiradas/soft-delete-by-period?${params.toString()}`, {
+            method: 'DELETE',
+        });
     }
+
+    // ========== ALERTAS ==========
 
     async getUnviewedAlertsCount() {
         try {
@@ -198,92 +287,6 @@ class ApiService {
             console.error('Erro ao marcar alertas como visualizados', error);
             throw error;
         }
-    }
-
-    async uploadBulkItems(file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        return this._fetch('/itens/upload-bulk/', {
-            method: 'POST',
-            body: formData,
-        });
-    }
-
-    async fetchUserRetiradasPaginated(page, pageSize) {
-        const responseData = await this.get('/retiradas/minhas-retiradas/paginated', { page, page_size: pageSize });
-        return {
-            current_page: responseData.page,
-            total_pages: responseData.pages,
-            total_items: responseData.total,
-            items: responseData.items
-        };
-    }
-
-    //  Retorna o ID do setor do usuário também
-    async getCurrentUserDetails(userId) {
-        try {
-            const user = await this.get(`/usuarios/${userId}`);
-            const sectorName = await this.getSetorById(user.setor_id);
-            return {
-                name: user.nome_usuario,
-                siape: user.siape_usuario,
-                sectorName: sectorName,
-                sectorId: user.setor_id // ADICIONADO: ID do setor do usuário
-            };
-        } catch (error) {
-            console.error("Erro ao carregar detalhes do usuário ou setor:", error);
-            return { name: 'Usuário', siape: 'N/A', sectorName: 'N/A', sectorId: null }; // Adicionado sectorId: null
-        }
-    }
-
-    // MÉTODO: Soft delete de retiradas por período 
-    async deleteRetiradasByPeriod(startDate, endDate) {
-        // Envia as datas como query parameters para o endpoint DELETE 
-        const params = new URLSearchParams({ start_date: startDate, end_date: endDate }); 
-        return this._fetch(`/retiradas/soft-delete-by-period?${params.toString()}`, {
-            method: 'DELETE', 
-        });
-    }
-
-    // MÉTODO PARA REDEFINIR SENHA SIMPLES
-    async resetPasswordSimple(usernameOrEmail, newPassword) {
-        return this.post('/usuarios/reset-password-simple', {
-            username_or_email: usernameOrEmail,
-            new_password: newPassword
-        });
-    }
-
-// MÉTODO PARA CHECAR EXISTÊNCIA DE USUÁRIO NA PRIMEIRA ETAPA DE ESQUECI SENHA
-    async checkUserForPasswordReset(usernameOrEmail) {
-        const url = `${this.baseUrl}/usuarios/check-user-for-reset`;
-        const headers = {
-            'Content-Type': 'application/json',
-            ...this._getHeaders()
-        };
-        const response = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ username_or_email: usernameOrEmail })
-        });
-
-        if (response.status === 200) {
-            // encontrou usuário
-            return true;
-        }
-
-        if (response.status === 404) {
-            // não encontrou usuário
-            return false;
-        }
-
-        // qualquer outro erro, tenta extrair mensagem e lançar
-        let errorData;
-        try {
-            errorData = await response.json();
-        } catch {
-            errorData = { detail: 'Erro desconhecido na resposta da API.' };
-        }
-        throw new Error(errorData.detail || `Erro na API: ${response.status} ${response.statusText}`);
     }
 }
 

@@ -16,6 +16,8 @@ class RetiradaBase(BaseModel):
 
 class RetiradaCreate(RetiradaBase):
     itens: List[ItemRetirada]
+    is_local_withdrawal: Optional[bool] = False # indica se é uma retirada local
+    linked_usuario_id: Optional[int] = None # ID do usuário vinculado (se for retirada local)
 
 class RetiradaUpdateStatus(BaseModel):
     status: StatusEnum
