@@ -424,7 +424,7 @@ class UsuariosModule {
         if (this.isProfileMode) {
 
             // PERFIL: campos editáveis + manter obrigatórios
-            ['nome_usuario', 'email_usuario', 'username', 'password'].forEach(key => {
+            ['nome_usuario', 'email_usuario', 'username', 'senha_usuario'].forEach(key => {
                 const v = formData.get(key);
                 if (v && v.trim()) userData[key] = v.trim();
             });

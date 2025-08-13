@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cats.forEach(c => {
       const o = document.createElement('option');
       o.value       = c.categoria_id;
-      o.textContent = `${c.categoria_id} – ${c.nome_original.toUpperCase()}`;
+      o.textContent = `${c.categoria_id} ${c.nome_original.toUpperCase()}`;
       sel.append(o);
     });
   }
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cats.forEach(c => {
       const o = document.createElement('option');
       o.value       = c.categoria_id;
-      o.textContent = `${c.categoria_id} – ${c.nome_categoria.toUpperCase()}`;
+      o.textContent = `${c.categoria_id} – ${c.nome_original.toUpperCase()}`;
       sel.append(o);
     });
   }

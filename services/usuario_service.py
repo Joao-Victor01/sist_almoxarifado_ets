@@ -33,8 +33,22 @@ class UsuarioService:
         user_data.tipo_usuario = RoleEnum.USUARIO_DIRECAO.value
         user_data.setor_id = setor_root_data.setor_id
 
-        user_root = await UsuarioService.create_usuario(db, user_data)
-        return user_root
+        #criando o modelo de usuário 
+        new_user = Usuario(
+            siape_usuario=user_data.siape_usuario,
+            nome_usuario=user_data.nome_usuario,
+            senha_usuario=get_password_hash(user_data.senha_usuario),
+            tipo_usuario=3,
+            email_usuario=user_data.email_usuario,
+            setor_id=setor_root_data.setor_id,
+            username=user_data.username,
+
+        )
+
+        db.add(new_user)
+        await db.commit() 
+        await db.refresh(new_user) 
+        return new_user
 
     @staticmethod
     async def create_usuario (db: AsyncSession, user_data: UsuarioCreate):

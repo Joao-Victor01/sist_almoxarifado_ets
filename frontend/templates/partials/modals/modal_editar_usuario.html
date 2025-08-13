@@ -1,5 +1,36 @@
 <!-- frontend/templates/partials/modals/modal_editar_usuario.html -->
-<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="modalEditarUsuarioLabel" aria-hidden="true">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+        /* Sobrescreve regras dentro de modais do Bootstrap — caret escuro e foco visível */
+        .modal .form-control,
+        .modal select.form-select,
+        .modal textarea.form-control {
+            caret-color: #111 !important;
+            /* caret (barra de inserção) escuro */
+            color: #111 !important;
+            /* texto visível */
+        }
+        /* foco */
+        .modal .form-control:focus,
+        .modal select.form-select:focus,
+        .modal textarea.form-control:focus {
+            caret-color: #111 !important;
+            color: #111 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15) !important;
+        }
+        /* seleção de texto dentro dos campos */
+        .modal .form-control::selection,
+        .modal textarea.form-control::selection {
+            background-color: #b3d4fc !important;
+            color: #000 !important;
+        }
+    </style>
+</head>
+
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="modalEditarUsuarioLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content rounded-4 shadow">
             <div class="modal-header border-0">

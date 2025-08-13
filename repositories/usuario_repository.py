@@ -23,11 +23,8 @@ class UsuarioRepository:
         )
 
         db.add(new_user)
-        logger.debug("Repo: new_user adicionado à sessão. Iniciando commit...")
-        await db.commit() # <<< PONTO CRÍTICO
-        logger.debug("Repo: Commit concluído. Iniciando refresh...")
-        await db.refresh(new_user) # <<< PONTO CRÍTICO
-        logger.debug(f"Repo: Refresh concluído. Usuário ID: {new_user.usuario_id}")
+        await db.commit() 
+        await db.refresh(new_user) 
         return new_user
 
 

@@ -11,15 +11,19 @@ class CategoriaCreate(CategoriaBase):
 
 class CategoriaOut(CategoriaBase):
     categoria_id: int
-    nome_original: str  # Campo para armazenar o nome original (derivado de nome_categoria)
-    nome_categoria: str  # Campo normalizado
+    nome_original: str
+    nome_categoria: str
+    ativo: bool  
 
     class Config:
         from_attributes = True
 
+
 class CategoriaUpdate(BaseModel):
-    nome_categoria: Optional[str] = None  
+    nome_categoria: Optional[str] = None
     descricao_categoria: Optional[str] = None
+    ativo: Optional[bool] = None  # opcional, usada se quiser reativar/inativar via API
+
 
 class PaginatedCategorias(BaseModel):
     page: int

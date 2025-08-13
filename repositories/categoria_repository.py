@@ -1,11 +1,11 @@
 #repositories\categoria_repository.py
 from sqlalchemy import func
-from sqlalchemy.exc import NoResultFound, IntegrityError
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.categoria import Categoria
-from schemas.categoria import CategoriaCreate, CategoriaUpdate
 from fastapi import HTTPException, status
+from models import Item
 
 
 class CategoriaRepository:
@@ -74,17 +74,34 @@ class CategoriaRepository:
     async def delete_categoria(cls, db: AsyncSession, categoria_id: int):
         expr = Categoria.categoria_id == categoria_id
         categoria = await cls.__first_or_404(db, expr)
-        try:
-            await db.delete(categoria)
-            await db.commit()
-            return {"message": "Categoria excluída com sucesso"}
-        except IntegrityError as e:
-            # se violação de FK em item → retorna 409 Conflict
-            await db.rollback()
+
+        # Verifica itens ativos
+        result = await db.execute(
+            select(func.count()).select_from(Item).where(Item.categoria_id == categoria_id, Item.ativo == True)
+        )
+        active_count = result.scalar_one()
+        if active_count > 0:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Não é possível excluir: existem itens vinculados a esta categoria."
+                detail=f"Não é possível excluir: existem {active_count} item(s) ativo(s) vinculados a esta categoria."
             )
+
+        # Se houver itens inativos, faz soft delete da categoria
+        result_inactive = await db.execute(
+            select(func.count()).select_from(Item).where(Item.categoria_id == categoria_id, Item.ativo == False)
+        )
+        inactive_count = result_inactive.scalar_one()
+
+        if inactive_count > 0:
+            categoria.ativo = False
+            await db.commit()
+            return {"message": "Categoria inativada com sucesso (possui itens inativos vinculados)"}
+
+        # Se não houver itens, pode remover fisicamente
+        await db.delete(categoria)
+        await db.commit()
+        return {"message": "Categoria excluída com sucesso"}
+
     
     @staticmethod
     async def find_categoria_ids_by_name(db: AsyncSession, nome_normalizado: str) -> list[int]:
