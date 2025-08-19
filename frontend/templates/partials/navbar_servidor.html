@@ -1,7 +1,15 @@
 <link rel="stylesheet" href="/static/css/custom-navbar.css">
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
     <div class="container-fluid">
-        <button class="navbar-btn btn" id="home-button"><i class="bi bi-house-fill"></i></button>
+
+        <a class="navbar-btn nav-link me-2" href="/static/Manual do Usuário_ Sistema de Controle de Almoxarifado.pdf"
+            download id="help-download-link">
+            <i class="bi bi-question-circle"></i> AJUDA
+        </a>
+
+
+        <button class="navbar-btn btn" id="home-button"><i class="bi bi-house-fill"></i> INÍCIO </button>
+
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
             aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -23,8 +31,8 @@
             </ul>
             <div class="d-flex align-items-center">
                 <div class="dropdown">
-                    <a class="navbar-btn nav-link position-relative me-3" href="#" id="alert-notification-bell" role="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="navbar-btn nav-link position-relative me-3" href="#" id="alert-notification-bell"
+                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell-fill fs-5"></i>
                     </a>
                     <span id="notification-dot" class="notification-dot position-absolute">
@@ -48,10 +56,10 @@
                         <i class="bi bi-person-circle"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                        <li><a class="dropdown-item" href="#" id="edit-profile-link">Editar Perfil</a></li> 
+                        <li><a class="dropdown-item" href="#" id="edit-profile-link">Editar Perfil</a></li>
                         <li>
                             <hr class="dropdown-divider">
-                        </li> 
+                        </li>
                         <li><a class="dropdown-item" href="#" id="logout-link">Sair</a></li>
                 </div>
             </div>
