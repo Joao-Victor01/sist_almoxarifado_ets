@@ -6,8 +6,38 @@
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* .styled-dropdown:hover {
-    background-color: #f8f9fa8a;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
-    cursor: pointer;
-} */
+/* Classe padrão para botões/links da navbar */
+.navbar .navbar-btn {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin: 0 4px;
+    transition: all 0.2s ease-in-out;
+    color: #fff; /* mantém texto/ícone visível em navbar escura */
+}
+
+/* Hover/focus para evidenciar que é clicável */
+.navbar .navbar-btn:hover,
+.navbar .navbar-btn:focus {
+    border-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+
+/* Bordas discretas nos botões principais da navbar */
+.navbar .styled-dropdown {
+    border: 1px solid rgba(255, 255, 255, 0.3); /* borda sutil */
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin: 0 4px;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Efeito ao passar o mouse */
+.navbar .styled-dropdown:hover,
+.navbar .styled-dropdown:focus {
+    border-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
